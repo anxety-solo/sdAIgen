@@ -1,0 +1,22 @@
+{
+    "txt2img/Styles/value": [
+        "ANXETY"
+    ],
+    "customscript/sampler.py/txt2img/Schedule type/value": "Karras",
+    "customscript/sampler.py/txt2img/Sampling steps/value": 30,
+    "txt2img/Upscaler/value": "None",
+    "txt2img/Denoising strength/value": 0.45,
+    "customscript/wildcard_recursive.py/txt2img/Enable UmiAI/value": false,
+    "txt2img/Control Mode/value": "My prompt is more important",
+    "customscript/prompt_matrix.py/txt2img/Grid margins (px)/value": 2,
+    "customscript/xyz_grid.py/txt2img/Grid margins (px)/value": 2,
+    "img2img/Styles/value": [
+        "ANXETY"
+    ],
+    "img2img/Inpaint area/value": "Only masked",
+    "customscript/sampler.py/img2img/Schedule type/value": "Karras",
+    "customscript/sampler.py/img2img/Sampling steps/value": 40,
+    "img2img/Denoising strength/value": 0.4,
+    "img2img/Control Mode/value": "My prompt is more important",
+    "civitai_interface/NSFW content/value": true
+}

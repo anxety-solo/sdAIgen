@@ -2,7 +2,7 @@
 
 <h1 align="center">~ ANXETY | Stable Diffusion WebUI | NoteBook V2 ~</h1>
 
-English | [Русский ](./README-ru_RU.md)
+[English](./README.md) | Русский
 
 </div>
 

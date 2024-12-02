@@ -1,0 +1,188 @@
+/* General Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
+
+hr {
+    border-color: grey;
+    background-color: grey;
+    opacity: 0.25;
+}
+
+.instruction {
+    font-size: 18px;
+    color: grey;
+    user-select: none;
+    cursor: default;
+}
+
+/* Text FONTs */
+
+.instruction,
+.custom_select_multiple select,
+.output_message,
+.storage_info,
+.cleaner_button {
+    font-family: "Shantell Sans", serif;
+    font-optical-sizing: auto;
+}
+
+
+/* Container style */
+
+.cleaner_container {
+    position: relative;
+    padding: 10px 15px;
+    margin: 5px 0 0 5px;
+    background-color: #232323;
+    border: 2px solid rgba(0, 0, 0, 0.4);
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+.cleaner_container::before {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    content: "AutoCleaner";
+    font-family: "Tiny5", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 750;
+    font-size: 24px;
+    color: rgba(0, 0, 0, 0.3);
+}
+.cleaner_container::after {
+    position: absolute;
+    top: 30px;
+    right: 10px;
+    content: "ANXETY";
+    font-family: "Tiny5", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 750;
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.custom_select_multiple select {
+    padding: 10px;
+    border: 1px solid #262626 !important;
+    border-radius: 10px;
+    color: white;
+    background-color: #1c1c1c;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.output_panel {
+    padding: 10px;
+    height: auto;
+    border: 1px solid #262626;
+    border-radius: 10px;
+    background-color: #1c1c1c;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    width: auto;
+    box-sizing: border-box;
+}
+
+.output_message {
+    color: white;
+    font-size: 14px;
+    user-select: none;
+    cursor: default
+}
+
+
+.storage_info {
+    padding: 5px 20px;
+    height: auto;
+    border: 1px solid #262626;
+    border-radius: 10px;
+    background-color: #1c1c1c;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    width: auto;
+    font-size: 14px;
+    user-select: none;
+    cursor: default
+}
+
+
+/* Button and storage info layout */
+.lower_information_panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+
+/* Button style */
+
+.cleaner_button {
+    width: auto;
+    color: white;
+    font-size: 14px;
+    height: 35px;
+    border-radius: 15px;
+    background-image: radial-gradient(circle at top left, purple 10%, violet 90%);
+    background-size: 200% 200%;
+    background-position: left bottom;
+    transition: background 0.5s ease-in-out, transform 0.3s ease;
+}
+.cleaner_button:hover {
+    cursor: pointer;
+    background-size: 200% 200%;
+    background-position: right bottom;
+    transform: translateY(1px);
+}
+
+.button_execute:hover {
+    background-image: radial-gradient(circle at top left, purple 10%, #93ac47 90%);
+}
+.button_hide:hover {
+    background-image: radial-gradient(circle at top left, purple 10%, #fc3468 90%);
+}
+
+.button_execute:active,
+.button_hide:active {
+    filter: brightness(0.75);
+}
+
+.jupyter-widgets.lm-Widget:focus {
+    outline: none;
+}
+
+
+/* Animation of elements */
+
+/* Emergence */
+.cleaner_container {
+    animation: slideInTopBlur 0.7s forwards;
+}
+
+@keyframes slideInTopBlur {
+    0% {
+        transform: translate3d(0, 50%, 0) scale(0.85) rotate3d(1, 0, 0, -85deg);
+        filter: blur(5px) grayscale(1) brightness(0.5);
+        opacity: 0;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1) rotate3d(1, 0, 0, 0deg);
+        filter: blur(0) grayscale(0) brightness(1);
+        opacity: 1;
+    }
+}
+
+/* Leaving */
+.cleaner_container.hide {
+    animation: slideOutTopBlur 0.3s forwards;
+}
+
+@keyframes slideOutTopBlur {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0) grayscale(0) brightness(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -100%, 0);
+        filter: blur(5px) grayscale(1) brightness(0);
+        opacity: 0;
+    }
+}
