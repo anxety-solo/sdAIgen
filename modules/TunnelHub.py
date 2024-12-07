@@ -36,9 +36,7 @@ class TunnelDict(TypedDict):
     pattern: re.Pattern
     name: str
     note: Optional[str]
-    callback: Optional[
-        Callable[[str, Optional[str], Optional[str]], None]
-    ]  # (url, note, name) -> None
+    callback: Optional[Callable[[str, Optional[str], Optional[str]], None]]
 
 
 class Tunnel:
@@ -61,28 +59,32 @@ class Tunnel:
             a list of URLs after the tunnel is created.
 
     Instance Attributes:
-        _is_running (bool): Indicates whether the tunnel is running.
-        urls (List[Tuple[str, Optional[str], Optional[str]]]): List of URLs associated with the tunnel.
-        urls_lock (Lock): Mutex for safe access to the list of URLs.
-        jobs (List[Thread]): List of threads associated with the tunnel.
-        processes (List[subprocess.Popen]): List of running processes for managing tunnels.
-        tunnel_list (List[TunnelDict]): List of dictionaries containing tunnel parameters.
-        stop_event (Event): Event for stopping the tunnel operation.
-        printed (Event): Event indicating whether tunnel information has been printed.
-        logger (logging.Logger): Logger for recording information about the tunnel's operation.
+        _is_running (bool): Indicates whether the tunnel is currently running.
+        urls (List[Tuple[str, Optional[str], Optional[str]]]): List of URLs associated with the tunnel, 
+            including the URL, note, and name of the tunnel.
+        urls_lock (Lock): Mutex for safe access to the list of URLs, ensuring thread-safety.
+        jobs (List[Thread]): List of threads associated with the tunnel, used for managing tunnel processes.
+        processes (List[subprocess.Popen]): List of running subprocesses for managing tunnels.
+        tunnel_list (List[TunnelDict]): List of dictionaries containing parameters for each tunnel added.
+        stop_event (Event): Event used to signal the stopping of tunnel operations.
+        printed (Event): Event indicating whether tunnel information has been printed to the console.
+        logger (logging.Logger): Logger for recording information about the tunnel's operation, including 
+            errors and status updates.
 
     Exceptions:
         ValueError: Raised if the specified port is invalid or occupied.
+        RuntimeError: Raised if the tunnel is already running or if an operation is attempted when the tunnel is not running.
     """
+    
     def __init__(
         self,
         port: int,
         check_local_port: bool = True,
         debug: bool = False,
-        timeout: int = 30,    # default - 60 sec
+        timeout: int = 30,
         propagate: bool = False,
         log_handlers: List[logging.Handler] = None,
-        log_dir: StrOrPath = Path.home(),    # default - None
+        log_dir: StrOrPath = Path.home(),
         callback: Callable[[List[Tuple[str, Optional[str]]]], None] = None,
     ):
         self._is_running = False
@@ -97,87 +99,84 @@ class Tunnel:
         self.check_local_port = check_local_port
         self.debug = debug
         self.timeout = timeout
-        self.log_handlers = log_handlers
+        self.log_handlers = log_handlers or []
         self.log_dir = log_dir or os.getcwd()
         self.callback = callback
 
-        self.logger = logging.getLogger("Tunnel")
-        self.logger.setLevel(logging.DEBUG if debug else logging.INFO)
-        if not propagate:
-            self.logger.propagate = False
-            if not self.logger.handlers:
-                handler = logging.StreamHandler()
-                handler.setLevel(self.logger.level)
-                handler.setFormatter(CustomLogFormat("{message}", style="{"))
-                self.logger.addHandler(handler)
-        if self.log_handlers:
-            for i in self.log_handlers:
-                self.logger.addHandler(i)
-
+        self.logger = self.setup_logger(propagate)
         self.WINDOWS = os.name == "nt"
 
-    def add_tunnel(
-        self,
-        *,
-        command: str,
-        pattern: StrOrRegexPattern,
-        name: str,
-        note: str = None,
-        callback: Callable[[str, Optional[str], Optional[str]], None] = None,
-    ) -> None:
+    def setup_logger(self, propagate: bool) -> logging.Logger:
+        logger = logging.getLogger("Tunnel")
+        logger.setLevel(logging.DEBUG if self.debug else logging.INFO)
+        if not propagate:
+            logger.propagate = False
+            if not logger.handlers:
+                handler = logging.StreamHandler()
+                handler.setLevel(logger.level)
+                handler.setFormatter(CustomLogFormat("{message}", style="{"))
+                logger.addHandler(handler)
+        for handler in self.log_handlers:
+            logger.addHandler(handler)
+        return logger
+
+    def add_tunnel(self, *, command: str, pattern: StrOrRegexPattern, name: str, note: str = None, callback: Callable[[str, Optional[str], Optional[str]], None] = None) -> None:
         if isinstance(pattern, str):
             pattern = re.compile(pattern)
 
-        log = self.logger
-        log.debug(f"Adding tunnel {command=} {pattern=} {name=} {note=} {callback=}")
-        self.tunnel_list.append(
-            dict(
-                command=command,
-                pattern=pattern,
-                name=name,
-                note=note,
-                callback=callback,
-            )
-        )
+        self.logger.debug(f"Adding tunnel {command=} {pattern=} {name=} {note=} {callback=}")
+        self.tunnel_list.append({
+            "command": command,
+            "pattern": pattern,
+            "name": name,
+            "note": note,
+            "callback": callback,
+        })
 
     def start(self) -> None:
         if self._is_running:
             raise RuntimeError("Tunnel is already running")
 
-        log = self.logger
         self.__enter__()
 
         try:
             while not self.printed.is_set():
                 time.sleep(1)
         except KeyboardInterrupt:
-            log.warning("Keyboard Interrupt detected, stopping tunnel")
+            self.logger.warning("Keyboard Interrupt detected, stopping tunnel")
             self.stop()
 
     def stop(self) -> None:
         if not self._is_running:
             raise RuntimeError("Tunnel is not running")
 
-        log = self.logger
+        self.logger.info(f"\n\033[32m💣 Tunnels:\033[0m \033[34m{self.get_tunnel_names()}\033[0m \033[31mKilled.\033[0m")
         self.stop_event.set()
-        tunnel_names = ', '.join(tunnel["name"] for tunnel in self.tunnel_list)
-        log.info(f"\n\033[32m💣 Tunnels:\033[0m \033[34m{tunnel_names}\033[0m \033[31mKilled.\033[0m")
+        self.terminate_processes()
+        self.join_threads()
+        self.reset()
 
+    def get_tunnel_names(self) -> str:
+        return ', '.join(tunnel["name"] for tunnel in self.tunnel_list)
+
+    def terminate_processes(self) -> None:
         for process in self.processes:
             while process.poll() is None:
                 try:
                     process.terminate()
                     process.wait(timeout=15)
                 except subprocess.TimeoutExpired:
-                    if self.WINDOWS:
-                        process.send_signal(signal.CTRL_BREAK_EVENT)
-                        process.send_signal(signal.CTRL_C_EVENT)
-                    process.kill()
+                    self.handle_process_timeout(process)
 
+    def handle_process_timeout(self, process: subprocess.Popen) -> None:
+        if self.WINDOWS:
+            process.send_signal(signal.CTRL_BREAK_EVENT)
+            process.send_signal(signal.CTRL_C_EVENT)
+        process.kill()
+
+    def join_threads(self) -> None:
         for job in self.jobs:
             job.join()
-
-        self.reset()
 
     def __enter__(self):
         if self._is_running:
@@ -186,50 +185,37 @@ class Tunnel:
         if not self.tunnel_list:
             raise ValueError("No tunnels added")
 
-        log = self.logger
-        self.tunnel_names = []
-
         print_job = Thread(target=self._print)
         print_job.start()
         self.jobs.append(print_job)
 
         for tunnel in self.tunnel_list:
-            cmd = tunnel["command"]
-            name = tunnel.get("name")
-            self.tunnel_names.append(name)
-            tunnel_thread = Thread(
-                target=self._run,
-                args=(cmd.format(port=self.port),),
-                kwargs={"name": name},
-            )
-            tunnel_thread.start()
-            self.jobs.append(tunnel_thread)
+            self.start_tunnel_thread(tunnel)
 
         self._is_running = True
         return self
+
+    def start_tunnel_thread(self, tunnel: TunnelDict) -> None:
+        cmd = tunnel["command"]
+        name = tunnel.get("name")
+        tunnel_thread = Thread(target=self._run, args=(cmd.format(port=self.port),), kwargs={"name": name})
+        tunnel_thread.start()
+        self.jobs.append(tunnel_thread)
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.stop()
 
     def reset(self) -> None:
-        self.urls = []
-        self.jobs = []
-        self.processes = []
+        self.urls.clear()
+        self.jobs.clear()
+        self.processes.clear()
         self.stop_event.clear()
         self.printed.clear()
         self._is_running = False
 
     @staticmethod
     def is_port_in_use(port: int) -> bool:
-        """
-        Check if the specified port is in use.
-
-        Args:
-            port (int): The port to check.
-
-        Returns:
-            bool: `True` if the port is in use, `False` otherwise.
-        """
+        """Check if the specified port is in use."""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(1)
@@ -238,113 +224,71 @@ class Tunnel:
             return False
 
     @staticmethod
-    def wait_for_condition(
-        condition: Callable[[], bool], *, interval: int = 1, timeout: int = 10
-    ) -> bool:
-        """
-        Wait for the condition to be true until the specified timeout.
-
-        Mostly for internal use but can be used for anything else.
-
-        Args:
-            condition (Callable[[], bool]): The condition to check.
-            interval (int, optional): The interval (in seconds) between condition checks.
-            timeout (int, optional): Maximum time to wait for the condition. `None` for no timeout.
-
-        Returns:
-            bool: `True` if the condition is met, `False` if timeout is reached.
-        """
+    def wait_for_condition(condition: Callable[[], bool], *, interval: int = 1, timeout: int = 10) -> bool:
+        """Wait for the condition to be true until the specified timeout."""
         start_time = time.time()
-
-        # Initialize variables to track elapsed time and number of checks
         elapsed_time = 0
         checks_count = 0
-
-        # Prevent zero or negative timeout
-        if timeout is not None:
-            timeout = max(1, timeout)
+        timeout = max(1, timeout) if timeout is not None else None
 
         while True:
             if condition():
                 return True
 
             checks_count += 1
+            elapsed_time = time.time() - start_time
 
-            if timeout is not None:
-                elapsed_time = time.time() - start_time
-                remaining_time = timeout - elapsed_time
+            if timeout is not None and elapsed_time >= timeout:
+                return False
 
-                # If remaining time is non-positive, return False (timeout occurred)
-                if remaining_time <= 0:
-                    return False
-
-                # Adjust the interval to respect the remaining time
-                # and distribute it evenly among the remaining checks
-                next_interval = min(interval, remaining_time / (checks_count + 1))
-            else:
-                next_interval = interval
-
+            next_interval = min(interval, (timeout - elapsed_time) / (checks_count + 1)) if timeout else interval
             time.sleep(next_interval)
 
     def _process_line(self, line: str) -> bool:
-        """
-        Process a line of output to extract tunnel information.
-
-        Args:
-            line (str): A line of output from the tunnel process.
-
-        Returns:
-            bool: True if a URL is extracted, False otherwise.
-        """
+        """Process a line of output to extract tunnel information."""
         for tunnel in self.tunnel_list:
-            note = tunnel.get("note")
-            name = tunnel.get("name")
-            callback = tunnel.get("callback")
-            regex = tunnel["pattern"]
-            matches = regex.search(line)
-
-            if matches:
-                link = matches.group().strip()
-                link = link if link.startswith("http") else "http://" + link
-                with self.urls_lock:
-                    self.urls.append((link, note, name))
-                if callback:
-                    try:
-                        callback(link, note, name)
-                    except Exception:
-                        self.logger.error(
-                            "An error occurred while invoking URL callback",
-                            exc_info=True,
-                        )
+            if self.extract_url(tunnel, line):
                 return True
         return False
 
-    def _run(self, cmd: str, name: str) -> None:
-        """
-        Run the tunnel process and monitor its output.
+    def extract_url(self, tunnel: TunnelDict, line: str) -> bool:
+        """Extract the URL from the line and invoke the callback if applicable."""
+        regex = tunnel["pattern"]
+        matches = regex.search(line)
 
-        Args:
-            cmd (str): The command to execute for the tunnel.
-            name (str): Name of the tunnel.
-        """
+        if matches:
+            link = matches.group().strip()
+            link = link if link.startswith("http") else "http://" + link
+            note = tunnel.get("note")
+            name = tunnel.get("name")
+            callback = tunnel.get("callback")
+
+            with self.urls_lock:
+                self.urls.append((link, note, name))
+
+            if callback:
+                self.invoke_callback(callback, link, note, name)
+            return True
+        return False
+
+    def invoke_callback(self, callback: Callable, link: str, note: Optional[str], name: Optional[str]) -> None:
+        """Invoke the callback and handle any exceptions."""
+        try:
+            callback(link, note, name)
+        except Exception:
+            self.logger.error("An error occurred while invoking URL callback", exc_info=True)
+
+    def _run(self, cmd: str, name: str) -> None:
+        """Run the tunnel process and monitor its output."""
         log_path = Path(self.log_dir, f"tunnel_{name}.log")
         log_path.write_text("")  # Clear the log
 
         log = self.logger.getChild(name)
-        if not log.handlers:
-            handler = logging.FileHandler(log_path, encoding="utf-8")
-            handler.setLevel(logging.DEBUG)
-            log.addHandler(handler)
+        self.setup_file_logging(log, log_path)
 
         try:
-            if self.check_local_port:
-                self.wait_for_condition(
-                    lambda: self.is_port_in_use(self.port) or self.stop_event.is_set(),
-                    interval=1,
-                    timeout=None,
-                )
-            if not self.WINDOWS:
-                cmd = shlex.split(cmd)
+            self.wait_for_port_if_needed()
+            cmd = shlex.split(cmd) if not self.WINDOWS else cmd
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -352,66 +296,68 @@ class Tunnel:
                 stdin=subprocess.PIPE,
                 universal_newlines=True,
                 bufsize=1,
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                if self.WINDOWS
-                else 0,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if self.WINDOWS else 0,
             )
             self.processes.append(process)
-
-            url_extracted = False
-            while not self.stop_event.is_set() and process.poll() is None:
-                line = process.stdout.readline()
-                if not line:
-                    break
-                if not url_extracted:
-                    url_extracted = self._process_line(line)
-
-                log.debug(line.rstrip())
+            self.monitor_process_output(process, log)
 
         except Exception:
-            log.error(
-                f"An error occurred while running the command: {cmd}", exc_info=True
-            )
+            log.error(f"An error occurred while running the command: {cmd}", exc_info=True)
         finally:
             for handler in log.handlers:
                 handler.close()
 
-    def _print(self) -> None:
-        """
-        Print the tunnel URLs.
-        """
-        log = self.logger
-        D = ', '.join(tunnel["name"] for tunnel in self.tunnel_list)
+    def setup_file_logging(self, log: logging.Logger, log_path: Path) -> None:
+        """Set up file logging for the specified logger."""
+        if not log.handlers:
+            handler = logging.FileHandler(log_path, encoding="utf-8")
+            handler.setLevel(logging.DEBUG)
+            log.addHandler(handler)
 
+    def wait_for_port_if_needed(self) -> None:
+        """Wait for the port to be available if required."""
         if self.check_local_port:
             self.wait_for_condition(
                 lambda: self.is_port_in_use(self.port) or self.stop_event.is_set(),
                 interval=1,
                 timeout=None,
             )
-            if not self.stop_event.is_set():
-                pass
+
+    def monitor_process_output(self, process: subprocess.Popen, log: logging.Logger) -> None:
+        """Monitor the output of the tunnel process."""
+        url_extracted = False
+        while not self.stop_event.is_set() and process.poll() is None:
+            line = process.stdout.readline()
+            if not line:
+                break
+            if not url_extracted:
+                url_extracted = self._process_line(line)
+            log.debug(line.rstrip())
+
+    def _print(self) -> None:
+        """Print the tunnel URLs."""
+        if self.check_local_port:
+            self.wait_for_port_if_needed()
 
         if not self.wait_for_condition(
             lambda: len(self.urls) == len(self.tunnel_list) or self.stop_event.is_set(),
             interval=1,
             timeout=self.timeout,
         ):
-            log.warning("Timeout while getting tunnel URLs, print available URLs")
+            self.logger.warning("Timeout while getting tunnel URLs, print available URLs")
 
         if not self.stop_event.is_set():
-            with self.urls_lock:
-                print()   # space
-                for url, note, name in self.urls:
-                    print(f"\033[32m 🔗 Tunnel \033[0m{name} \033[32mURL: \033[0m{url} {note if note else ''}")
-                print()   # space
+            self.display_urls()
 
-                if self.callback:
-                    try:
-                        self.callback(self.urls)
-                    except Exception:
-                        log.error(
-                            "An error occurred while invoking URLs callback",
-                            exc_info=True,
-                        )
+    def display_urls(self) -> None:
+        """Display the collected URLs."""
+        with self.urls_lock:
+            print()  # space
+            for url, note, name in self.urls:
+                print(f"\033[32m 🔗 Tunnel \033[0m{name} \033[32mURL: \033[0m{url} {note if note else ''}")
+            print()  # space
+
+            if self.callback:
+                self.invoke_callback(self.callback, self.urls)
+
             self.printed.set()
