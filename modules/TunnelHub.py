@@ -79,10 +79,10 @@ class Tunnel:
         port: int,
         check_local_port: bool = True,
         debug: bool = False,
-        timeout: int = 30,		# default 60 sec
+        timeout: int = 30,    # default - 60 sec
         propagate: bool = False,
         log_handlers: List[logging.Handler] = None,
-        log_dir: StrOrPath = None,
+        log_dir: StrOrPath = Path.home(),    # default - None
         callback: Callable[[List[Tuple[str, Optional[str]]]], None] = None,
     ):
         self._is_running = False

@@ -101,8 +101,8 @@
         "cross_attention_optimization"
     ],
     "ui_tab_order": [
-        "txt2img",
-        "img2img",
+        "Txt2img",
+        "Img2img",
         "Fast PNG Info",
         "SuperMerger",
         "HUB",

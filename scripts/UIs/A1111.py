@@ -26,8 +26,7 @@ os.chdir(HOME)
 def _download_file(url, directory, filename):
     os.makedirs(directory, exist_ok=True)
     file_path = os.path.join(directory, filename)
-    command = f"curl -sLo {file_path} {url}"
-    os.system(command)
+    get_ipython().system(f'curl -sLo {file_path} {url}')
 
 def download_files(file_list):
     for file_info in file_list:
@@ -55,17 +54,17 @@ def download_configuration():
     os.chdir(EXTS)
 
     for command in extensions_list:
-        os.system(command)
+        get_ipython().system(command)
 
 def unpack_webui():
-    with capture.capture_output():
-        zip_path = f"{SCR_PATH}/{UI}.zip"
-        get_ipython().system(f'aria2c --console-log-level=error -c -x 16 -s 16 -k 1M {REPO_URL} -d {SCR_PATH} -o {UI}.zip')
-        get_ipython().system(f'unzip -q -o {zip_path} -d {WEBUI}')
-        get_ipython().system(f'rm -rf {zip_path}')
+    zip_path = f"{SCR_PATH}/{UI}.zip"
+    get_ipython().system(f'aria2c --console-log-level=error -c -x 16 -s 16 -k 1M {REPO_URL} -d {SCR_PATH} -o {UI}.zip')
+    get_ipython().system(f'unzip -q -o {zip_path} -d {WEBUI}')
+    get_ipython().system(f'rm -rf {zip_path}')
 
 # ==================== MAIN CODE ====================
 
 if __name__ == "__main__":
-    unpack_webui()
-    download_configuration()
+    with capture.capture_output():
+        unpack_webui()
+        download_configuration()
