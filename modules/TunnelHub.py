@@ -1,8 +1,8 @@
 """
 Modified script for creating tunnels.
 
-Original author: gutris1
-Author's GitHub: https://github.com/gutris1
+Originated from: https://github.com/gutris1/segsmaker/blob/main/script/SM/cupang.py
+Author: gutris1 https://github.com/gutris1
 """
 
 import logging
