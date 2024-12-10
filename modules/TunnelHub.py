@@ -13,11 +13,12 @@ import time
 import subprocess
 from pathlib import Path
 from threading import Event, Lock, Thread
-from typing import Callable, List, Optional, Tuple, TypedDict, Union
+from typing import Callable, List, Optional, Tuple, TypedDict, Union, get_args
 
 
 StrOrPath = Union[str, Path]
 StrOrRegexPattern = Union[str, re.Pattern]
+ListHandlersOrBool = Union[List[logging.Handler], bool]
 
 
 class CustomLogFormat(logging.Formatter):
@@ -73,7 +74,7 @@ class Tunnel:
         ValueError: Raised if the specified port is invalid or occupied.
         RuntimeError: Raised if the tunnel is already running or if an operation is attempted when the tunnel is not running.
     """
-    
+
     def __init__(
         self,
         port: int,
@@ -81,7 +82,7 @@ class Tunnel:
         debug: bool = False,
         timeout: int = 30,
         propagate: bool = False,
-        log_handlers: List[logging.Handler] = None,
+        log_handlers: ListHandlersOrBool = None,
         log_dir: StrOrPath = Path.home(),
         callback: Callable[[List[Tuple[str, Optional[str]]]], None] = None,
     ):
@@ -354,3 +355,12 @@ class Tunnel:
                 self.invoke_callback(self.callback, self.urls)
 
             self.printed.set()
+
+    def set_log_handlers(self, log_handlers: ListHandlersOrBool) -> None:
+        """Set logging handlers for the tunnel logger."""
+        if log_handlers is False:
+            for handler in self.logger.handlers:
+                self.logger.removeHandler(handler)
+        elif isinstance(log_handlers, list):
+            for handler in log_handlers:
+                self.logger.addHandler(handler)

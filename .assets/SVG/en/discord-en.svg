@@ -1,0 +1,97 @@
+<svg fill="none" viewBox="0 0 800 130" width="800" height="130" xmlns="http://www.w3.org/2000/svg">
+    <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+            <style>
+			@keyframes rotateLabel {
+				0% {
+					transform: rotate(1deg) translateY(-20px);
+				}
+				100% {
+					transform: rotate(-1deg) translateY(-20px);
+				}
+			}
+
+                @keyframes gradientBackground {
+                    0% {
+                        background-position: 0% 50%;
+                    }
+                    50% {
+                        background-position: 100% 0%;
+                    }
+                    100% {
+                        background-position: 0% 50%;
+                    }
+                }
+
+                @keyframes fadeIn {
+                    0% {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(50%);
+                    }
+                    66% {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(50%);
+                    }
+                    100% {
+                        opacity: 0.5;
+                        transform: translateX(-50%) translateY(0%);
+                    }
+                }
+
+                .container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: auto;
+                    height: 130px;
+                    background: linear-gradient(45deg, #FC5C7D, #6A82FB, #04B2AC);
+                    background-size: 600% 400%;
+                    animation: gradientBackground 10s ease infinite;
+                    border-radius: 10px;
+                    user-select: none;
+                    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+                }
+                
+                .H1 {
+                    color: #8DFFDD;
+                    font-size: 70px;
+                    letter-spacing: 10px;
+                    font-weight: bold;
+                    text-shadow:
+                        0 1px 0 #1EB387,
+                        0 2px 0 #1eb387,
+                        0 3px 0 #1EB387,
+                        0 4px 0 #1EB387,
+                        0 12px 5px rgba(0, 0, 0, 0.1);
+                    animation: rotateLabel ease-in-out 3s infinite alternate;
+                }
+
+                .source {
+                    position: absolute;
+                    top: 55px;
+                    left: 50%;
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(50%);
+                    animation: 3s ease 2s normal forwards 1 fadeIn;
+                }
+
+                p {
+                    color: white;
+                    font-size: 30px;
+                    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+                    white-space: nowrap;
+                    font-weight: bold;
+                }
+            </style>
+            
+            <div class="container">
+                <div class="H1">DISCORD</div>
+                
+                <div class="source">
+                    <p>Click to join the server</p>
+                </div>
+            </div>
+        </div>
+    </foreignObject>
+</svg>

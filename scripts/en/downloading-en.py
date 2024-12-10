@@ -347,6 +347,11 @@ def manual_download(url, dst_dir, file_name=None, prefix=None):
             image_url, image_name = civitai.get_image_info(data, model_name, model_type)
             # fix name error | split NoneType
             file_name = model_name
+           
+            # DL PREVIEW IMAGES | CIVITAI
+            if image_url and image_name:
+                command = ["aria2c"] + aria2_args.split() + ["-d", dst_dir, "-o", image_name, image_url]
+                subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     elif 'github' in url or 'huggingface.co' in url:
         if file_name and '.' not in file_name:
