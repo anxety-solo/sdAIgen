@@ -23,10 +23,10 @@ SETTINGS_PATH = SCR_PATH / 'settings.json'
 UI = read_json(SETTINGS_PATH, 'WEBUI.current')
 WEBUI = read_json(SETTINGS_PATH, 'WEBUI.webui_path')
 ENV_NAME = read_json(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-VENV = Path(read_json(SETTINGS_PATH, 'ENVIRONMENT.venv_path'))
+VENV = read_json(SETTINGS_PATH, 'ENVIRONMENT.venv_path')
 
 # USER VENV
-py = VENV / '/bin/python3'
+py = Path(VENV) / 'bin/python3'
 
 def load_settings(path):
     """Load settings from a JSON file."""
