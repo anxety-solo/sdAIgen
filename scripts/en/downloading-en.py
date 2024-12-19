@@ -113,7 +113,7 @@ def setup_venv():
     if ENV_NAME == 'Google Colab':
         install_commands = ["apt -y install python3.10-venv", "apt -y install lz4"]
     else:
-        install_commands = ["pip install ipywidgets jupyterlab_widgets --upgrade"]
+        install_commands = ["pip install ipywidgets jupyterlab_widgets --upgrade", "apt -y install lz4"]
     
     for cmd in install_commands:
         subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
