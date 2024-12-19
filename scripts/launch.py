@@ -14,6 +14,7 @@ import json
 import os
 import re
 
+
 # Constants
 HOME = Path.home()
 SCR_PATH = HOME / 'ANXETY'
@@ -22,6 +23,10 @@ SETTINGS_PATH = SCR_PATH / 'settings.json'
 UI = read_json(SETTINGS_PATH, 'WEBUI.current')
 WEBUI = read_json(SETTINGS_PATH, 'WEBUI.webui_path')
 ENV_NAME = read_json(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+VENV = Path(read_json(SETTINGS_PATH, 'ENVIRONMENT.venv_path'))
+
+# USER VENV
+py = VENV / '/bin/python3'
 
 def load_settings(path):
     """Load settings from a JSON file."""
@@ -147,14 +152,14 @@ with tunnel:
 
     ## Launch
     if UI != 'ComfyUI':
-        get_ipython().system(f'python launch.py {commandline_arguments}')
+        get_ipython().system(f'{py} launch.py {commandline_arguments}')
     else:
         if check_custom_nodes_deps:
-            get_ipython().system('python install-deps.py')
+            get_ipython().system('{py} install-deps.py')
         print("Installing dependencies for ComfyUI from requirements.txt...")
         subprocess.run(['pip', 'install', '-r', 'requirements.txt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         clear_output(wait=True)
-        get_ipython().system(f'python main.py {commandline_arguments}')
+        get_ipython().system(f'{py} main.py {commandline_arguments}')
 
 # Print session duration
 timer = float(open(f'{WEBUI}/static/timer.txt', 'r').read())
