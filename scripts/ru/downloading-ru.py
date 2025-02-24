@@ -49,7 +49,7 @@ def install_dependencies(commands):
 
 def setup_venv():
     """Customize the virtual environment."""
-    url = "https://huggingface.co/NagisaNao/ANXETY_test/resolve/main/python310-venv-torch251-cu121-C-fca.tar.lz4"
+    url = "https://huggingface.co/NagisaNao/ANXETY/resolve/main/python310-venv-torch251-cu121-C-fca.tar.lz4"
     fn = Path(url).name
 
     m_download(f'{url} {HOME} {fn}')
@@ -148,7 +148,7 @@ locals().update(settings)
 
 ## ======================== WEBUI ========================
 
-if UI != 'ComfyUI' and not os.path.exists('/root/.cache/huggingface/hub/models--Bingsu--adetailer'):
+if UI not in ['ComfyUI', 'Forge'] and not os.path.exists('/root/.cache/huggingface/hub/models--Bingsu--adetailer'):
     print('🚚 Распаковка кэша моделей ADetailer...')
 
     name_zip = 'hf_cache_adetailer'

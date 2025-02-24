@@ -1,11 +1,48 @@
-/* General Styles */
-
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
 
+:root {
+  /* Accent Color */
+  --aw-accent-color: #FF97EF;
+
+  /* Fonts */
+  --aw-font-family-primary: "Shantell Sans", serif;
+  --aw-font-family-secondary: "Tiny5", sans-serif;
+  --aw-font-size-widgets: 14px;
+
+  /* Colors */
+  --aw-color-watermark: rgba(0, 0, 0, 0.3);
+  --aw-color-text-primary: white;
+
+  /* Container */
+  --aw-container-bg: #232323;
+  --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
+  --aw-container-radius: 16px;
+  --aw-container-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+
+  /* Inputs */
+  --aw-input-bg: #1F1F1F;
+  --aw-input-padding: 10px;
+  --aw-input-border: 1px solid #262626;
+  --aw-input-radius: 10px;
+  --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+
+  /* Buttons */
+  --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
+  --aw-button-execute-hover: radial-gradient(circle at top left, purple 10%, #93AC47 90%);
+  --aw-button-hide-hover: radial-gradient(circle at top left, purple 10%, #FC3468 90%);
+
+  /* Special Elements */
+  --aw-hr-color: grey;
+  --aw-hr-opacity: 0.25;
+}
+
+
+/* General Styles */
+
 hr {
-    border-color: grey;
-    background-color: grey;
-    opacity: 0.25;
+    border-color: var(--aw-hr-color);
+    background-color: var(--aw-hr-color);
+    opacity: var(--aw-hr-opacity);
 }
 
 .instruction {
@@ -15,6 +52,7 @@ hr {
     cursor: default;
 }
 
+
 /* Text FONTs */
 
 .instruction,
@@ -22,9 +60,10 @@ hr {
 .output_message,
 .storage_info,
 .cleaner_button {
-    font-family: "Shantell Sans", serif;
+    font-family: var(--aw-font-family-primary);
     font-optical-sizing: auto;
 }
+
 
 /* Container style */
 
@@ -32,10 +71,10 @@ hr {
     position: relative;
     padding: 10px 15px;
     margin: 5px 0 0 5px;
-    background-color: #232323;
-    border: 2px solid rgba(0, 0, 0, 0.4);
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    background-color: var(--aw-container-bg);
+    border: var(--aw-container-border);
+    border-radius: var(--aw-container-radius);
+    box-shadow: var(--aw-container-shadow);
     overflow: hidden;
 }
 .cleaner_container::before {
@@ -43,44 +82,127 @@ hr {
     top: 5px;
     right: 10px;
     content: "AutoCleaner";
-    font-family: "Tiny5", sans-serif;
+    font-family: var(--aw-font-family-secondary);
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
-    color: rgba(0, 0, 0, 0.3);
+    color: var(--aw-color-watermark);
 }
 .cleaner_container::after {
     position: absolute;
     top: 30px;
     right: 10px;
     content: "ANXETY";
-    font-family: "Tiny5", sans-serif;
+    font-family: var(--aw-font-family-secondary);
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 18px;
-    color: rgba(0, 0, 0, 0.3);
+    color: var(--aw-color-watermark);
 }
 
+
+/* Input-Output field styles */
+
 .custom_select_multiple select {
-    padding: 10px;
-    border: 1px solid #262626 !important;
-    border-radius: 10px;
-    color: white;
-    background-color: #1c1c1c;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    padding: var(--aw-input-padding);
+    border: var(--aw-input-border) !important;
+    border-radius: var(--aw-input-radius);
+    color: var(--aw-color-text-primary);
+    background-color: var(--aw-input-bg);
+    box-shadow: var(--aw-input-shadow);
 }
 
 .output_panel {
-    padding: 10px;
+    padding: var(--aw-input-padding);
+    border: var(--aw-input-border);
+    border-radius: var(--aw-input-radius);
+    background-color: var(--aw-input-bg);
+    box-shadow: var(--aw-input-shadow);
+    box-sizing: border-box;
+}
+.output_message {
+    color: var(--aw-color-text-primary);
+    font-size: var(--aw-font-size-widgets);
+    user-select: none;
+    cursor: default;
+}
+
+.storage_info {
+    padding: 5px 20px;
+    height: auto;
     border: 1px solid #262626;
     border-radius: 10px;
     background-color: #1c1c1c;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--aw-input-shadow);
     width: auto;
-    box-sizing: border-box;
+    font-size: var(--aw-font-size-widgets);
+    user-select: none;
+    cursor: default;
 }
 
-/* Animation for output messages */
+/* Layout for selection and output areas */
+.selection_output_layout {
+    display: flex;
+    justify-content: space-between; 
+    gap: 5px;
+}
+
+.custom_select_multiple,
+.output_panel {
+    flex: 1;
+    min-height: 100px;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+
+/* Button and storage info layout */
+.lower_information_panel {
+    justify-content: space-between;
+}
+
+
+/* Button style */
+
+.cleaner_button {
+    width: auto;
+    color: var(--aw-color-text-primary);
+    font-size: var(--aw-font-size-widgets);
+    height: 35px;
+    border-radius: 15px;
+    background-image: var(--aw-button-gradient);
+    background-size: 200% 200%;
+    background-position: left bottom;
+    transition: background 0.5s ease, transform 0.3s ease;
+}
+.cleaner_button:hover {
+    cursor: pointer;
+    background-size: 200% 200%;
+    background-position: right bottom;
+    transform: translateY(1px);
+}
+
+.button_execute:hover {
+    background-image: var(--aw-button-execute-hover);
+}
+.button_hide:hover {
+    background-image: var(--aw-button-hide-hover);
+}
+
+/* Removes ugly stroke from widget buttons. */
+.cleaner_button:active {
+    filter: brightness(0.75) !important;
+}
+.jupyter-widgets.lm-Widget:focus {
+    outline: none;
+}
+
+
+/* Animation of elements */
+
+.cleaner_container {
+    animation: slideInTopBlur 0.7s forwards;
+}
 .animated_message {
     animation: fadeIn 0.5s forwards;
 }
@@ -94,92 +216,6 @@ hr {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.output_message {
-    color: white;
-    font-size: 14px;
-    user-select: none;
-    cursor: default;
-}
-
-.storage_info {
-    padding: 5px 20px;
-    height: auto;
-    border: 1px solid #262626;
-    border-radius: 10px;
-    background-color: #1c1c1c;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-    width: auto;
-    font-size: 14px;
-    user-select: none;
-    cursor: default;
-}
-
-/* Button and storage info layout */
-.lower_information_panel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Button style */
-
-.cleaner_button {
-    width: auto;
-    color: white;
-    font-size: 14px;
-    height: 35px;
-    border-radius: 15px;
-    background-image: radial-gradient(circle at top left, purple 10%, violet 90%);
-    background-size: 200% 200%;
-    background-position: left bottom;
-    transition: background 0.5s ease, transform 0.3s ease;
-}
-.cleaner_button:hover {
-    cursor: pointer;
-    background-size: 200% 200%;
-    background-position: right bottom;
-    transform: translateY(1px);
-}
-
-.button_execute:hover {
-    background-image: radial-gradient(circle at top left, purple 10%, #93ac47 90%);
-}
-.button_hide:hover {
-    background-image: radial-gradient(circle at top left, purple 10%, #fc3468 90%);
-}
-
-.button_execute:active,
-.button_hide:active {
-    filter: brightness(0.75);
-}
-
-.jupyter-widgets.lm-Widget:focus {
-    outline: none;
-}
-
-/* Layout for selection and output areas */
-.selection_output_layout {
-    display: flex;
-    justify-content: space-between; 
-    align-items: stretch; 
-    margin: 5px 0;
-}
-
-.custom_select_multiple {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.output_panel {
-    flex: 1;
-    min-height: 100px;
-}
-
-/* General styles for the cleaner container */
-.cleaner_container {
-    animation: slideInTopBlur 0.7s forwards;
 }
 
 @keyframes slideInTopBlur {

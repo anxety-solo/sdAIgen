@@ -1,23 +1,95 @@
-/* General Styles */
-
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
+
+:root {
+  /* Accent Color */
+  --aw-accent-color: #FF97EF;
+
+  /* Fonts */
+  --aw-font-family-primary: "Shantell Sans", serif;
+  --aw-font-family-secondary: "Tiny5", sans-serif;
+  --aw-font-size-header: 20px;
+  --aw-font-weight-header: 650;
+  --aw-font-size-widgets: 14px;
+
+  /* Colors */
+  --aw-color-header: var(--aw-accent-color);
+  --aw-color-watermark: rgba(0, 0, 0, 0.3);
+  --aw-color-text-primary: white;
+  --aw-color-placeholder: grey;
+
+  /* Container */
+  --aw-container-bg: #232323;
+  --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
+  --aw-container-radius: 16px;
+  --aw-container-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+
+  /* Inputs */
+  --aw-input-bg: #1C1C1C;
+  --aw-input-bg-hover: #262626;
+  --aw-input-border: 1px solid #262626;
+  --aw-input-radius: 10px;
+  --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+  --aw-input-focus-border: #006EE5;
+
+  /* Checkboxes */
+  --aw-checkbox-unchecked-bg: #20b2aa;
+  --aw-checkbox-checked-bg: #2196F3;
+  --aw-checkbox-inpaint-bg: #BBCA53;
+  --aw-checkbox-sdxl-bg: #EA861A;
+  --aw-checkbox-empowerment-bg: #DF6B91;
+  --aw-checkbox-handle-bg: white;
+
+  /* Scrollbar */
+  --aw-scrollbar-width: 0.65rem;
+  --aw-scrollbar-thumb-bg: #475254;
+  --aw-scrollbar-track-bg: #111111;
+  --aw-scrollbar-thumb-hover: var(--aw-accent-color);
+
+  /* Buttons */
+  --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
+  --aw-button-save-hover: radial-gradient(circle at top left, purple 10%, #93AC47 90%);
+  --aw-button-zrok-hover: radial-gradient(circle at top left, purple 10%, #1D94BB 90%);
+
+  /* Popup */
+  --aw-popup-bg: rgba(255, 255, 255, 0.05);
+  --aw-popup-color: #FFFFFF;
+  --aw-popup-border: 2px solid rgba(255, 255, 255, 0.45);
+  --aw-popup-sample-bg: rgba(255, 255, 255, 0.2);
+  --aw-popup-sample-color: #C6E2FF;
+  --aw-popup-sample-border: 2px solid rgba(255, 255, 255, 0.2);
+
+  /* Term Colors (Popup) */
+  --aw-term-sample-label: #DBAFFF;
+  --aw-term-braces: #FFFF00;
+  --aw-term-extension: #EB934B;
+  --aw-term-filename: #FFDBA7;
+  --aw-term-required: #FF9999;
+
+  /* Special Elements */
+  --aw-hr-color: grey;
+  --aw-hr-opacity: 0.25;
+  --aw-text-shadow-header: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+
+/* General Styles */
 
 .header {
     display: inline-block;
-    font-size: 20px;
-    font-weight: 650;
-    color: #FF97EF;
+    font-size: var(--aw-font-size-header);
+    font-weight: var(--aw-font-weight-header);
+    color: var(--aw-color-header);
     margin-bottom: 10px;
     user-select: none;
     cursor: default;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+    text-shadow: var(--aw-text-shadow-header);
 }
 
 hr {
     margin: 4px 0;
-    border-color: grey;
-    background-color: grey;
-    opacity: 0.25;
+    border-color: var(--aw-hr-color);
+    background-color: var(--aw-hr-color);
+    opacity: var(--aw-hr-opacity);
 }
 
 a {
@@ -25,30 +97,32 @@ a {
     text-decoration: none;
 }
 
-/* Sprecial Styles */
-/* === ScrollBar === */
+/* Special Styles */
+
+/* === ScrollBar (For TextArea) === */
 .widget-textarea textarea::-webkit-scrollbar {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: var(--aw-scrollbar-width);
+  height: var(--aw-scrollbar-width);
 }
 .widget-textarea textarea::-webkit-scrollbar-thumb {
-  background: #475254 !important;
+  background: var(--aw-scrollbar-thumb-bg) !important;
   border-radius: 16px;
-  border: 3px solid #111111;
+  border: 3px solid var(--aw-scrollbar-track-bg);
 }
 .widget-textarea textarea::-webkit-scrollbar-thumb:hover {
-  background: #db88ae !important;
+  background: var(--aw-scrollbar-thumb-hover) !important;
 }
 .widget-textarea textarea::-webkit-scrollbar-track,
 .widget-textarea textarea::-webkit-scrollbar-corner {
-  background: #111111 !important;
+  background: var(--aw-scrollbar-track-bg) !important;
   border-radius: 0 8px 8px 0;
 }
-/* FireFox */ 
+/* FireFox Styles */
 .widget-textarea textarea {
   scrollbar-width: auto;
-  scrollbar-color: #475254 #111111;
+  scrollbar-color: var(--aw-scrollbar-thumb-bg) var(--aw-scrollbar-track-bg);
 }
+
 
 /* Text FONTs */
 
@@ -63,7 +137,7 @@ a {
 .widget-dropdown select,
 .widget-textarea textarea,
 .widget-text input[type="text"] {
-    font-family: "Shantell Sans", serif;
+    font-family: var(--aw-font-family-primary);
     font-optical-sizing: auto;
 }
 
@@ -74,10 +148,10 @@ a {
     position: relative;
     padding: 10px 15px;
     margin: 5px 0 0 5px;
-    background-color: #232323;
-    border: 2px solid rgba(0, 0, 0, 0.4);
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    background-color: var(--aw-container-bg);
+    border: var(--aw-container-border);
+    border-radius: var(--aw-container-radius);
+    box-shadow: var(--aw-container-shadow);
     overflow: hidden;
 }
 .container::after {
@@ -85,11 +159,11 @@ a {
     top: 8px;
     right: 10px;
     content: "ANXETY";
-    font-family: "Tiny5", sans-serif;
+    font-family: var(--aw-font-family-secondary);
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
-    color: rgba(0, 0, 0, 0.3);
+    color: var(--aw-color-watermark);
 }
 
 .container_cdl {
@@ -108,14 +182,15 @@ a {
 .widget-checkbox label,
 .widget-dropdown label,
 .widget-dropdown select,
+.widget-textarea textarea,
 .widget-text input[type="text"] {
     font-style: normal;
-    font-size: 14px;
-    color: white;
+    font-size: var(--aw-font-size-widgets);
+    color: var(--aw-color-text-primary);
     user-select: none;
 }
 .widget-text input[type="text"]::placeholder {
-    color: grey;
+    color: var(--aw-color-placeholder);
 }
 
 
@@ -125,10 +200,10 @@ a {
 .widget-text input[type="text"],
 .widget-textarea textarea {
     height: 30px;
-    background-color: #1c1c1c;
-    border: 1px solid #262626;
-    border-radius: 10px;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    background-color: var(--aw-input-bg);
+    border: var(--aw-input-border);
+    border-radius: var(--aw-input-radius);
+    box-shadow: var(--aw-input-shadow);
     transition: all 0.25s ease-in-out;
 }
 .widget-textarea textarea {
@@ -140,22 +215,23 @@ a {
 .widget-dropdown select:focus,
 .widget-text input[type="text"]:focus,
 .widget-textarea textarea:focus {
-    border-color: #006ee5;
+    border-color: var(--aw-input-focus-border);
 }
 
 .widget-dropdown select:hover,
 .widget-text input[type="text"]:hover {
     transform: scale(1.003);
-    background-color: #262626;
+    background-color: var(--aw-input-bg-hover);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .widget-dropdown option {
-    background-color: #1c1c1c;
+    background-color: var(--aw-input-bg);
 }
 
 
 /* Slider Checkbox style */
+
 /* Fix Checkbox Width */ 
 .widget-checkbox {
     width: auto;
@@ -166,27 +242,27 @@ a {
 .widget-checkbox input[type="checkbox"] {
     appearance: none;
     position: relative;
-    top: 4px; /* Why is he taller?! */
+    top: 4px;
     width: 40px;
     height: 20px;
     border: none;
     border-radius: 10px;
-    background-color: #20b2aa;
+    background-color: var(--aw-checkbox-unchecked-bg);
     cursor: pointer;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
     transition: background-color 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 .widget-checkbox input[type="checkbox"]:checked {
-    background-color: #2196F3;
+    background-color: var(--aw-checkbox-checked-bg);
 }
 .inpaint input[type="checkbox"]:checked {
-    background-color: #BBCA53;  
+    background-color: var(--aw-checkbox-inpaint-bg);  
 }
 .sdxl input[type="checkbox"]:checked {
-    background-color: #EA861A;  
+    background-color: var(--aw-checkbox-sdxl-bg);  
 }
 .empowerment input[type="checkbox"]:checked {
-    background-color: #DF6B91;  
+    background-color: var(--aw-checkbox-empowerment-bg);  
 }
 
 .widget-checkbox input[type="checkbox"]:before {
@@ -197,7 +273,7 @@ a {
     width: 16px;
     height: 16px;
     border-radius: inherit;
-    background-color: white;
+    background-color: var(--aw-checkbox-handle-bg);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
     transform: translateY(-50%);
     transition: left 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86);
@@ -227,13 +303,13 @@ a {
     z-index: 999;
     padding: 12px;
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--aw-popup-bg);
     backdrop-filter: blur(8px);
-    border: 2px solid rgba(255, 255, 255, 0.45);
+    border: var(--aw-popup-border);
     border-radius: 8px;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
     opacity: 0;
-    color: #FFFFFF;
+    color: var(--aw-popup-color);
     font-size: 16px;
     transform: rotate(-5deg);
     pointer-events: none;
@@ -243,9 +319,9 @@ a {
 .sample {
     margin-top: 25px;
     padding: 10px 100px;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #c6e2ff;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background-color: var(--aw-popup-sample-bg);
+    color: var(--aw-popup-sample-color);
+    border: var(--aw-popup-sample-border);
     border-radius: 8px;
     white-space: nowrap;
 }
@@ -273,11 +349,11 @@ a {
 }
 
 /* Term Colors */
-.sample_label { color: #dbafff; }
-.braces { color: #ffff00; }
-.extension { color: #eb934b; }
-.file_name { color: #ffdba7; }
-.required { color: #ff9999; }
+.sample_label { color: var(--aw-term-sample-label); }
+.braces { color: var(--aw-term-braces); }
+.extension { color: var(--aw-term-extension); }
+.file_name { color: var(--aw-term-filename); }
+.required { color: var(--aw-term-required); }
 
 
 /* Button styles */
@@ -287,7 +363,7 @@ a {
     color: white;
     user-select: none;
     font-size: 15px;
-    background-image: radial-gradient(circle at top left, purple 10%, violet 90%);
+    background-image: var(--aw-button-gradient);
     background-size: 200% 200%;
     background-position: left bottom;
     transition: background 0.5s ease;
@@ -311,17 +387,16 @@ a {
     background-position: right bottom;
 }
 .button_save:hover {
-    background-image: radial-gradient(circle at top left, purple 10%, #93AC47 90%);
+    background-image: var(--aw-button-save-hover);
 }
 .button_zrok:hover {
-    background-image: radial-gradient(circle at top left, purple 10%, #1D94BB 90%);
-}
-
-.button:active {
-    filter: brightness(0.75) !important;
+    background-image: var(--aw-button-zrok-hover);
 }
 
 /* Removes ugly stroke from widget buttons. */
+.button:active {
+    filter: brightness(0.75) !important;
+}
 .jupyter-widgets.lm-Widget:focus {
     outline: none;
 }
