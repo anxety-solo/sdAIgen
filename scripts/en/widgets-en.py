@@ -141,16 +141,15 @@ custom_download_header_popup = factory.create_html('''
 empowerment_widget = factory.create_checkbox('Empowerment', False, class_names=['empowerment'])
 empowerment_output_widget = factory.create_textarea(
 '', '', """Use special tags. Portable analog of "File (txt)"
-Available tags: model, vae, lora, embed, extension, adetailer, control, upscale, clip, unet, config
----
-For example:
+Available tags: model (ckpt), vae, lora, embed (emb), extension (ext), adetailer (ad), control (cnet), upscale (ups), clip, unet, config (cfg)
+Short tags: start with '$' without a space -> $ckpt
+------ Example ------
 
 # Lora
 https://civitai.com/api/download/models/229782
 
-# Extension
-https://github.com/hako-mikan/sd-webui-cd-tuner[CD-Tuner]
-""")
+$ext
+https://github.com/hako-mikan/sd-webui-cd-tuner[CD-Tuner]""")
 
 Model_url_widget = factory.create_text('Model:')
 Vae_url_widget = factory.create_text('Vae:')
@@ -198,20 +197,20 @@ factory.display(WIDGET_LIST)
 
 ## ================== CALLBACK FUNCTION ==================
 
-# Initialize visibility
-check_custom_nodes_deps_widget.layout.display = 'none'  # Initially hidden
-empowerment_output_widget.layout.display = 'none'       # Initially hidden
+# Initialize visibility | hidden
+check_custom_nodes_deps_widget.layout.display = 'none'
+empowerment_output_widget.layout.display = 'none'
 
 # Callback functions for XL options
 def update_XL_options(change, widget):
     selected = change['new']
 
     default_model_values = {
-        True: ('3. WAI-illustrious [Anime] [V11] [XL]', 'none', 'none'),            # For XL models
-        False: ('4. Counterfeit [Anime] [V3] + INP', '3. Blessed2.vae', 'none')    # For 1.5 models
+        True: ('3. WAI-illustrious [Anime] [V11] [XL]', 'none', 'none'),           # XL models
+        False: ('4. Counterfeit [Anime] [V3] + INP', '3. Blessed2.vae', 'none')    # SD 1.5 models
     }
 
-    # GET DATA MODELs | VAES| CNETs
+    # Get data - MODELs | VAEs | CNETs
     data_file = '_xl-models-data.py' if selected else '_models-data.py'
     model_widget.options = read_model_data(f'{SCRIPTS}/{data_file}', 'model')
     vae_widget.options = read_model_data(f'{SCRIPTS}/{data_file}', 'vae')
