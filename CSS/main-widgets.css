@@ -1,74 +1,62 @@
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
 
 :root {
-  /* Accent Color */
-  --aw-accent-color: #FF97EF;
+    /* Accent Color */
+    --aw-accent-color: #ff97ef;
 
-  /* Fonts */
-  --aw-font-family-primary: "Shantell Sans", serif;
-  --aw-font-family-secondary: "Tiny5", sans-serif;
-  --aw-font-size-header: 20px;
-  --aw-font-weight-header: 650;
-  --aw-font-size-widgets: 14px;
+    /* Text - Fonts */
+    --aw-font-family-primary: "Shantell Sans", serif;
+    --aw-font-family-secondary: "Tiny5", sans-serif;
+    --aw-color-text-primary: #f0f8ff;
+    --aw-text-size: 14px;
 
-  /* Colors */
-  --aw-color-header: var(--aw-accent-color);
-  --aw-color-watermark: rgba(0, 0, 0, 0.3);
-  --aw-color-text-primary: white;
-  --aw-color-placeholder: grey;
+    /* Container */
+    --aw-container-bg: #232323;
+    --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
 
-  /* Container */
-  --aw-container-bg: #232323;
-  --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
-  --aw-container-radius: 16px;
-  --aw-container-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    /* Inputs */
+    --aw-input-bg: #1c1c1c;
+    --aw-input-bg-hover: #262626;
+    --aw-input-border: 1px solid #262626;
+    --aw-input-border-focus: #006ee5;
 
-  /* Inputs */
-  --aw-input-bg: #1C1C1C;
-  --aw-input-bg-hover: #262626;
-  --aw-input-border: 1px solid #262626;
-  --aw-input-radius: 10px;
-  --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-  --aw-input-focus-border: #006EE5;
+    /* Checkboxes */
+    --aw-checkbox-unchecked-bg: #20b2aa;
+    --aw-checkbox-checked-bg: #2196f3;
+    --aw-checkbox-inpaint-bg: #bbca53;
+    --aw-checkbox-sdxl-bg: #ea861a;
+    --aw-checkbox-empowerment-bg: #df6b91;
+    --aw-checkbox-handle-bg: white;
+  
+    /* Popup */
+    --aw-popup-bg: rgba(255, 255, 255, 0.05);
+    --aw-popup-color: #ffffff;
+    --aw-popup-border: 2px solid rgba(255, 255, 255, 0.45);
+    --aw-popup-sample-bg: rgba(255, 255, 255, 0.2);
+    --aw-popup-sample-color: #c6e2ff;
+    --aw-popup-sample-border: 2px solid rgba(255, 255, 255, 0.2);
+  
+    /* Term Colors (Popup) */
+    --aw-term-sample-label: dbafff;
+    --aw-term-braces: #ffff00;
+    --aw-term-extension: #eb934b;
+    --aw-term-filename: #ffdba7;
+    --aw-term-required: #ff9999;
 
-  /* Checkboxes */
-  --aw-checkbox-unchecked-bg: #20b2aa;
-  --aw-checkbox-checked-bg: #2196F3;
-  --aw-checkbox-inpaint-bg: #BBCA53;
-  --aw-checkbox-sdxl-bg: #EA861A;
-  --aw-checkbox-empowerment-bg: #DF6B91;
-  --aw-checkbox-handle-bg: white;
+    /* Scrollbar */
+    --aw-scrollbar-width: 0.65rem;
+    --aw-scrollbar-thumb-bg: #475254;
+    --aw-scrollbar-track-bg: #111111;
+    --aw-scrollbar-thumb-hover: var(--aw-accent-color);
+  
+    /* Buttons */
+    --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
+    --aw-button-save-hover: radial-gradient(circle at top left, purple 10%, #93ac47 90%);
+    --aw-button-zrok-hover: radial-gradient(circle at top left, purple 10%, #1d94bb 90%);
 
-  /* Scrollbar */
-  --aw-scrollbar-width: 0.65rem;
-  --aw-scrollbar-thumb-bg: #475254;
-  --aw-scrollbar-track-bg: #111111;
-  --aw-scrollbar-thumb-hover: var(--aw-accent-color);
-
-  /* Buttons */
-  --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
-  --aw-button-save-hover: radial-gradient(circle at top left, purple 10%, #93AC47 90%);
-  --aw-button-zrok-hover: radial-gradient(circle at top left, purple 10%, #1D94BB 90%);
-
-  /* Popup */
-  --aw-popup-bg: rgba(255, 255, 255, 0.05);
-  --aw-popup-color: #FFFFFF;
-  --aw-popup-border: 2px solid rgba(255, 255, 255, 0.45);
-  --aw-popup-sample-bg: rgba(255, 255, 255, 0.2);
-  --aw-popup-sample-color: #C6E2FF;
-  --aw-popup-sample-border: 2px solid rgba(255, 255, 255, 0.2);
-
-  /* Term Colors (Popup) */
-  --aw-term-sample-label: #DBAFFF;
-  --aw-term-braces: #FFFF00;
-  --aw-term-extension: #EB934B;
-  --aw-term-filename: #FFDBA7;
-  --aw-term-required: #FF9999;
-
-  /* Special Elements */
-  --aw-hr-color: grey;
-  --aw-hr-opacity: 0.25;
-  --aw-text-shadow-header: 0 0 10px rgba(255, 255, 255, 0.2);
+    /* Special Elements */
+    --aw-hr-color: grey;
+    --aw-hr-opacity: 0.25;
 }
 
 
@@ -76,13 +64,13 @@
 
 .header {
     display: inline-block;
-    font-size: var(--aw-font-size-header);
-    font-weight: var(--aw-font-weight-header);
-    color: var(--aw-color-header);
+    font-size: 20px;
+    font-weight: 650;
+    color: var(--aw-accent-color);
     margin-bottom: 10px;
     user-select: none;
     cursor: default;
-    text-shadow: var(--aw-text-shadow-header);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 hr {
@@ -91,11 +79,12 @@ hr {
     background-color: var(--aw-hr-color);
     opacity: var(--aw-hr-opacity);
 }
-
 a {
     color: inherit;
     text-decoration: none;
 }
+
+
 
 /* Special Styles */
 
@@ -142,28 +131,52 @@ a {
 }
 
 
+/* Element text style */
+
+.widget-button,
+.widget-text label,
+.widget-checkbox label,
+.widget-dropdown label,
+.widget-dropdown select,
+.widget-textarea textarea,
+.widget-text input[type="text"] {
+    font-size: var(--aw-text-size);
+    color: var(--aw-color-text-primary) !important;
+    user-select: none;
+}
+.widget-text input[type="text"]::placeholder {
+    color: grey;
+}
+
+
 /* Container style */
+
+.mainContainer {
+    width: auto;
+    padding: 5px;
+    gap: 5px;
+    /* overflow: hidden; */
+}
 
 .container {
     position: relative;
+    width: 1080px;
     padding: 10px 15px;
-    margin: 5px 0 0 5px;
     background-color: var(--aw-container-bg);
     border: var(--aw-container-border);
-    border-radius: var(--aw-container-radius);
-    box-shadow: var(--aw-container-shadow);
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 .container::after {
     position: absolute;
-    top: 8px;
+    top: 5px;
     right: 10px;
     content: "ANXETY";
     font-family: var(--aw-font-family-secondary);
-    font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
-    color: var(--aw-color-watermark);
+    color: rgba(0, 0, 0, 0.3);
 }
 
 .container_cdl {
@@ -175,25 +188,6 @@ a {
 }
 
 
-/* Element text style */
-
-.widget-button,
-.widget-text label,
-.widget-checkbox label,
-.widget-dropdown label,
-.widget-dropdown select,
-.widget-textarea textarea,
-.widget-text input[type="text"] {
-    font-style: normal;
-    font-size: var(--aw-font-size-widgets);
-    color: var(--aw-color-text-primary);
-    user-select: none;
-}
-.widget-text input[type="text"]::placeholder {
-    color: var(--aw-color-placeholder);
-}
-
-
 /* Input field styles */
 
 .widget-dropdown select,
@@ -202,9 +196,10 @@ a {
     height: 30px;
     background-color: var(--aw-input-bg);
     border: var(--aw-input-border);
-    border-radius: var(--aw-input-radius);
-    box-shadow: var(--aw-input-shadow);
+    border-radius: 10px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
     transition: all 0.25s ease-in-out;
+    margin: 0 !important;
 }
 .widget-textarea textarea {
     height: 200px;
@@ -215,7 +210,7 @@ a {
 .widget-dropdown select:focus,
 .widget-text input[type="text"]:focus,
 .widget-textarea textarea:focus {
-    border-color: var(--aw-input-focus-border);
+    border-color: var(--aw-input-border-focus);
 }
 
 .widget-dropdown select:hover,
@@ -242,7 +237,7 @@ a {
 .widget-checkbox input[type="checkbox"] {
     appearance: none;
     position: relative;
-    top: 4px;
+    top: 0.25em;
     width: 40px;
     height: 20px;
     border: none;
@@ -269,17 +264,19 @@ a {
     content: '';
     position: absolute;
     top: 50%;
-    left: 3px;
-    width: 16px;
-    height: 16px;
+    left: 4px;
+    width: 12px;
+    height: 12px;
     border-radius: inherit;
     background-color: var(--aw-checkbox-handle-bg);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
     transform: translateY(-50%);
-    transition: left 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+    transition: all 0.25s cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 .widget-checkbox input[type="checkbox"]:checked:before {
-    left: 21px;
+    left: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 
@@ -290,9 +287,9 @@ a {
     top: -5px;
     right: 90px;
     color: grey;
-    font-size: 14px;
+    font-size: var(--aw-text-size);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: all 0.25s;
     display: inline-block;
     user-select: none;
 }
@@ -306,14 +303,14 @@ a {
     background-color: var(--aw-popup-bg);
     backdrop-filter: blur(8px);
     border: var(--aw-popup-border);
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
     opacity: 0;
     color: var(--aw-popup-color);
     font-size: 16px;
     transform: rotate(-5deg);
     pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .sample {
@@ -322,7 +319,7 @@ a {
     background-color: var(--aw-popup-sample-bg);
     color: var(--aw-popup-sample-color);
     border: var(--aw-popup-sample-border);
-    border-radius: 8px;
+    border-radius: 10px;
     white-space: nowrap;
 }
 
@@ -332,7 +329,7 @@ a {
     top: 10px;
     left: 300px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: all 0.25s;
     pointer-events: none;
 }
 
@@ -360,17 +357,17 @@ a {
 
 .button {
     cursor: pointer;
-    color: white;
+    color: var(--aw-color-text-primary);
     user-select: none;
     font-size: 15px;
     background-image: var(--aw-button-gradient);
     background-size: 200% 200%;
     background-position: left bottom;
     transition: background 0.5s ease;
+    margin: 0;
 }
 .button_save {
     border-radius: 15px;
-    margin: 5px 0 0 5px;
     width: 120px;
     height: 35px;
     font-weight: 650;
@@ -379,7 +376,7 @@ a {
     border-radius: 10px;
     font-size: 12px;
     height: 30px;
-    padding: 1px 12px;
+    padding: 0 12px;
     white-space: nowrap;
 }
 

@@ -193,7 +193,7 @@ additional_box = factory.create_vbox(additional_widgets, class_names=["container
 custom_download_box = factory.create_vbox(custom_download_widgets, class_names=["container", "container_cdl"])
 
 WIDGET_LIST = factory.create_vbox([model_box, vae_box, additional_box, custom_download_box, save_button],
-                                  layouts=[{'width': '1080px'}]*4)    # style for the first four elements
+                                  class_names=["mainContainer"])
 factory.display(WIDGET_LIST)
 
 ## ================== CALLBACK FUNCTION ==================

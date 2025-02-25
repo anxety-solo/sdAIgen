@@ -1,39 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
 
 :root {
-  /* Accent Color */
-  --aw-accent-color: #FF97EF;
+    /* Text - Fonts */
+    --aw-font-family-primary: "Shantell Sans", serif;
+    --aw-font-family-secondary: "Tiny5", sans-serif;
+    --aw-color-text-primary: #f0f8ff;
+    --aw-text-size: 14px;
 
-  /* Fonts */
-  --aw-font-family-primary: "Shantell Sans", serif;
-  --aw-font-family-secondary: "Tiny5", sans-serif;
-  --aw-font-size-widgets: 14px;
+    /* Container */
+    --aw-container-bg: #232323;
+    --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
 
-  /* Colors */
-  --aw-color-watermark: rgba(0, 0, 0, 0.3);
-  --aw-color-text-primary: white;
+    /* Inputs */
+    --aw-input-bg: #1f1f1f;
+    --aw-input-border: 1px solid #262626;
+    --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 
-  /* Container */
-  --aw-container-bg: #232323;
-  --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
-  --aw-container-radius: 16px;
-  --aw-container-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    /* Buttons */
+    --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
+    --aw-button-execute-hover: radial-gradient(circle at top left, purple 10%, #93ac47 90%);
+    --aw-button-hide-hover: radial-gradient(circle at top left, purple 10%, #fc3468 90%);
 
-  /* Inputs */
-  --aw-input-bg: #1F1F1F;
-  --aw-input-padding: 10px;
-  --aw-input-border: 1px solid #262626;
-  --aw-input-radius: 10px;
-  --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
-
-  /* Buttons */
-  --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
-  --aw-button-execute-hover: radial-gradient(circle at top left, purple 10%, #93AC47 90%);
-  --aw-button-hide-hover: radial-gradient(circle at top left, purple 10%, #FC3468 90%);
-
-  /* Special Elements */
-  --aw-hr-color: grey;
-  --aw-hr-opacity: 0.25;
+    /* Special Elements */
+    --aw-hr-color: grey;
+    --aw-hr-opacity: 0.25;
 }
 
 
@@ -73,8 +63,8 @@ hr {
     margin: 5px 0 0 5px;
     background-color: var(--aw-container-bg);
     border: var(--aw-container-border);
-    border-radius: var(--aw-container-radius);
-    box-shadow: var(--aw-container-shadow);
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 .cleaner_container::before {
@@ -86,7 +76,7 @@ hr {
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
-    color: var(--aw-color-watermark);
+    color: rgba(0, 0, 0, 0.3);
 }
 .cleaner_container::after {
     position: absolute;
@@ -97,45 +87,42 @@ hr {
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 18px;
-    color: var(--aw-color-watermark);
+    color: rgba(0, 0, 0, 0.3);
 }
 
 
 /* Input-Output field styles */
 
 .custom_select_multiple select {
-    padding: var(--aw-input-padding);
+    padding: 10px;
     border: var(--aw-input-border) !important;
-    border-radius: var(--aw-input-radius);
+    border-radius: 10px;
     color: var(--aw-color-text-primary);
     background-color: var(--aw-input-bg);
     box-shadow: var(--aw-input-shadow);
 }
 
 .output_panel {
-    padding: var(--aw-input-padding);
+    padding: 10px;
     border: var(--aw-input-border);
-    border-radius: var(--aw-input-radius);
+    border-radius: 10px;
     background-color: var(--aw-input-bg);
     box-shadow: var(--aw-input-shadow);
-    box-sizing: border-box;
 }
 .output_message {
     color: var(--aw-color-text-primary);
-    font-size: var(--aw-font-size-widgets);
+    font-size: var(--aw-text-size);
     user-select: none;
     cursor: default;
 }
 
 .storage_info {
     padding: 5px 20px;
-    height: auto;
-    border: 1px solid #262626;
+    border: var(--aw-input-border);
     border-radius: 10px;
-    background-color: #1c1c1c;
+    background-color: var(--aw-input-bg);
     box-shadow: var(--aw-input-shadow);
-    width: auto;
-    font-size: var(--aw-font-size-widgets);
+    font-size: var(--aw-text-size);
     user-select: none;
     cursor: default;
 }
@@ -167,7 +154,7 @@ hr {
 .cleaner_button {
     width: auto;
     color: var(--aw-color-text-primary);
-    font-size: var(--aw-font-size-widgets);
+    font-size: var(--aw-text-size);
     height: 35px;
     border-radius: 15px;
     background-image: var(--aw-button-gradient);

@@ -1,71 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans:ital,wght@0,300..800;1,300..800&family=Tiny5&display=swap');
 
 :root {
-  /* Accent Color */
-  --aw-accent-color: #AC8FA5;
+    /* Accent Color */
+    --aw-accent-color: #ac8fa5;
 
-  /* Fonts */
-  --aw-font-family-primary: "Shantell Sans", serif;
-  --aw-font-family-secondary: "Tiny5", sans-serif;
-  --aw-font-size-header: 20px;
-  --aw-font-weight-header: 650;
-  --aw-font-size-widgets: 14px;
+    /* Text / Fonts */
+    --aw-font-family-primary: "Shantell Sans", serif;
+    --aw-font-family-secondary: "Tiny5", sans-serif;
+    --aw-color-text-primary: #f0f8ff;
+    --aw-text-size: 14px;
 
-  /* Colors */
-  --aw-color-header: var(--aw-accent-color);
-  --aw-output-color-header: #0083C0;
-  --aw-color-watermark: rgba(0, 0, 0, 0.3);
-  --aw-color-text-primary: white;
-  --aw-color-placeholder: grey;
+    /* Container */
+    --aw-container-bg: #232323;
+    --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
+    --aw-output-container-bg: #1f1f1f;
+    --aw-output-section-bg: #181818;
+    --aw-output-section-border: 2px solid rgba(0, 0, 0, 0.35);
 
-  /* Container */
-  --aw-container-bg: #232323;
-  --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
-  --aw-container-radius: 16px;
-  --aw-container-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
-  --aw-output-container-bg: #1F1F1F;
-  --aw-output-container-radius: 8px;
-  --aw-output-section-bg: #181818;
-  --aw-output-section-border: 2px solid rgba(0, 0, 0, 0.35);
-
-  /* Special Elements */
-  --aw-hr-color: grey;
-  --aw-hr-opacity: 0.25;
+    /* Special Elements */
+    --aw-hr-color: grey;
+    --aw-hr-opacity: 0.25;
 }
 
-
-/* General Styles */
-
-.header-main-title,
-.header-output-title {
-    font-size: var(--aw-font-size-header);
-    font-weight: bold;
-    text-align: center;
-}
-.header-main-title {
-    color: var(--aw-accent-color);
-    text-align: center;
-    margin-bottom: 15px;
-}
-.header-output-title {
-    color: var(--aw-output-color-header);
-}
-
-.divider-line {
-    border-color: var(--aw-hr-color);
-    background-color: var(--aw-hr-color);
-    opacity: var(--aw-hr-opacity);
-    width: 1000px;
-}
-
-
-/* Element text style */
-
-.widget-html {
-    font-size: var(--aw-font-size-widgets);
-    color: var(--aw-color-text-primary) !important;
-    user-select: none;
-}
 
 /* Text FONTs */
 
@@ -77,6 +33,40 @@
 }
 
 
+/* Element text style */
+
+.widget-html {
+    font-size: var(--aw-text-size);
+    color: var(--aw-color-text-primary) !important;
+    user-select: none;
+}
+
+
+/* General Styles */
+
+.header-main-title,
+.header-output-title {
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+.header-main-title {
+    color: var(--aw-accent-color);
+    text-align: center;
+    margin-bottom: 15px;
+}
+.header-output-title {
+    color: #0083c0;
+}
+
+.divider-line {
+    border-color: var(--aw-hr-color);
+    background-color: var(--aw-hr-color);
+    opacity: var(--aw-hr-opacity);
+    width: 1000px;
+}
+
+
 /* Container style */
 
 .result-container {
@@ -84,14 +74,14 @@
     flex-direction: column;
     align-items: center;
     padding: 10px 15px;
-    margin: 5px 0 0 5px;
+    margin: 5px;
     height: auto;
     margin: 40px 10px 10px 10px;
     padding: 10px 15px;
     background-color: var(--aw-container-bg);
     border: var(--aw-container-border);
-    border-radius: var(--aw-container-radius);
-    box-shadow: var(--aw-container-shadow);
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 .result-container::after {
@@ -103,14 +93,14 @@
     font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
-    color: var(--aw-color-watermark);
+    color: rgba(0, 0, 0, 0.3);
 }
 
 .result-output-container {
     flex-wrap: wrap;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
     background-color: var(--aw-output-container-bg);
-    border-radius: var(--aw-output-container-radius);
+    border-radius: 8px;
     width: 95%;
     padding: 10px 15px;
     overflow: visible;
@@ -121,7 +111,7 @@
     flex-grow: 1;
     background-color: var(--aw-output-section-bg);
     padding: 10px 15px;
-    border-radius: calc(var(--aw-output-container-radius) * 2);
+    border-radius: 16px;
     border: var(--aw-output-section-border);
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.3);
     margin: 8px;
