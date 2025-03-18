@@ -1,4 +1,4 @@
-.# ~ download.py | by ANXETY ~
+# ~ download.py | by ANXETY ~
 
 from webui_utils import handle_setup_timer    # WEBUI
 from CivitaiAPI import CivitAiAPI             # CivitAI API
