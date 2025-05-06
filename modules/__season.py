@@ -194,7 +194,7 @@ def display_info(env, scr_folder, branch, lang='en', fork=None):
 
     # === Season Scripts ===
 
-    ## OLD VER
+    ## OLD VER | adaptation needed...
     # WINTER_SCRIPT = """
     # <script>
     # // Function to create snowflakes
@@ -214,7 +214,7 @@ def display_info(env, scr_folder, branch, lang='en', fork=None):
     #   snowflake.style.top = -size + 'px'; // Start just above the container
 
     #   // Set random opacity between 0.1 and 0.5
-    #   const opacity = Math.random() * 0.4 + 0.1; // Opacity from 0.1 to 0.5
+    #   const opacity = Math.random() * 0.4 + 0.1;
     #   snowflake.style.opacity = opacity;
 
     #   // Set random fall duration and angle (up to 25 degrees)
@@ -228,7 +228,7 @@ def display_info(env, scr_folder, branch, lang='en', fork=None):
     #   // Animation for falling with horizontal movement
     #   snowflake.animate([
     #     { transform: `translate(0, 0)`, opacity: 1 },
-    #     { transform: `translate(${horizontalMovement}px, ${verticalMovement}px)`, opacity: 0 } // Fade out
+    #     { transform: `translate(${horizontalMovement}px, ${verticalMovement}px)`, opacity: 0 }
     #   ], {
     #     duration: fallDuration * 1000,
     #     easing: 'linear',
@@ -240,10 +240,7 @@ def display_info(env, scr_folder, branch, lang='en', fork=None):
     #     snowflake.remove();
     #   }, fallDuration * 1000);
     # }
-
-    # // Clear existing snowflakes and then start snowfall
-    # clearSnowflakes();
-    # setInterval(createSnowflake, 50); // Create a snowflake every 50 ms for increased quantity
+    # setInterval(createSnowflake, 50);
     # </script>
     # """
 
