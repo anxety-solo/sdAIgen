@@ -2,8 +2,6 @@
 
 from _core import UICore, install_ui    # UI-Core
 
-ipySys = get_ipython().system
-
 
 UI = 'SD-UX'
 ui_source = f"https://huggingface.co/NagisaNao/ANXETY/resolve/main/{UI}.zip"   # ZIP source or GIT

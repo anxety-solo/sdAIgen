@@ -2,8 +2,6 @@
 
 from _core import UICore, install_ui    # UI-Core
 
-ipySys = get_ipython().system
-
 
 UI = 'ComfyUI'
 ui_source = f"https://huggingface.co/NagisaNao/ANXETY/resolve/main/{UI}.zip"   # ZIP source or GIT
@@ -13,7 +11,7 @@ core = UICore(UI, ui_source, is_git)
 config_url = f"https://raw.githubusercontent.com/{core.FORK_REPO}/{core.BRANCH}/__configs__"
 
 def post_install(core: UICore):
-    ipySys('pip install gradio-tunneling')
+    get_ipython().system('pip install gradio-tunneling')
 
 
 # Config
@@ -47,7 +45,7 @@ extensions_list=[
 if __name__ == '__main__':
     install_ui(
         core=core,
+        post_install=post_install,
         config_files=config_files,
-        extensions_list=extensions_list,
-        post_install=post_install
+        extensions_list=extensions_list
     )

@@ -102,10 +102,10 @@ class UICore:
 
 def install_ui(
     core: UICore,
+    post_install: Optional[Callable[[UICore], None]] = None,
     config_files: Optional[List[str]] = None,
     extensions_list: Optional[List[str]] = None,
-    recursive_extensions: bool = True,
-    post_install: Optional[Callable[[UICore], None]] = None
+    recursive_extensions: bool = True
 ) -> None:
     """
     Complete installation workflow
@@ -118,16 +118,18 @@ def install_ui(
     """
     with capture.capture_output():
         # Base installation
-        core.unpack_webui()
-
-        # Configuration files
-        if config_files:
-            asyncio.run(core.download_files(config_files))
-
-        # Extensions
-        if extensions_list:
-            asyncio.run(core.clone_extensions(extensions_list, recursive_extensions))
+        # core.unpack_webui()
 
         # Post-install actions
         if post_install:
             post_install(core)
+
+        # Configuration files
+        if config_files:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(core.download_files(config_files))
+
+        # Extensions
+        if extensions_list:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(core.clone_extensions(extensions_list, recursive_extensions))
