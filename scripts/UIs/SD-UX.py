@@ -1,6 +1,6 @@
 # ~ SD-UX.py | by ANXETY ~
 
-from _core import UICore, install_ui
+from _core import UICore, install_ui    # UI-Core
 
 ipySys = get_ipython().system
 

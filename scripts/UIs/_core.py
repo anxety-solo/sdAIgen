@@ -1,15 +1,15 @@
 # ~ _core.py | by ANXETY ~
 
-from Manager import m_download, m_clone
-import json_utils as js
+from Manager import m_download, m_clone    # Every Download | Clone
+import json_utils as js                    # JSON
 
+from typing import Optional, Callable, List
 from IPython.utils import capture
 from IPython import get_ipython
 from pathlib import Path
 import subprocess
 import asyncio
 import os
-from typing import Optional, Callable, List
 
 
 CD = os.chdir
