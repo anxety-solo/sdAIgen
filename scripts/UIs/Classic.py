@@ -69,7 +69,6 @@ async def download_configuration():
         f"{url_cfg}/styles.csv",
         f"{url_cfg}/user.css",
         # other
-        f"{url_cfg}/card-no-preview.png, {WEBUI}/html",
         f"{url_cfg}/notification.mp3"
     ]
     await download_files(configs)
