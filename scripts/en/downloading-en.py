@@ -50,10 +50,10 @@ def install_dependencies(commands):
         except Exception:
             pass
 
-def setup_venv():
+def setup_venv(url):
     """Customize the virtual environment using the specified URL."""
     CD(HOME)
-    url = "https://huggingface.co/NagisaNao/ANXETY/resolve/main/python31017-venv-torch251-cu121-C-fca.tar.lz4"
+    # url = "https://huggingface.co/NagisaNao/ANXETY/resolve/main/python31017-venv-torch251-cu121-C-fca.tar.lz4"
     fn = Path(url).name
 
     m_download(f"{url} {HOME} {fn}")
@@ -113,10 +113,41 @@ if not js.key_exists(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True):
     clear_output()
     js.update(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True)
 
-if not os.path.exists(VENV):
-    print('♻️ Installing VENV, this will take some time...')
-    setup_venv()
+# Install VENV
+current_ui = js.read(SETTINGS_PATH, 'WEBUI.current')
+latest_ui = js.read(SETTINGS_PATH, 'WEBUI.latest')
+
+# Determine whether to reinstall venv
+venv_needs_reinstall = (
+    not VENV.exists()  # venv is missing
+    # Check category change (Classic <-> other)
+    or (latest_ui == 'Classic') != (current_ui == 'Classic')
+)
+
+if venv_needs_reinstall:
+    if VENV.exists():
+        print("🗑️ Remove old venv...")
+        shutil.rmtree(VENV)
+        clear_output()
+
+    if current_ui == 'Classic':
+        venv_url = "https://huggingface.co/NagisaNao/ANXETY/resolve/main/python31112-venv-torch251-cu121-C-Classic.tar.lz4"
+        py_version = '(3.11.12)'
+    else:
+        venv_url = "https://huggingface.co/NagisaNao/ANXETY/resolve/main/python31017-venv-torch251-cu121-C-fca.tar.lz4"
+        py_version = '(3.10.17)'
+
+    print(f"♻️ Installing VENV {py_version}, this will take some time...")
+    setup_venv(venv_url)
     clear_output()
+
+    # Update latest UI version...
+    js.update(SETTINGS_PATH, 'WEBUI.latest', current_ui)
+
+# if not os.path.exists(VENV):
+#     print('♻️ Installing VENV, this will take some time...')
+#     setup_venv()
+#     clear_output()
 
 ## ================ loading settings V5 ==================
 
@@ -138,7 +169,7 @@ locals().update(settings)
 
 ## ======================== WEBUI ========================
 
-if UI not in ['ComfyUI', 'Forge', 'ReForge'] and not os.path.exists('/root/.cache/huggingface/hub/models--Bingsu--adetailer'):
+if UI not in ['ComfyUI', 'Forge', 'Classic', 'ReForge'] and not os.path.exists('/root/.cache/huggingface/hub/models--Bingsu--adetailer'):
     print('🚚 Unpacking ADetailer model cache...')
 
     name_zip = 'hf_cache_adetailer'

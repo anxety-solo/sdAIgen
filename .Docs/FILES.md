@@ -41,5 +41,4 @@
 
 ### Subdirectory -> `scripts/UIs`
 > WebUI management.
-- **[_core.py](../scripts/UIs/_core.py)**: Simple module to install the UI, its configuration and extensions/nodes.
-- **[UI Sritps](../scripts/UIs/)**: Handles WebUI repo installation, config deployment, and extension/node setup.
+- **[WebUI Manager](../scripts/UIs/)**: Handles WebUI repo installation, config deployment, and extension/node setup.

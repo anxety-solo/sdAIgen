@@ -21,36 +21,42 @@
 ## 🌟 Особенности:
   - Мультиплатформенный блокнот: **Google Colab, Kaggle.**
   - *Виджеты* для простого взаимодействия.
-  - Предустановленные пользовательские настройки + стили.
+  - Предустановленные пользовательские: *Настройки* + *Стили* + [*UI Тема*](https://github.com/anxety-solo/anxety-theme)
   - Скачивание превью для *моделей, LoRa и embedding* (CivitAi) | ***Для Kaggle есть ограничения.***
-  - Выбор WebUI между *A1111*, *ComfyUI*, *Forge*, *ReForge*, *SD-UX.*
-  - [Rentry Page](https://rentry.co/faq-sdAIgen-ru) - описание виджетов.
+  - Выбор WebUI между *A1111*, *ComfyUI*, *Forge*, *Classic (Forge)*, *ReForge*, *SD-UX.*
+  - [Rentry Page](https://rentry.co/faq-sdAIgen-ru) → описание виджетов.
 
 <details>
-<summary>Установленные Расширения</summary>
+<summary>📚 Установленные Расширения</summary>
 
-- [ADetailer](https://github.com/Bing-su/adetailer)
-- [anxety-theme](https://github.com/anxety-solo/anxety-theme)
-- [Aspect-Ratio-Helper](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper)
-- [CivitAi-Browser-plus](https://github.com/anxety-solo/sd-civitai-browser-plus)
-- [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
-- [Infinite-Image-Browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing)
-- [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter)
-- [Encrypt-Image](https://github.com/gutris1/sd-encrypt-image)
-- [SD-Hub](https://github.com/gutris1/sd-hub)
-- [Image-Info](https://github.com/gutris1/sd-image-info)
-- [Image-Viewer](https://github.com/gutris1/sd-image-viewer)
-- [State](https://github.com/ilian6806/stable-diffusion-webui-state)
-- [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger)
-- [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete)
-- [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards)
-- [WD14-Tagger](https://github.com/picobyte/stable-diffusion-webui-wd14-tagger)
-- [webui_timer](https://github.com/anxety-solo/webui_timer)
+### *Легенда:*
+| ✔️ — Установленно | ❌ — Не установлено | 🔄 — Интегрированная версия | <sup>`†`</sup> — Только в *Kaggle* |
+|----------------|---------------------|-------------------------|----------------------------------|
+
+| Extension | A1111 | Forge | Classic | ReForge | SD-UX |
+|-----------|-------|-------|---------|---------|-------|
+| [ADetailer](https://github.com/Bing-su/adetailer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [anxety-theme](https://github.com/anxety-solo/anxety-theme) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Aspect-Ratio-Helper](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [CivitAi-Browser-plus](https://github.com/anxety-solo/sd-civitai-browser-plus) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [ControlNet](https://github.com/Mikubill/sd-webui-controlnet) | ✔️ | 🔄 | 🔄 | 🔄 | ✔️ |
+| [Infinite-Image-Browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter) | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
+| [Encrypt-Image](https://github.com/gutris1/sd-encrypt-image) | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> |
+| [SD-Hub](https://github.com/gutris1/sd-hub) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Image-Info](https://github.com/gutris1/sd-image-info) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Image-Viewer](https://github.com/gutris1/sd-image-viewer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
+| [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [WD14-Tagger](https://github.com/picobyte/stable-diffusion-webui-wd14-tagger) | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
+| [webui_timer](https://github.com/anxety-solo/webui_timer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 
 </details>
 
 <details>
-<summary>Установленные Кастомные-Ноды | ComfyUI</summary>
+<summary>🧩 Установленные Кастомные-Ноды | ComfyUI</summary>
 
 - [Advanced-ControlNet](https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet)
 - [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
@@ -66,11 +72,14 @@
 
 </details>
 
-## Поддержать 💙
+## 💙 Поддержать:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">
         <img src=".Docs/SVG/DA_Logo_Color.svg" width="250" height="100" alt="DonationAlerts">
+    </a>
+    <a href="https://boosty.to/anxety/single-payment/donation/707920">
+        <img src=".Docs/SVG/Boosty_Logo_Color.svg" width="250" height="100" alt="Boosty">
     </a>
 </div>
 

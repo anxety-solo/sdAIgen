@@ -144,7 +144,7 @@ class TunnelManager:
 
     async def _print_status(self):
         """Async status printer"""
-        print('\033[33mChecking tunnels:\033[0m')
+        print('\033[33m>> Tunnels:\033[0m')
         while True:
             service_name = await self.checking_queue.get()
             print(f"- 🕒 Checking \033[36m{service_name}\033[0m...")

@@ -1,4 +1,7 @@
 {
+    "show_scheduler": true,
+    "sd_checkpoint_dropdown_use_short": true,
+    "hires_fix_show_sampler": true,
     "aria2_flags": "--optimize-concurrent-downloads --console-log-level=error -j5 -x16 -s16 -k1M -c",
     "unpack_zip": true,
     "ad_max_models": 6,
@@ -62,19 +65,17 @@
         "txt2img",
         "img2img",
         "Image Info",
-        "SuperMerger",
+        "Checkpoint Merger",
         "HUB",
         "Infinite image browsing",
         "CivitAI Browser+",
-        "Tagger",
         "Settings",
         "Extensions"
     ],
     "hidden_tabs": [
         "Extras",
         "PNG Info",
-        "Train",
-        "Checkpoint Merger"
+        "Train"
     ],
     "ui_reorder_list": [
         "override_settings",
@@ -98,6 +99,5 @@
     "live_preview_fast_interrupt": true,
     "extra_networks_card_width": 200.0,
     "extra_networks_card_height": 300.0,
-    "extra_networks_card_text_scale": 0.8,
-    "uiux_show_input_range_ticks": false
+    "extra_networks_card_text_scale": 0.8
 }

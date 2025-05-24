@@ -19,6 +19,10 @@ WEBUI_PATHS = {
     'ComfyUI': (
         'checkpoints', 'vae', 'loras', 
         'embeddings', 'custom_nodes', 'upscale_models', 'output'
+    ),
+    'Classic': (
+        'Stable-diffusion', 'VAE', 'Lora', 
+        'embeddings', 'extensions', 'ESRGAN', 'output'
     )
 }
 
@@ -49,8 +53,9 @@ def _set_webui_paths(ui):
 
     # Configure special paths
     is_comfy = selected_ui == 'ComfyUI'
+    is_classic = selected_ui == 'Classic'
     control_dir = 'controlnet' if is_comfy else 'ControlNet'
-    embed_root = models_root if is_comfy else webui_root
+    embed_root = models_root if (is_comfy or is_classic) else webui_root
     config_root = webui_root / 'user/default' if is_comfy else webui_root
 
     path_config = {

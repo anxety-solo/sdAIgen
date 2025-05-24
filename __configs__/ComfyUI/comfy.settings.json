@@ -1,10 +1,11 @@
 {
+    "Comfy.DevMode": true,
     "Comfy.TutorialCompleted": true,
     "Comfy.Locale": "en",
     "Comfy.Sidebar.Size": "small",
     "Comfy.ColorPalette": "comfy-anxety",
     "Comfy.Graph.LinkMarkers": 2,
-    "Comfy.NodeSuggestions.number": 100,
+    "Comfy.NodeSuggestions.number": 20,
     "Comfy.CustomColorPalettes": {
         "comfy-anxety": {
             "id": "comfy-anxety",
@@ -77,5 +78,7 @@
         }
     },
     "pysssss.ImageFeed.Location": "hidden",
-    "pysssss.ModelInfo.NsfwLevel": "PG"
+    "pysssss.ModelInfo.NsfwLevel": "PG",
+    "ModelManager.APIKey.Civitai": "65b66176dcf284b266579de57fbdc024",
+    "ModelManager.APIKey.HuggingFace": ""
 }

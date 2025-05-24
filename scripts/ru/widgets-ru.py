@@ -45,6 +45,7 @@ webui_selection = {
     'A1111':   "--xformers --no-half-vae",
     'ComfyUI': "--dont-print-server --preview-method auto --use-pytorch-cross-attention",
     'Forge':   "--disable-xformers --opt-sdp-attention --cuda-stream --pin-shared-memory",
+    'Classic': "--xformers --cuda-stream --pin-shared-memory",
     'ReForge': "--xformers --cuda-stream --pin-shared-memory",
     'SD-UX':   "--xformers --no-half-vae"
 }
@@ -246,7 +247,7 @@ def update_XL_options(change, widget):
     selected = change['new']
 
     default_model_values = {
-        True: ('4. WAI-illustrious [Anime] [V13] [XL]', 'none', 'none'),           # XL models
+        True: ('4. WAI-illustrious [Anime] [V14] [XL]', 'none', 'none'),           # XL models
         False: ('4. Counterfeit [Anime] [V3] + INP', '3. Blessed2.vae', 'none')    # SD 1.5 models
     }
 
