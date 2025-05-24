@@ -1,21 +1,21 @@
 # ~ Classic.py | by ANXETY ~
 
-from _core import Core
-import asyncio
+from _core import *
 from IPython.utils import capture
+import asyncio
 
-# Constants
+# Configuration
 UI = 'Classic'
 REPO_URL = f"https://huggingface.co/NagisaNao/ANXETY/resolve/main/{UI}.zip"
-METHOD = 'zip'
+WEBUI = HOME / UI
 
 CONFIGS = [
-    # settings
+    # Settings
     f"{UI}/config.json",
     f"{UI}/ui-config.json",
     "styles.csv",
     "user.css",
-    # other
+    # Other files
     "notification.mp3"
 ]
 
@@ -32,50 +32,52 @@ EXTENSIONS = [
 
     # OTHER | ON
     'https://github.com/Bing-su/adetailer',
+
+    # OTHER | OFF
+    # 'https://github.com/thomasasfk/sd-webui-aspect-ratio-helper Aspect-Ratio-Helper',
+    # 'https://github.com/zanllp/sd-webui-infinite-image-browsing Infinite-Image-Browsing',
+    # 'https://github.com/ilian6806/stable-diffusion-webui-state State',
+    # 'https://github.com/DominikDoom/a1111-sd-webui-tagcomplete TagComplete',
+    # 'https://github.com/Tsukreya/Umi-AI-Wildcards'
 ]
 
-def fixes_modules(webui_path):
+def fix_cmd_args(webui_path):
     """Apply specific fixes for Classic UI modules"""
-    module_path = f"{webui_path}/modules/cmd_args.py"
-    with open(module_path, 'r+', encoding='utf-8') as f:
-        content = f.read()
-        if '# Arguments added by ANXETY' in content:
+    path = webui_path / "modules/cmd_args.py"
+    if not path.exists():
+        return
+
+    marker = '# Arguments added by ANXETY'
+    with open(path, 'r+', encoding='utf-8') as f:
+        if marker in f.read():
             return
 
-        add_block = [
-            '\n\n# Arguments added by ANXETY',
-            'parser.add_argument("--hypernetwork-dir", type=normalized_filepath, '
-            'default=os.path.join(models_path, \'hypernetworks\'), help="hypernetwork directory")'
-        ]
+        f.write(f"\n\n{marker}\n")
+        f.write('parser.add_argument("--hypernetwork-dir", type=normalized_filepath, '
+               'default=os.path.join(models_path, \'hypernetworks\'), help="hypernetwork directory")')
 
-        prefix = '\n' if content and not content.endswith('\n') else ''
-        f.seek(0, 2)
-        f.write(prefix + '\n'.join(add_block))
+async def install_classic():
+    # Download and extract WebUI
+    install_zip(REPO_URL, WEBUI)
 
-async def main():
-    # Initialize core with UI name
-    core = Core(UI)
-    
-    # Prepare full config URLs
-    config_urls = [f"https://raw.githubusercontent.com/{core.FORK_REPO}/{core.BRANCH}/__configs__/{cfg}" 
-                  for cfg in CONFIGS]
-    
-    # Add Kaggle-specific extension if needed
-    extensions = EXTENSIONS.copy()
-    if core.ENV_NAME == 'Kaggle':
-        extensions.append('https://github.com/gutris1/sd-encrypt-image Encrypt-Image')
-    
-    # Perform installation
-    with capture.capture_output():
-        await core.core_install(
-            source=REPO_URL,
-            configs=config_urls,
-            extensions=extensions,
-            mode=METHOD
-        )
-        
-        # Apply Classic-specific fixes
-        fixes_modules(core.WEBUI)
+    # Download configs
+    base_url = f"https://raw.githubusercontent.com/{FORK_REPO}/{BRANCH}/__configs__"
+    await asyncio.gather(*[
+        download_file(f"{base_url}/{cfg}", WEBUI)
+        for cfg in CONFIGS
+    ])
+
+    # Install extensions
+    if ENV_NAME == 'Kaggle':
+        EXTENSIONS.append('https://github.com/gutris1/sd-encrypt-image Encrypt-Image')
+
+    await asyncio.gather(*[
+        git_clone(repo) for repo in EXTENSIONS
+    ])
+
+    # Apply Classic-specific fixes
+    fix_cmd_args(WEBUI)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    with capture.capture_output():
+        asyncio.run(install_classic())
