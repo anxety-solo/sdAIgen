@@ -1,13 +1,64 @@
 # ~ widgets.py | by ANXETY ~
 
 from widget_factory import WidgetFactory        # WIDGETS
-from webui_utils import update_current_webui    # WEBUI
+from webui_utils import update_current_webui, SHARED_MODEL_BASE # WEBUI # Import SHARED_MODEL_BASE
 import json_utils as js                         # JSON
 
 import ipywidgets as widgets
 from pathlib import Path
 import os
 
+# Platform-aware widget configuration
+PLATFORM = os.environ.get('DETECTED_PLATFORM', 'local')
+
+# --- START OF MODIFICATION ---
+def get_platform_paths():
+    """
+    Get platform-specific paths.
+    Model-related paths (models, vae, lora, embeddings, controlnet) will now
+    consistently refer to subdirectories within SHARED_MODEL_BASE.
+    Only UI-specific directories (like extensions, outputs) will be under the UI's base.
+    """
+    # Base path for the current studio instance
+    if PLATFORM == 'lightning':
+        base = Path('/teamspace/studios/this_studio')
+    elif PLATFORM == 'colab':
+        base = Path('/content')
+    elif PLATFORM == 'kaggle':
+        base = Path('/kaggle/working')
+    else:
+        base = Path.cwd()
+
+    return {
+        # Model-related directories should reference SHARED_MODEL_BASE
+        'models': SHARED_MODEL_BASE / 'Stable-diffusion',
+        'vae': SHARED_MODEL_BASE / 'vae',
+        'lora': SHARED_MODEL_BASE / 'Lora',
+        'embeddings': SHARED_MODEL_BASE / 'embeddings',
+        'controlnet': SHARED_MODEL_BASE / 'ControlNet',
+        'adetailer': SHARED_MODEL_BASE / 'adetailer', 
+        'clip': SHARED_MODEL_BASE / 'text_encoder', 
+        'unet': SHARED_MODEL_BASE / 'unet', 
+        'vision': SHARED_MODEL_BASE / 'clip_vision', 
+        'encoder': SHARED_MODEL_BASE / 'text_encoder', 
+        'diffusion': SHARED_MODEL_BASE / 'diffusion_models', 
+        'upscale': SHARED_MODEL_BASE / 'ESRGAN', 
+
+        # UI-specific directories (these are typically within the WebUI's own folder)
+        # Note: 'base' here means the root of the studio, not the specific UI's folder.
+        # The actual UI folder path (WEBUI) is determined later by settings.
+        # We ensure these paths are created, assuming they are general top-level dirs.
+        'outputs': base / 'outputs', 
+        'extensions_root': base / 'extensions', # This is where generic extensions might be cloned if not UI-specific
+        'config_root': base / 'config', # Generic config root
+        
+        # Temporary/Cache directories (often global or in /tmp)
+        'temp': Path('/tmp/sdaigen') if PLATFORM == 'lightning' else base / 'temp',
+        'cache': base / '.cache'
+    }
+
+# Get paths (not creating them here yet)
+PATHS = get_platform_paths()
 
 # Constants
 HOME = Path.home()
@@ -22,6 +73,62 @@ JS = SCR_PATH / 'JS'
 widgets_css = CSS / 'main-widgets.css'
 widgets_js = JS / 'main-widgets.js'
 
+## --- Ensure all necessary directories exist (only for paths that are directly managed/created here) ---
+# This loop now explicitly creates only the paths returned by get_platform_paths().
+# It's crucial that SHARED_MODEL_BASE and its subdirectories are also explicitly created.
+# These paths are what determine your top-level folder structure.
+for path_key, path_obj in PATHS.items():
+    if path_obj: # Ensure path_obj is not empty/None
+        # These are all top-level directories or critical shared directories.
+        # We assume they should exist in the root if not part of system /tmp.
+        if path_key not in ['temp', 'cache']: # Exclude system temp/cache as they might be handled elsewhere
+            path_obj.mkdir(parents=True, exist_ok=True)
+            print(f"Created directory: {path_obj}")
+
+# Explicitly ensure SHARED_MODEL_BASE itself and its known main subdirectories exist
+SHARED_MODEL_BASE.mkdir(parents=True, exist_ok=True)
+print(f"Ensured SHARED_MODEL_BASE exists: {SHARED_MODEL_BASE}")
+
+# Also ensure specific model subdirectories within SHARED_MODEL_BASE are created here,
+# as widgets script might be the first to trigger their need.
+(SHARED_MODEL_BASE / 'Stable-diffusion').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'vae').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'Lora').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'embeddings').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'ControlNet').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'adetailer').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'text_encoder').mkdir(parents=True, exist_ok=True) # For clip/encoder
+(SHARED_MODEL_BASE / 'unet').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'clip_vision').mkdir(parents=True, exist_ok=True) # For vision
+(SHARED_MODEL_BASE / 'diffusion_models').mkdir(parents=True, exist_ok=True)
+(SHARED_MODEL_BASE / 'ESRGAN').mkdir(parents=True, exist_ok=True)
+
+# Update the settings.json with the definitive paths from this script
+# (These would have been read from settings.json in downloading.py)
+# This ensures consistency for other scripts relying on settings.json
+js.save(SETTINGS_PATH, 'WEBUI.model_dir', str(SHARED_MODEL_BASE / 'Stable-diffusion'))
+js.save(SETTINGS_PATH, 'WEBUI.vae_dir', str(SHARED_MODEL_BASE / 'vae'))
+js.save(SETTINGS_PATH, 'WEBUI.lora_dir', str(SHARED_MODEL_BASE / 'Lora'))
+js.save(SETTINGS_PATH, 'WEBUI.embed_dir', str(SHARED_MODEL_BASE / 'embeddings'))
+js.save(SETTINGS_PATH, 'WEBUI.control_dir', str(SHARED_MODEL_BASE / 'ControlNet'))
+js.save(SETTINGS_PATH, 'WEBUI.adetailer_dir', str(SHARED_MODEL_BASE / 'adetailer'))
+js.save(SETTINGS_PATH, 'WEBUI.clip_dir', str(SHARED_MODEL_BASE / 'text_encoder'))
+js.save(SETTINGS_PATH, 'WEBUI.unet_dir', str(SHARED_MODEL_BASE / 'unet'))
+js.save(SETTINGS_PATH, 'WEBUI.vision_dir', str(SHARED_MODEL_BASE / 'clip_vision'))
+js.save(SETTINGS_PATH, 'WEBUI.encoder_dir', str(SHARED_MODEL_BASE / 'text_encoder'))
+js.save(SETTINGS_PATH, 'WEBUI.diffusion_dir', str(SHARED_MODEL_BASE / 'diffusion_models'))
+js.save(SETTINGS_PATH, 'WEBUI.upscale_dir', str(SHARED_MODEL_BASE / 'ESRGAN'))
+js.save(SETTINGS_PATH, 'WEBUI.output_dir', str(PATHS['outputs'])) # Use the base/outputs path
+js.save(SETTINGS_PATH, 'WEBUI.extension_dir', str(PATHS['extensions_root'])) # Use the base/extensions path
+js.save(SETTINGS_PATH, 'WEBUI.config_dir', str(PATHS['config_root'])) # Use the base/config path
+
+
+# Re-load settings to ensure `model_dir`, `vae_dir` etc. are updated for the rest of this script's execution
+# This is crucial for the widgets to reflect the correct paths if they need to.
+settings = js.read(SETTINGS_PATH)
+locals().update(settings) # Re-populate locals with updated settings
+# --- END OF MODIFICATION ---
+
 
 ## ======================= WIDGETS =======================
 
@@ -33,21 +140,24 @@ def create_expandable_button(text, url):
     </a>
     ''')
 
-def read_model_data(file_path, data_type):
-    """Reads model, VAE, or ControlNet data from the specified file."""
-    type_map = {
-        'model': ('model_list', ['none']),
-        'vae': ('vae_list', ['none', 'ALL']),
-        'cnet': ('controlnet_list', ['none', 'ALL'])
-    }
-    key, prefixes = type_map[data_type]
+# Modified read_model_data to be more generic for data files
+def read_model_data(file_path, data_key_in_file, prefixes=['none']):
+    """Reads data from the specified file based on a key within that file."""
     local_vars = {}
-
     with open(file_path) as f:
         exec(f.read(), {}, local_vars)
+    
+    # Safely get the nested dictionary if data_key_in_file is like 'lora_data.sd15_loras'
+    data_dict = local_vars
+    for key_part in data_key_in_file.split('.'):
+        data_dict = data_dict.get(key_part, {})
+        if not isinstance(data_dict, dict): # Handle cases where a key part might not lead to a dict
+            data_dict = {}
+            break
 
-    names = list(local_vars[key].keys())
+    names = list(data_dict.keys())
     return prefixes + names
+
 
 webui_selection = {
     'A1111':   "--xformers --no-half-vae",
@@ -65,7 +175,7 @@ HR = widgets.HTML('<hr>')
 # --- MODEL ---
 """Create model selection widgets."""
 model_header = factory.create_header('Model Selection')
-model_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'model')
+model_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'model_list') # Updated key here
 model_widget = factory.create_dropdown(model_options, 'Model:', '4. Counterfeit [Anime] [V3] + INP')
 model_num_widget = factory.create_text('Model Number:', '', 'Enter model numbers for download.')
 inpainting_model_widget = factory.create_checkbox('Inpainting Models', False, class_names=['inpaint'], layout={'width': '25%'})
@@ -76,9 +186,18 @@ switch_model_widget = factory.create_hbox([inpainting_model_widget, XL_models_wi
 # --- VAE ---
 """Create VAE selection widgets."""
 vae_header = factory.create_header('VAE Selection')
-vae_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'vae')
+vae_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'vae_list') # Updated key here
 vae_widget = factory.create_dropdown(vae_options, 'Vae:', '3. Blessed2.vae')
 vae_num_widget = factory.create_text('Vae Number:', '', 'Enter vae numbers for download.')
+
+# --- LORA (NEW SECTION) ---
+"""Create LoRA selection widgets."""
+lora_header = factory.create_header('LoRA Selection')
+# Initial load of LoRA options (defaults to SD 1.5 LoRAs)
+lora_options = read_model_data(f"{SCRIPTS}/_loras-data.py", 'lora_data.sd15_loras')
+lora_widget = factory.create_dropdown(lora_options, 'LoRA:', 'none')
+lora_num_widget = factory.create_text('LoRA Number:', '', 'Enter LoRA numbers for download.')
+
 
 # --- ADDITIONAL ---
 """Create additional configuration widgets."""
@@ -99,26 +218,29 @@ choose_changes_widget = factory.create_hbox(
     layout={'justify_content': 'space-between'}
 )
 
-controlnet_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'cnet')
+controlnet_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'controlnet_list') # Updated key here
 controlnet_widget = factory.create_dropdown(controlnet_options, 'ControlNet:', 'none')
 controlnet_num_widget = factory.create_text('ControlNet Number:', '', 'Enter ControlNet numbers for download.')
 commit_hash_widget = factory.create_text('Commit Hash:', '', 'Switching between branches or commits.')
 
-civitai_token_widget = factory.create_text('CivitAI Token:', '', 'Enter your CivitAi API token.')
+# HARDCODED TOKENS START HERE
+civitai_token_widget = factory.create_text('CivitAI Token:', 'ff14ef326fa02885e8202e4d44fc9a13', 'Enter your CivitAi API token.')
 civitai_button = create_expandable_button('Get CivitAI Token', 'https://civitai.com/user/account')
 civitai_widget = factory.create_hbox([civitai_token_widget, civitai_button])
 
-huggingface_token_widget = factory.create_text('HuggingFace Token:')
+huggingface_token_widget = factory.create_text('HuggingFace Token:', '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')
 huggingface_button = create_expandable_button('Get HuggingFace Token', 'https://huggingface.co/settings/tokens')
 huggingface_widget = factory.create_hbox([huggingface_token_widget, huggingface_button])
 
-ngrok_token_widget = factory.create_text('Ngrok Token:')
+ngrok_token_widget = factory.create_text('Ngrok Token:', '2tjxIXifSaGR3dMhkvhk6sZqbGo_6ZfBZLZHMbtAjfRmfoDW5')
 ngrok_button = create_expandable_button('Get Ngrok Token', 'https://dashboard.ngrok.com/get-started/your-authtoken')
 ngrok_widget = factory.create_hbox([ngrok_token_widget, ngrok_button])
 
+# Moved Zrok widget definition before additional_widget_list
 zrok_token_widget = factory.create_text('Zrok Token:')
 zrok_button = create_expandable_button('Register Zrok Token', 'https://colab.research.google.com/drive/1d2sjWDJi_GYBUavrHSuQyHTDuLy36WpU')
 zrok_widget = factory.create_hbox([zrok_token_widget, zrok_button])
+# HARDCODED TOKENS END HERE
 
 commandline_arguments_widget = factory.create_text('Arguments:', webui_selection['A1111'])
 
@@ -134,6 +256,8 @@ additional_widget_list = [
     HR,
     controlnet_widget, controlnet_num_widget,
     commit_hash_widget,
+    # Removed redundant LoRA widgets from here, they are now in their own box (lora_box)
+    HR,
     civitai_widget, huggingface_widget, zrok_widget, ngrok_widget,
     HR,
     # commandline_arguments_widget,
@@ -223,6 +347,7 @@ factory.load_js(widgets_js)     # load JS (widgets)
 # Display sections
 model_widgets = [model_header, model_widget, model_num_widget, switch_model_widget]
 vae_widgets = [vae_header, vae_widget, vae_num_widget]
+lora_widgets = [lora_header, lora_widget, lora_num_widget] # Group LoRA widgets
 additional_widgets = additional_widget_list
 custom_download_widgets = [
     custom_download_header_popup,
@@ -243,10 +368,12 @@ model_content = factory.create_vbox(model_widgets, class_names=['container'])   
 model_box = factory.create_hbox([model_content, GDrive_button], layout={'width': '1150px'})   # fix layout width...
 
 vae_box = factory.create_vbox(vae_widgets, class_names=['container'])
+lora_box = factory.create_vbox(lora_widgets, class_names=['container']) # New LoRA Box
 additional_box = factory.create_vbox(additional_widgets, class_names=['container'])
 custom_download_box = factory.create_vbox(custom_download_widgets, class_names=['container', 'container_cdl'])
 
-WIDGET_LIST = factory.create_vbox([model_box, vae_box, additional_box, custom_download_box, save_button],
+# Added lora_box to the main display list
+WIDGET_LIST = factory.create_vbox([model_box, vae_box, lora_box, additional_box, custom_download_box, save_button],
                                   class_names=['mainContainer'])
 factory.display(WIDGET_LIST)
 
@@ -267,13 +394,22 @@ def update_XL_options(change, widget):
     }
 
     # Get data - MODELs | VAEs | CNETs
-    data_file = '_xl-models-data.py' if selected else '_models-data.py'
-    model_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'model')
-    vae_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'vae')
-    controlnet_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'cnet')
+    # Update main model, VAE, ControlNet options based on SDXL checkbox
+    model_data_file = f"{SCRIPTS}/_xl-models-data.py" if selected else f"{SCRIPTS}/_models-data.py"
+    model_widget.options = read_model_data(model_data_file, 'model_list')
+    vae_widget.options = read_model_data(model_data_file, 'vae_list')
+    controlnet_widget.options = read_model_data(model_data_file, 'controlnet_list')
+
+    # Update LoRA options based on SDXL checkbox
+    lora_data_key = 'lora_data.sdxl_loras' if selected else 'lora_data.sd15_loras'
+    lora_widget.options = read_model_data(f"{SCRIPTS}/_loras-data.py", lora_data_key)
+
 
     # Set default values from the dictionary
     model_widget.value, vae_widget.value, controlnet_widget.value = default_model_values[selected]
+    # LoRA default value
+    lora_widget.value = 'none' # Reset LoRA selection on model type change
+
 
 # Callback functions for updating widgets
 def update_change_webui(change, widget):
@@ -332,6 +468,7 @@ SETTINGS_KEYS = [
       'XL_models', 'model', 'model_num', 'inpainting_model', 'vae', 'vae_num',
       'latest_webui', 'latest_extensions', 'check_custom_nodes_deps', 'change_webui', 'detailed_download',
       'controlnet', 'controlnet_num', 'commit_hash',
+      'lora', 'lora_num', # Added lora and lora_num to SETTINGS_KEYS
       'civitai_token', 'huggingface_token', 'zrok_token', 'ngrok_token', 'commandline_arguments', 'theme_accent',
       # CustomDL
       'empowerment', 'empowerment_output',
@@ -369,7 +506,7 @@ def save_data(button):
     """Handle save button click."""
     save_settings()
     # factory.close(list(WIDGET_LIST.children), class_names=['hide'], delay=0.8)
-    all_widgets = [model_content, vae_box, additional_box, custom_download_box, save_button, GDrive_button]
+    all_widgets = [model_content, vae_box, lora_box, additional_box, custom_download_box, save_button, GDrive_button] # Added lora_box
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 
 load_settings()
