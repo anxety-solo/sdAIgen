@@ -19,7 +19,20 @@ nest_asyncio.apply()  # Async support for Jupyter
 
 
 # ======================== CONSTANTS =======================
-HOME = Path.home()
+# Environment detection with custom home paths
+SUPPORTED_ENVS = {
+    'COLAB_GPU': ('Google Colab', '/content'),
+    'KAGGLE_URL_BASE': ('Kaggle', '/kaggle')
+}
+
+# Detect environment and set HOME accordingly
+env_home = None
+for var, (name, path) in SUPPORTED_ENVS.items():
+    if var in os.environ:
+        env_home = Path(path)
+        break
+
+HOME = env_home if env_home else Path.home()
 SCR_PATH = HOME / 'ANXETY'
 SETTINGS_PATH = SCR_PATH / 'settings.json'
 VENV_PATH = HOME / 'venv'
@@ -39,12 +52,6 @@ DEFAULT_REPO = 'sdAIgen'
 DEFAULT_BRANCH = 'main'
 DEFAULT_LANG = 'en'
 BASE_GITHUB_URL = "https://raw.githubusercontent.com"
-
-# Environment detection
-SUPPORTED_ENVS = {
-    'COLAB_GPU': 'Google Colab',
-    'KAGGLE_URL_BASE': 'Kaggle'
-}
 
 # File structure configuration
 FILE_STRUCTURE = {
@@ -136,11 +143,11 @@ def setup_module_folder(modules_folder = None):
 # =================== ENVIRONMENT SETUP ====================
 
 def detect_environment():
-    """Detect runtime environment."""
-    for var, name in SUPPORTED_ENVS.items():
+    """Detect runtime environment and return name."""
+    for var, (name, path) in SUPPORTED_ENVS.items():
         if var in os.environ:
             return name
-    raise EnvironmentError(f"Unsupported environment. Supported: {', '.join(SUPPORTED_ENVS.values())}")
+    raise EnvironmentError(f"Unsupported environment. Supported: {', '.join([name for name, path in SUPPORTED_ENVS.values()])}")
 
 def parse_fork_arg(fork_arg):
     """Parse fork argument into user/repo."""
