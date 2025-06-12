@@ -38,6 +38,8 @@ SETTINGS_PATH = SCR_PATH / 'settings.json'
 VENV_PATH = HOME / 'venv'
 MODULES_FOLDER = SCR_PATH / "modules"
 
+scripts_dir = SCR_PATH / 'scripts'    # Variable for storing folders main script files
+
 # Add paths to the environment
 os.environ.update({
     'home_path': str(HOME),
