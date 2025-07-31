@@ -101,5 +101,6 @@
     "custom_api_key": "65b66176dcf284b266579de57fbdc024",
     "aria2_flags": "--header=\"User-Agent: Mozilla/5.0\" --allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5",
     "unpack_zip": true,
+    "video_playback": false,
     "sd_image_info_layout": "side by side"
 }

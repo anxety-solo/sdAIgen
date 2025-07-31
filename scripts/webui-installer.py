@@ -108,6 +108,7 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/{UI}/ui-config.json",
         f"{CONFIG_URL}/styles.csv",
         f"{CONFIG_URL}/user.css",
+        f"{CONFIG_URL}/card-no-preview.png, {WEBUI}/html, card-no-preview.jpg",
         f"{CONFIG_URL}/notification.mp3",
         # Special Scripts
         f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.11/site-packages/gradio_tunneling, main.py",
