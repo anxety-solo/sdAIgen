@@ -134,7 +134,7 @@ class CivitAiAPI:
 
     def _early_access_check(self, data: Dict) -> bool:
         """Check if model is gated behind Early Access"""
-        ea = data.get('availability') == 'EarlyAccess' or data.get('earlyAccessEndsAt')
+        ea = data.get('availability') == 'EarlyAccess' # or data.get('earlyAccessEndsAt')
         if ea:
             model_id = data.get('modelId')
             version_id = data.get('id')

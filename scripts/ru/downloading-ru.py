@@ -505,9 +505,10 @@ def manual_download(url, dst_dir, file_name=None, prefix=None):
         clean_url, url = data.clean_url, data.download_url          # Clean_URL, Download_URL
         image_url, image_name = data.image_url, data.image_name     # Image_URL, Image_Name
 
+        ## Preview will be downloaded automatically via [CivitAI-Extension]
         # Download preview images
-        if image_url and image_name:
-            m_download(f"{image_url} {dst_dir} {image_name}")
+        # if image_url and image_name:
+        #     m_download(f"{image_url} {dst_dir} {image_name}")
 
     elif any(s in url for s in ('github', 'huggingface.co')):
         if file_name and '.' not in file_name:
