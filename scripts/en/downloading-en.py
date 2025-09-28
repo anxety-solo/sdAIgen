@@ -265,7 +265,7 @@ if commit_hash or branch != 'none':
 
             # In case of conflicts, we resolve them while preserving local changes.
             conflicts = subprocess.run(
-                ['git', 'diff', '--name-only', "'-diff-filter=U'],
+                ['git', 'diff', '--name-only', '-diff-filter=U'],
                 cwd=WEBUI, stdout=subprocess.PIPE, text=True
             ).stdout.strip().splitlines()
 

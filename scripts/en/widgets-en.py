@@ -27,8 +27,8 @@ ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 SCRIPTS  = SCR_PATH / 'scripts'
 CSS      = SCR_PATH / 'CSS'
 JS       = SCR_PATH / 'JS'
-WIDGETS_CSS = CSS / 'main-widgets.css'
-WIDGETS_JS  = JS / 'main-widgets.js'
+widgets_css = CSS / 'main-widgets.css'
+widgets_js  = JS / 'main-widgets.js'
 
 
 # ================ WIDGETS (Main Container) ================
