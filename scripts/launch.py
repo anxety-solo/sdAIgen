@@ -17,7 +17,6 @@ import shlex
 import time
 import json
 import yaml
-import sys
 import os
 import re
 
@@ -37,6 +36,7 @@ SETTINGS_PATH = PATHS['settings_path']
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 UI = js.read(SETTINGS_PATH, 'WEBUI.current')
 WEBUI = js.read(SETTINGS_PATH, 'WEBUI.webui_path')
+EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
 nest_asyncio.apply()  # Async support for Jupyter
@@ -55,14 +55,24 @@ osENV.update({
 
 # Text Colors (\033)
 class COLORS:
-    R  =  "\033[31m"     # Red
-    G  =  "\033[32m"     # Green
-    Y  =  "\033[33m"     # Yellow
-    B  =  "\033[34m"     # Blue
-    lB =  "\033[36m"     # lightBlue
-    X  =  "\033[0m"      # Reset
+    R  =  '\033[31m'    # Red
+    G  =  '\033[32m'    # Green
+    Y  =  '\033[33m'    # Yellow
+    B  =  '\033[34m'    # Blue
+    lB =  '\033[36m'    # Light Blue
+    X  =  '\033[0m'     # Reset
 
 COL = COLORS
+
+# Tag-CSV Mapping
+TAGGER_MAP = {
+    'm': 'merged',
+    'merged': 'merged',
+    'e': 'e621',
+    'e621': 'e621',
+    'd': 'danbooru',
+    'danbooru': 'danbooru'
+}
 
 
 # =================== loading settings V5 ==================
@@ -89,6 +99,11 @@ locals().update(settings)
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log', action='store_true', help='Show failed tunnel details')
+    parser.add_argument(
+        '-t', '--tagger',
+        choices=['m', 'merged', 'e', 'e621', 'd', 'danbooru'],
+        help='Select tagger type: m/merged, e/e621, d/danbooru'
+    )
     return parser.parse_args()
 
 def _trashing():
@@ -99,14 +114,71 @@ def _trashing():
         cmd = f"find {path} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"
         subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def _update_config_paths():
+def find_latest_tag_file(target='danbooru'):
+    """Find the latest tag file for specified target in TagComplete extension."""
+    from datetime import datetime
+    import re
+
+    possible_names = {
+        'a1111-sd-webui-tagcomplete',
+        'sd-webui-tagcomplete',
+        'webui-tagcomplete',
+        'tag-complete',
+        'tagcomplete',
+    }
+
+    # Find TagComplete extension directory
+    tagcomplete_dir = next(
+        (
+            ext_dir
+            for ext_dir in EXTS.iterdir()
+            if ext_dir.is_dir() and ext_dir.name.lower() in possible_names
+        ),
+        None
+    )
+    if not tagcomplete_dir:
+        return None
+
+    tags_dir = tagcomplete_dir / 'tags'
+    if not tags_dir.exists():
+        return None
+
+    # Prepare patterns
+    if target == 'merged':
+        glob_pattern = '*_merged_*.csv'
+        regex_pattern = r'.*_merged_(\d{4}-\d{2}-\d{2})\.csv$'
+    else:
+        glob_pattern = f"{target}_*.csv"
+        regex_pattern = rf"{re.escape(target)}_(\d{{4}}-\d{{2}}-\d{{2}})\.csv$"
+
+    # Find latest file
+    latest_file = None
+    latest_date = None
+
+    for file_path in tags_dir.glob(glob_pattern):
+        match = re.search(regex_pattern, file_path.name)
+        if not match:
+            continue
+        try:
+            file_date = datetime.strptime(match.group(1), '%Y-%m-%d')
+        except ValueError:
+            continue
+        if latest_date is None or file_date > latest_date:
+            latest_date, latest_file = file_date, file_path.name
+
+    return latest_file
+
+def _update_config_paths(tagger=None):
     """Update configuration paths in WebUI config file"""
+    target_tagger = TAGGER_MAP.get(tagger, 'danbooru')
+
     config_mapping = {
+        'tac_tagFile': find_latest_tag_file(target_tagger),
         'tagger_hf_cache_dir': f"{WEBUI}/models/interrogators/",
         'ad_extra_models_dir': adetailer_dir,
         # 'sd_checkpoint_hash': '',
         # 'sd_model_checkpoint': '',
-        'sd_vae': 'None'
+        # 'sd_vae': 'None'
     }
 
     config_file = f"{WEBUI}/config.json"
@@ -228,10 +300,11 @@ class TunnelManager:
                 'command': f"gradio-tun {self.tunnel_port}",
                 'pattern': re.compile(r'[\w-]+\.gradio\.live')
             }),
-            ('Serveo', {
-                'command': f"ssh -o StrictHostKeyChecking=no -R 80:localhost:{self.tunnel_port} serveo.net",
-                'pattern': re.compile(r'[\w-]+\.serveo\.net')
-            }),
+            ## RIP
+            # ('Serveo', {
+            #     'command': f"ssh -T -N -o StrictHostKeyChecking=no -R 80:localhost:{self.tunnel_port} serveo.net",
+            #     'pattern': re.compile(r'[\w-]+\.serveo\.net')
+            # }),
             ('Pinggy', {
                 'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{self.tunnel_port} a.pinggy.io",
                 'pattern': re.compile(r'[\w-]+\.a\.free\.pinggy\.link')
@@ -341,7 +414,7 @@ if __name__ == '__main__':
 
     # Launch sequence
     _trashing()
-    _update_config_paths()
+    _update_config_paths(args.tagger)
     LAUNCHER = get_launch_command()
 
     # Setup pinggy timer
@@ -371,6 +444,13 @@ if __name__ == '__main__':
                 print(f"  - {error['name']}: {error['reason']}")
             print()
 
+        # Display selected trigger if was used
+        if args.tagger:
+            selected_trigger = TAGGER_MAP.get(args.tagger, args.tagger)
+            tag_file = find_latest_tag_file(selected_trigger)
+            file_info = f" ({tag_file})" if tag_file else ""
+            print(f"{COL.B}>> 🏷️ Selected Tagger:{COL.X} {COL.lB}{selected_trigger}{COL.X}{file_info}\n")
+
         print(f"🔧 WebUI: {COL.B}{UI}{COL.X}")
 
         try:
@@ -381,7 +461,7 @@ if __name__ == '__main__':
     # Post-execution cleanup
     if zrok_token:
         ipySys('zrok disable &> /dev/null')
-        print('/n🔐 Zrok tunnel disabled :3')
+        print('\n🔐 Zrok tunnel disabled :3')
 
     # Display session duration
     try:

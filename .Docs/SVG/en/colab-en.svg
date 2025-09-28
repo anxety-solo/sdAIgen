@@ -2,108 +2,166 @@
     <foreignObject width="100%" height="100%">
         <div xmlns="http://www.w3.org/1999/xhtml">
             <style>
-                @keyframes letterSpacingH2 {
-                    0% {
-                        letter-spacing: 15px; 
-                    }
-                    100% {
-                        letter-spacing: 20px;
-                    }
-                }
-
-                @keyframes fadeIn {
-                    0% {
-                        opacity: 0;
-                        transform: translateX(-50%) translateY(50%);
-                    }
-                    66% {
-                        opacity: 0;
-                        transform: translateX(-50%) translateY(50%);
-                    }
-                    100% {
-                        opacity: 0.5;
-                        transform: translateX(-50%) translateY(0%);
-                    }
-                }
-
-                @keyframes moveUp {
-                    0% {
-                        transform: translateY(0);
-                    }
-                    100% {
-                        transform: translateY(-20px);
-                    }
-                }
-
-                .container {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    width: auto;
-                    height: 160px;
-                    background: #E35D6A;
-                    box-shadow: inset 0 0 1px 2px #E87D87;
-                    border-radius: 10px;
-                    user-select: none;
-                    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-                }
-
-                .H1 {
-                    color: #8DFFDD;
-                    font-size: 45px;
-                    letter-spacing: 10px;
-                    font-weight: bold;
-                    text-shadow:
-                        0 1px 0 #1EB387,
-                        0 2px 0 #1EB387,
-                        0 3px 0 #1EB387,
-                        0 4px 0 #1EB387,
-                        0 12px 5px rgba(0, 0, 0, 0.1);
-                    animation: moveUp 1s ease forwards 3.85s;
-                }
-
-                .H2 {
-                    color: #FFFFFF;
-                    font-size: 70px;
-                    letter-spacing: 15px;
-                    font-weight: bold;
-                    text-shadow:
-                        0 1px 0 #BDBBBB,
-                        0 2px 0 #BDBBBB,
-                        0 3px 0 #BDBBBB,
-                        0 4px 0 #BDBBBB,
-                        0 12px 5px rgba(0, 0, 0, 0.1);
-                    animation: letterSpacingH2 ease-in-out 1s infinite alternate, moveUp 1s ease forwards 4s;
-                    margin-top: -15px;
-                }
-
-                .source {
-                    position: absolute;
-                    top: 98px;
-                    left: 50%;
-                    opacity: 0;
-                    transform: translateX(-50%) translateY(50%);
-                    animation: 3s ease 2s normal forwards 1 fadeIn;
-                }
-
-                p {
-                    color: white;
-                    font-size: 25px;
-                    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
-                    white-space: nowrap;
-                    font-weight: bold;
-                }
+            :root {
+                /* === Container === */
+                --shadow: rgba(0, 0, 0, 0.1);
+            
+                --container-width: 800px;
+                --container-height: 160px;
+                --container-radius: 10px;
+                --main-bg: #d15c55;
+                --main-bg-shadow: #e88a84;
+                --dots-color: rgba(255, 255, 255, 0.2);
+                --dots-size: 16px;
+                --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+            
+                /* === Texts === */
+                /* H1 */
+                --h1-color: #8dffdd;
+                --h1-shadow: #1eb387;
+                --h1-size: 40px;
+                --h1-spacing: 10px;
+            
+                /* H2 */
+                --h2-color: #ffffff;
+                --h2-shadow: #bdbbbb;
+                --h2-size: 60px;
+                --h2-spacing-from: 15px;
+                --h2-spacing-to: 20px;
+            
+                /* Tip Style */
+                --p-color: rgba(255, 255, 255, 0.8);
+                --p-bg: rgba(0, 0, 0, 0.25);
+                --p-border: rgba(255, 255, 255, 0.1);
+                --p-shadow: rgba(0, 0, 0, 0.2);
+                --p-text-shadow: rgba(0, 0, 0, 0.5);
+                --p-size: 16px;
+                --p-radius: 20px;
+                --p-padding: 4px 12px;
+            
+                /* Animation */
+                --delay: 4s;
+                --H1-fade-delay: calc(var(--delay) - 0.15s);
+                --H2-fade-delay: var(--delay);
+                --p-fade-delay: calc(var(--delay) / 2);
+                --move-up: -35%;
+                --fade-in-translate: -60%;
+                --h2-margin-top: -8px;
+            }
+            
+            @keyframes letterSpacingH2 {
+                0% { letter-spacing: var(--h2-spacing-from); }
+                100% { letter-spacing: var(--h2-spacing-to); }
+            }
+            @keyframes fadeIn {
+            0%, 70% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(0);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(var(--fade-in-translate));
+            }
+            }
+            @keyframes moveUp {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(var(--move-up)); }
+            }
+            @keyframes dotsMove {
+                0% { background-position: 0 0; }
+                100% { background-position: var(--dots-size) var(--dots-size); }
+            }
+            
+            .container {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                font-family: var(--font-family);
+                padding: 5px;
+                width: var(--container-width);
+                height: var(--container-height);
+                background: var(--main-bg);
+                border-radius: var(--container-radius);
+                box-shadow: 0 0 5px 0 var(--shadow), inset 0 0 2px 2px var(--main-bg-shadow);
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                overflow: hidden;
+            }
+            
+            .dots-bg {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                background-image: radial-gradient(var(--dots-color) 1px, transparent 1px);
+                background-size: var(--dots-size) var(--dots-size);
+                animation: dotsMove 1s linear infinite;
+            }
+            
+            .H1 {
+                color: var(--h1-color);
+                font-size: var(--h1-size);
+                letter-spacing: var(--h1-spacing);
+                font-weight: bold;
+                text-shadow:
+                0 1px 0 var(--h1-shadow),
+                0 2px 0 var(--h1-shadow),
+                0 3px 0 var(--h1-shadow),
+                0 4px 0 var(--h1-shadow),
+                0 12px 5px var(--shadow);
+                animation: moveUp 1s ease forwards var(--H1-fade-delay);
+            }
+            
+            .H2 {
+                color: var(--h2-color);
+                font-size: var(--h2-size);
+                letter-spacing: var(--h2-spacing-from);
+                font-weight: bold;
+                text-shadow:
+                0 1px 0 var(--h2-shadow),
+                0 2px 0 var(--h2-shadow),
+                0 3px 0 var(--h2-shadow),
+                0 4px 0 var(--h2-shadow),
+                0 12px 5px var(--shadow);
+                margin-top: var(--h2-margin-top);
+                animation: letterSpacingH2 ease-in-out 1s infinite alternate, moveUp 1s ease forwards var(--H2-fade-delay);
+            }
+            
+            .source {
+                position: absolute;
+                top: 75%;
+                left: 50%;
+                margin: 0;
+                padding: 0;
+            }
+            
+            p {
+                color: var(--p-color);
+                font-size: var(--p-size);
+                font-weight: bold;
+                text-shadow: 0 1px 0 var(--p-text-shadow);
+                white-space: nowrap;
+                padding: var(--p-padding);
+                background: var(--p-bg);
+                border: 1px solid var(--p-border);
+                border-radius: var(--p-radius);
+                box-shadow: 0 2px 10px var(--p-shadow);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                transform: translateX(-50%) translateY(50%);
+                animation: 3s ease var(--p-fade-delay) normal forwards 1 fadeIn;
+            }                
             </style>
-
             <div class="container">
+                <div class="dots-bg"></div>
                 <div class="H1">Open In</div>
                 <div class="H2">COLAB</div>
-
+            
                 <div class="source">
-                    <p>Click to open NoteBook</p>
-                </div>
-            </div>
+                      <p>Click to open NoteBook</p>
+                </div> 
+            </div>           
         </div>
     </foreignObject>
 </svg>

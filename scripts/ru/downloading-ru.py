@@ -13,7 +13,6 @@ from datetime import timedelta
 from pathlib import Path
 import subprocess
 import requests
-import zipfile
 import shutil
 import shlex
 import time
@@ -146,8 +145,8 @@ if venv_needs_reinstall:
 
     HF_VENV_URL = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
     venv_config = {
-        'Classic': (f"{HF_VENV_URL}/python31112-venv-torch251-cu121-C-Classic.tar.lz4", '(3.11.12)'),
-        'default': (f"{HF_VENV_URL}/python31015-venv-torch251-cu121-C-fca.tar.lz4", '(3.10.15)')
+        'Classic': (f"{HF_VENV_URL}/python31113-venv-torch260-cu124-C-Classic.tar.lz4", '(3.11.13)'),
+        'default': (f"{HF_VENV_URL}/python31018-venv-torch260-cu124-C-fca.tar.lz4", '(3.10.18)')
     }
     venv_url, py_version = venv_config.get(current_ui, venv_config['default'])
 
@@ -184,14 +183,14 @@ start_timer = js.read(SETTINGS_PATH, 'ENVIRONMENT.start_timer')
 
 if not os.path.exists(WEBUI):
     start_install = time.time()
-    print(f"⌚ Установка Stable Diffusion... | WEBUI: {COL.B}{UI}{COL.X}", end='')
+    print(f"⌚ Распаковка Stable Diffusion... | WEBUI: {COL.B}{UI}{COL.X}", end='')
 
     ipyRun('run', f"{SCRIPTS}/webui-installer.py")
     handle_setup_timer(WEBUI, start_timer)		# Setup timer (for timer-extensions)
 
     install_time = time.time() - start_install
     minutes, seconds = divmod(int(install_time), 60)
-    print(f"\r🚀 Установка {COL.B}{UI}{COL.X} Завершена! {minutes:02}:{seconds:02} ⚡" + ' '*25)
+    print(f"\r🚀 Распаковка {COL.B}{UI}{COL.X} Завершена! {minutes:02}:{seconds:02} ⚡" + ' '*25)
 
 else:
     print(f"🔧 Текущий WebUI: {COL.B}{UI}{COL.X}")
@@ -221,138 +220,186 @@ if UI != 'ComfyUI' and not os.path.exists(cache_path):
     print('\r🚚 Распаковка ADetailer model завершена.')
 
 
-## Version switching
-if commit_hash:
-    print('🔄 Переключаемся на указанную версию...', end='')
+## Version or branch switching
+def _git_branch_exists(branch: str) -> bool:
+    result = subprocess.run(
+        ["git", "show-ref", "--verify", f"refs/heads/{branch}"],
+        cwd=WEBUI,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    return result.returncode == 0
+
+if commit_hash or branch != 'none':
+    print("🔄 Switching to the specified commit or branch...", end="")
     with capture.capture_output():
         CD(WEBUI)
         ipySys('git config --global user.email "you@example.com"')
         ipySys('git config --global user.name "Your Name"')
-        ipySys('git reset --hard {commit_hash}')
-        ipySys('git pull origin {commit_hash}')    # Get last changes in branch
-    print(f"\r🔄 Переключение завершено! Текущий коммит: {COL.B}{commit_hash}{COL.X}")
+
+        commit_hash = branch if branch != "none" and not commit_hash else commit_hash
+
+        # Check for local changes (in the working directory and staged)
+        stash_needed = subprocess.run(["git", "diff", "--quiet"], cwd=WEBUI).returncode != 0 \
+                    or subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=WEBUI).returncode != 0
+
+        if stash_needed:
+            # Save local changes and untracked files
+            ipySys('git stash push -u -m "Temporary stash"')
+
+        is_commit = re.fullmatch(r"[0-9a-f]{7,40}", commit_hash) is not None
+
+        if is_commit:
+            ipySys(f"git checkout {commit_hash}")
+        else:
+            ipySys(f"git fetch origin {commit_hash}")
+
+            if _git_branch_exists(commit_hash):
+                ipySys(f"git checkout {commit_hash}")
+            else:
+                ipySys(f"git checkout -b {commit_hash} origin/{commit_hash}")
+
+            ipySys("git pull")
+
+        if stash_needed:
+            # Apply stash, saving the index
+            ipySys("git stash pop --index || true")
+
+            # In case of conflicts, we resolve them while preserving local changes.
+            conflicts = subprocess.run(
+                ["git", "diff", "--name-only", "--diff-filter=U"],
+                cwd=WEBUI, stdout=subprocess.PIPE, text=True
+            ).stdout.strip().splitlines()
+
+            for f in conflicts:
+                # Save the local version of the file (ours)
+                ipySys(f"git checkout --ours -- \"{f}\"")
+
+            if conflicts:
+                ipySys(f"git add {' '.join(conflicts)}")
+    print(f"\r✅ Переключение завершено! Текущий коммит/ветка: {COL.B}{commit_hash}{COL.X}")
 
 
 # === Google Drive Mounting | EXCLUSIVE for Colab ===
 from google.colab import drive
-mountGDrive = js.read(SETTINGS_PATH, 'mountGDrive')  # Mount/unmount flag
 
-# Configuration
-GD_BASE = "/content/drive/MyDrive/sdAIgen"
-SYMLINK_CONFIG = [
-    {   # model
-        'local_dir': model_dir,
-        'gdrive_subpath': 'Checkpoints',
-    },
-    {   # vae
-        'local_dir': vae_dir,
-        'gdrive_subpath': 'VAE',
-    },
-    {   # lora
-        'local_dir': lora_dir,
-        'gdrive_subpath': 'Lora',
-    }
-]
+mountGDrive = js.read(SETTINGS_PATH, 'mountGDrive')  # mount/unmount flag
+GD_BASE = '/content/drive/MyDrive/sdAIgen'
 
-def create_symlink(src_path, gdrive_path, log=False):
-    """Create symbolic link with content migration and cleanup"""
+def build_symlink_config(ui: str) -> list[dict]:
+    """Build symlink configuration based on UI type"""
+    is_comfy = ui == 'ComfyUI'
+    return [
+        {'local': model_dir,      'gdrive': 'Checkpoints'},
+        {'local': vae_dir,        'gdrive': 'VAE'},
+        {'local': lora_dir,       'gdrive': 'Lora'},
+        {'local': embed_dir,      'gdrive': 'Embeddings'},
+        {'local': extension_dir,  'gdrive': 'CustomNodes' if is_comfy else 'Extensions'},
+        {'local': control_dir,    'gdrive': 'ControlNet'},
+        {'local': upscale_dir,    'gdrive': 'Upscale'},
+        # Others
+        {'local': adetailer_dir,  'gdrive': 'Adetailer'},
+        {'local': clip_dir,       'gdrive': 'Clip'},
+        {'local': unet_dir,       'gdrive': 'Unet'},
+        {'local': vision_dir,     'gdrive': 'Vision'},
+        {'local': encoder_dir,    'gdrive': 'Encoder'},
+        {'local': diffusion_dir,  'gdrive': 'Diffusion'},
+    ]
+
+def create_symlink(src, dst, log=False):
+    """Create symlink with optional migration of existing content"""
     try:
-        src_exists = os.path.exists(src_path)
-        is_real_dir = src_exists and os.path.isdir(src_path) and not os.path.islink(src_path)
-
-        # Handle real directory migration
-        if is_real_dir and os.path.exists(gdrive_path):
-            for item in os.listdir(src_path):
-                src_item = os.path.join(src_path, item)
-                dst_item = os.path.join(gdrive_path, item)
-
-                if os.path.exists(dst_item):
-                    shutil.rmtree(dst_item) if os.path.isdir(dst_item) else os.remove(dst_item)
-                shutil.move(src_item, dst_item)
-
-            shutil.rmtree(src_path)
+        # Migrate contents if src is a real dir
+        if os.path.isdir(src) and os.path.islink(src) != True and os.path.exists(dst):
+            for item in os.listdir(src):
+                shutil.move(os.path.join(src, item), dst)
+            shutil.rmtree(src)
             if log:
-                print(f"Moved contents from {src_path} to {gdrive_path}")
+                print(f"📦 Moved contents: {src} → {dst}")
 
-        # Cleanup existing path
-        if os.path.exists(src_path) and not is_real_dir:
-            if os.path.islink(src_path):
-                os.unlink(src_path)
-            else:
-                os.remove(src_path)
+        # Remove old link or file
+        if os.path.islink(src) or os.path.isfile(src):
+            os.remove(src)
 
         # Create new symlink
-        if not os.path.exists(src_path):
-            os.symlink(gdrive_path, src_path)
+        if not os.path.exists(src):
+            os.symlink(dst, src)
             if log:
-                print(f"Created symlink: {src_path} → {gdrive_path}")
+                print(f"🔗 Symlink: {src} → {dst}")
 
     except Exception as e:
-        print(f"Error processing {src_path}: {str(e)}")
+        print(f"❌ Error processing {src}: {str(e)}")
 
-def handle_gdrive(mount_flag, log=False):
-    """Main handler for Google Drive mounting and symlink management"""
-    if mount_flag:
-        if os.path.exists("/content/drive/MyDrive"):
-            print("🎉 Google Drive подключен~")
-        else:
+def handle_gdrive(mount_flag, ui='A1111', log=False):
+    """Main handler for Google Drive mounting and symlink setup"""
+    if not mount_flag:
+        # Unmount logic
+        if os.path.exists('/content/drive/MyDrive'):
             try:
-                print("⏳ Подключаемся к Google Drive...", end='')
-                with capture.capture_output():
-                    drive.mount('/content/drive')
-                print("\r🚀 Google Drive успешно подключен!")
-            except Exception as e:
-                clear_output()
-                print(f"❌ Mounting failed: {str(e)}\n")
-                return
-
-        try:
-            # Create base directory structure
-            os.makedirs(GD_BASE, exist_ok=True)
-            for cfg in SYMLINK_CONFIG:
-                path = os.path.join(GD_BASE, cfg['gdrive_subpath'])
-                os.makedirs(path, exist_ok=True)
-            print(f"📁 → {GD_BASE}")
-
-            # Create symlinks
-            for cfg in SYMLINK_CONFIG:
-                src = os.path.join(cfg['local_dir'], 'GDrive')
-                dst = os.path.join(GD_BASE, cfg['gdrive_subpath'])
-                create_symlink(src, dst, log)
-
-            print("✅ Симлинки успешно созданы!")
-
-        except Exception as e:
-            print(f"❌ Setup error: {str(e)}\n")
-
-        # Trashing
-        cmd = f"find {GD_BASE} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"
-        subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    else:
-        if os.path.exists("/content/drive/MyDrive"):
-            try:
-                print("⏳ Отключаемся от Google Drive...", end='')
+                print('⏳ Отсоединение Google Drive...', end='')
                 with capture.capture_output():
                     drive.flush_and_unmount()
-                    os.system("rm -rf /content/drive")
-                print("\r✅ Диск успешно отключен и удалён!")
+                    os.system('rm -rf /content/drive')
+                print('\r✅ Google Drive отсоединён и очищен!')
 
                 # Remove symlinks
-                for cfg in SYMLINK_CONFIG:
-                    link_path = os.path.join(cfg['local_dir'], 'GDrive')
+                for cfg in build_symlink_config(ui):
+                    link_path = os.path.join(cfg['local'], 'GDrive')
                     if os.path.islink(link_path):
                         os.unlink(link_path)
 
-                print("🗑️ Симлинки успешно удалены!")
-
+                print('🗑️ Симлинки успешно удалены!')
             except Exception as e:
-                print(f"❌ Unmount error: {str(e)}\n")
+                print(f"❌ Unmount error: {str(e)}")
+        return
 
-handle_gdrive(mountGDrive)
+    # Mount logic
+    if not os.path.exists('/content/drive/MyDrive'):
+        try:
+            print('⏳ Подключение Google Drive...', end='')
+            with capture.capture_output():
+                drive.mount('/content/drive')
+            print('\r🚀 Google Drive успешно подключён!')
+        except Exception as e:
+            # clear_output()
+            print(f"❌ Mounting failed: {str(e)}")
+            return
+    else:
+        print('🎉 Google Drive уже подключён~')
+
+    try:
+        os.makedirs(GD_BASE, exist_ok=True)
+
+        # Create structure in Drive and symlinks
+        for cfg in build_symlink_config(ui):
+            dst = os.path.join(GD_BASE, cfg['gdrive'])
+            os.makedirs(dst, exist_ok=True)
+            src = os.path.join(cfg['local'], 'GDrive')
+            create_symlink(src, dst, log)
+
+        print('✅ Симлинки успешно созданы!')
+
+    except Exception as e:
+        print(f"❌ Setup error: {str(e)}")
+
+    # Cleanup notebook checkpoints
+    subprocess.run(
+        shlex.split(f"find {GD_BASE} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"),
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+
+handle_gdrive(mountGDrive, ui=UI)
 
 
 # ======================= DOWNLOADING ======================
+
+def handle_errors(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f">> An error occurred in {func.__name__}: {str(e)}")
+    return wrapper
 
 # Get XL or 1.5 models list
 ## model_list | vae_list | controlnet_list
@@ -429,16 +476,9 @@ def _extract_filename(url):
         return None
     return Path(urlparse(url).path).name
 
-def _unpack_zips():
-    """Recursively extract and delete all .zip files in PREFIX_MAP directories."""
-    for dir_path, _ in PREFIX_MAP.values():
-        for zip_file in Path(dir_path).rglob('*.zip'):
-            with zipfile.ZipFile(zip_file, 'r') as zf:
-                zf.extractall(zip_file.with_suffix(''))
-            zip_file.unlink()
-
 # Download Core
 
+@handle_errors
 def _process_download_link(link):
     """Processes a download link, splitting prefix, URL, and filename."""
     link = _clean_url(link)
@@ -448,6 +488,7 @@ def _process_download_link(link):
             return prefix, re.sub(r'\[.*?\]', '', path), _extract_filename(path)
     return None, link, None
 
+@handle_errors
 def download(line):
     """Downloads files from comma-separated links, processes prefixes, and unpacks zips post-download."""
     for link in filter(None, map(str.strip, line.split(','))):
@@ -459,16 +500,15 @@ def download(line):
                 extension_repo.append((url, filename))
                 continue
             try:
-                manual_download(url, dir_path, filename, prefix)
+                manual_download(url, dir_path, filename)
             except Exception as e:
                 print(f"\n> Download error: {e}")
         else:
             url, dst_dir, file_name = url.split()
             manual_download(url, dst_dir, file_name)
 
-    _unpack_zips()
-
-def manual_download(url, dst_dir, file_name=None, prefix=None):
+@handle_errors
+def manual_download(url, dst_dir, file_name=None):
     clean_url = url
     image_url, image_name = None, None
 
@@ -477,13 +517,14 @@ def manual_download(url, dst_dir, file_name=None, prefix=None):
         if not (data := api.validate_download(url, file_name)):
             return
 
-        model_type, file_name = data.model_type, data.model_name    # Type, Name
-        clean_url, url = data.clean_url, data.download_url          # Clean_URL, URL
-        image_url, image_name = data.image_url, data.image_name     # Img_URL, Img_Name
+        model_type, file_name = data.model_type, data.model_name    # Model_Type, Model_Name
+        clean_url, url = data.clean_url, data.download_url          # Clean_URL, Download_URL
+        image_url, image_name = data.image_url, data.image_name     # Image_URL, Image_Name
 
+        ## Preview will be downloaded automatically via [CivitAI-Extension]
         # Download preview images
-        if image_url and image_name:
-            m_download(f"{image_url} {dst_dir} {image_name}")
+        # if image_url and image_name:
+        #     m_download(f"{image_url} {dst_dir} {image_name}")
 
     elif any(s in url for s in ('github', 'huggingface.co')):
         if file_name and '.' not in file_name:
@@ -492,8 +533,8 @@ def manual_download(url, dst_dir, file_name=None, prefix=None):
     # Formatted info output
     format_output(clean_url, dst_dir, file_name, image_url, image_name)
 
-    # Downloading
-    m_download(f"{url} {dst_dir} {file_name or ''}", log=True)
+    # Downloading Files | With Logs and Auto Unpacking ZIP Archives
+    m_download(f"{url} {dst_dir} {file_name or ''}", log=True, unzip=True)
 
 ''' SubModels - Added URLs '''
 
@@ -537,17 +578,19 @@ def _parse_selection_numbers(num_str, max_num):
 
 def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, inpainting_model=False):
     selected = []
-    if selection == "ALL":
-        selected = sum(model_dict.values(), [])
-    elif selection in model_dict:
-        selected.extend(model_dict[selection])
 
-    if num_selection:
-        max_num = len(model_dict)
-        for num in _parse_selection_numbers(num_selection, max_num):
-            if 1 <= num <= max_num:
-                name = list(model_dict.keys())[num - 1]
-                selected.extend(model_dict[name])
+    if selection.lower() != 'none':
+        if selection == 'ALL':
+            selected = sum(model_dict.values(), [])
+        elif selection in model_dict:
+            selected.extend(model_dict[selection])
+
+        if num_selection:
+            max_num = len(model_dict)
+            for num in _parse_selection_numbers(num_selection, max_num):
+                if 1 <= num <= max_num:
+                    name = list(model_dict.keys())[num - 1]
+                    selected.extend(model_dict[name])
 
     unique_models = {}
     for model in selected:
@@ -565,7 +608,7 @@ def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, in
 
     return base_url
 
-line = ""
+line = ''
 line = handle_submodels(model, model_num, model_list, model_dir, line)
 line = handle_submodels(vae, vae_num, vae_list, vae_dir, line)
 line = handle_submodels(controlnet, controlnet_num, controlnet_list, control_dir, line)
@@ -683,6 +726,20 @@ if UI == 'ComfyUI':
                 os.remove(src)
             else:
                 shutil.move(src, dest)
+
+## Copy dir from GDrive to extension_dir (if enabled)
+if mountGDrive:
+    gdrive_path = os.path.join(extension_dir, 'GDrive')
+    if os.path.isdir(gdrive_path):
+        for folder in os.listdir(gdrive_path):
+            src = os.path.join(gdrive_path, folder)
+            dst = os.path.join(extension_dir, folder)
+            if os.path.isdir(src):
+                # Copy directory tree; if dst exists, merge contents
+                if os.path.exists(dst):
+                    shutil.copytree(src, dst, dirs_exist_ok=True)
+                else:
+                    shutil.copytree(src, dst)
 
 
 ## List Models and stuff

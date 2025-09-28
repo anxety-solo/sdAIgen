@@ -3,9 +3,9 @@
     "Comfy.TutorialCompleted": true,
     "Comfy.Locale": "en",
     "Comfy.Sidebar.Size": "small",
-    "Comfy.ColorPalette": "comfy-anxety",
     "Comfy.Graph.LinkMarkers": 2,
     "Comfy.NodeSuggestions.number": 15,
+    "Comfy.ColorPalette": "comfy-anxety",
     "Comfy.CustomColorPalettes": {
         "comfy-anxety": {
             "id": "comfy-anxety",
@@ -22,12 +22,12 @@
                     "LATENT": "#ffa5f9",
                     "MASK": "#4ae07b",
                     "MODEL": "#b088ff",
+                    "NOISE": "#5a6785",
                     "SAMPLER": "#ffb088",
                     "SIGMAS": "#4ae07b",
                     "STYLE_MODEL": "#7cdfff",
                     "TAESD": "#edf588",
-                    "VAE": "#ff6666",
-                    "NOISE": "#5a6785"
+                    "VAE": "#ff6666"
                 },
                 "litegraph_base": {
                     "BACKGROUND_IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQMAAABKLAcXAAAAAXNSR0IB2cksfwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAZQTFRFIyMjAAAAELmbUwAAADlJREFUeJxjtD/wROa/I4R4yFjf8IODoQFCfGT8z4AAw5+H6vfRcIHxRsMFO280XLDzRsMFOw/F7wDxEwfkrrXhFwAAAABJRU5ErkJggg==",
@@ -51,6 +51,7 @@
                     "WIDGET_OUTLINE_COLOR": "#3d4142",
                     "WIDGET_TEXT_COLOR": "#d1d5d7",
                     "WIDGET_SECONDARY_TEXT_COLOR": "#bbc2c6",
+                    "WIDGET_DISABLED_TEXT_COLOR": "#6b7072",
                     "LINK_COLOR": "#75d8f7",
                     "EVENT_LINK_COLOR": "#ff85v2",
                     "CONNECTING_LINK_COLOR": "#45db76",
@@ -58,6 +59,7 @@
                     "BADGE_BG_COLOR": "#22282a"
                 },
                 "comfy_base": {
+                    "fg-color": "#d1d5d7",
                     "bg-color": "#181818",
                     "comfy-menu-bg": "#0b0b0b",
                     "comfy-menu-secondary-bg": "#0b0b0b",
@@ -72,7 +74,8 @@
                     "content-bg": "#db88ae",
                     "content-fg": "#f5f6f7",
                     "content-hover-bg": "#fab387",
-                    "content-hover-fg": "#f0f0f0"
+                    "content-hover-fg": "#f0f0f0",
+                    "bar-shadow": "rgba(16, 16, 16, 0.5) 0 0 0.5rem"
                 }
             }
         }

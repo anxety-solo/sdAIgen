@@ -6,7 +6,6 @@ import json_utils as js                     # JSON
 import ipywidgets as widgets
 from pathlib import Path
 import json
-import time
 import re
 import os
 
@@ -24,6 +23,11 @@ UI = js.read(SETTINGS_PATH, 'WEBUI.current')
 
 CSS = SCR_PATH / 'CSS'
 widgets_css = CSS / 'download-result.css'
+
+EXCLUDED_EXTENSIONS = {'.txt', '.yaml', '.log', '.json'}
+CONTAINER_WIDTH = '1200px'
+HEADER_DL = 'DOWNLOAD RESULTS'
+VERSION = 'v1.1'
 
 
 # =================== loading settings V5 ==================
@@ -45,129 +49,116 @@ settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
 
-# ========================= WIDGETS ========================
-
-HR = widgets.HTML('<hr class="divider-line">')
-HEADER_DL = 'DOWNLOAD RESULTS'
-VERSION = 'v0.58'
-
+# Initialize the WidgetFactory
 factory = WidgetFactory()
+HR = widgets.HTML('<hr>')
 
-# Load CSS
-factory.load_css(widgets_css)
 
-# Define extensions to filter out
-EXCLUDED_EXTENSIONS = {'.txt', '.yaml', '.log', '.json'}
+# ====================== File Utilities ====================
 
-## Functions
-def output_container_generator(header, items, is_grid=False):
-    """Create a container widget for output items."""
-    header_widget = factory.create_html(f'<div class="section-title">{header} ➤</div>')
-    content_widgets = [factory.create_html(f'<div class="output-item">{item}</div>') for item in items]
-
-    container_method = factory.create_hbox if is_grid else factory.create_vbox    # hbox -> grid
-    content_container = container_method(content_widgets).add_class('_horizontal' if is_grid else '')
-
-    return factory.create_vbox([header_widget, content_container]).add_class('output-section')
-
-def get_all_files_list(directory, extensions, excluded_dirs=[]):
-    """Get all files in the directory and its subdirectories, excluding specified directories."""
+def get_files(directory, extensions, excluded_dirs=None, filter_func=None):
+    """Generic function to get files with optional filtering."""
     if not os.path.isdir(directory):
         return []
 
-    files_list = []
-    for root, dirs, files in os.walk(directory, followlinks=True):
-        # Exclude specified directories
+    # Convert single extension string to tuple
+    if isinstance(extensions, str):
+        extensions = (extensions,)
+
+    excluded_dirs = excluded_dirs or []
+    files = []
+
+    for root, dirs, filenames in os.walk(directory, followlinks=True):
         dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        for filename in filenames:
+            if (filename.endswith(extensions)) and not filename.endswith(tuple(EXCLUDED_EXTENSIONS)):
+                if filter_func is None or filter_func(filename):
+                    files.append(filename)
+    return files
 
-        for file in files:
-            if file.endswith(extensions) and not file.endswith(tuple(EXCLUDED_EXTENSIONS)):
-                files_list.append(file)  # Store only the file name
-    return files_list
-
-def get_folders_list(directory):
-    """List folders in a directory, excluding hidden folders."""
+def get_folders(directory, exclude_hidden=True):
+    """List folders in a directory, excluding hidden folders.
+       If 'GDrive' is found, include its subfolders instead."""
     if not os.path.isdir(directory):
         return []
-    return [
-        folder for folder in os.listdir(directory)
-        if os.path.isdir(os.path.join(directory, folder)) and not folder.startswith('__')
+    folders = []
+    for folder in os.listdir(directory):
+        path = os.path.join(directory, folder)
+        if not os.path.isdir(path) or (exclude_hidden and folder.startswith('__')):
+            continue
+        if folder == 'GDrive':
+            folders.extend(
+                f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))
+            )
+        else:
+            folders.append(folder)
+    return folders
+
+def controlnet_filter(filename):
+    """Filter function for ControlNet files."""
+    match = re.match(r'^[^_]*_[^_]*_[^_]*_(.*)_fp16\.safetensors', filename)
+    return match.group(1) if match else filename
+
+
+# ==================== Widget Generators ===================
+
+def create_section(title, items, is_grid=False):
+    """Create a standardized section widget."""
+    header = factory.create_html(f'<div class="section-title">{title} ➤</div>')
+    items_widgets = [
+        factory.create_html(f'<div class="output-item">{item}</div>') for item in items
     ]
 
-def get_controlnets_list(directory, filter_pattern):
-    """List ControlNet files matching a specific pattern."""
-    if not os.path.isdir(directory):
-        return []
-    filter_name = re.compile(filter_pattern)
-    return [
-        filter_name.match(file).group(1) if filter_name.match(file) else file
-        for file in os.listdir(directory)
-        if not file.endswith(tuple(EXCLUDED_EXTENSIONS)) and '.' in file
+    container = factory.create_hbox if is_grid else factory.create_vbox
+    content = container(items_widgets).add_class('_horizontal' if is_grid else '')
+
+    return factory.create_vbox([header, content], class_names=['output-section'])
+
+def create_all_sections():
+    """Create all content sections."""
+    ext_type = 'Nodes' if UI == 'ComfyUI' else 'Extensions'
+    SECTIONS = [
+        # TITLE | GET LIST(content_dir) | file.formats | excluded_dirs=[List] (files); is_grid=bool (folders)
+        ## Mains
+        ('Models', get_files(model_dir, ('.safetensors', '.ckpt'))),
+        ('VAEs', get_files(vae_dir, '.safetensors', '.vae')),
+        ('Embeddings', get_files(embed_dir, ('.safetensors', '.pt'), excluded_dirs=['SD', 'XL'])),
+        ('LoRAs', get_files(lora_dir, '.safetensors')),
+        (ext_type, get_folders(extension_dir), True),
+        ('ADetailers', get_files(adetailer_dir, ('.safetensors', '.pt'))),
+        ## Others
+        ('Clips', get_files(clip_dir, '.safetensors')),
+        ('Unets', get_files(unet_dir, '.safetensors', '.gguf')),
+        ('Visions', get_files(vision_dir, '.safetensors')),
+        ('Encoders', get_files(encoder_dir, '.safetensors')),
+        ('Diffusions', get_files(diffusion_dir, '.safetensors')),
+        ('ControlNets', get_files(control_dir, '.safetensors', filter_func=controlnet_filter)),
     ]
 
-## Widgets
-header_widget = factory.create_html(f'''
-<div><span class="header-main-title">{HEADER_DL}</span> <span style="color: grey; opacity: 0.25;">| {VERSION}</span></div>
-''')
+    return {create_section(*section): section[1] for section in SECTIONS}
 
-# Models
-models_list = get_all_files_list(model_dir, ('.safetensors', '.ckpt'))
-models_widget = output_container_generator('Models', models_list)
-# Vaes
-vaes_list = get_all_files_list(vae_dir, ('.safetensors',))
-vaes_widget = output_container_generator('VAEs', vaes_list)
-# Embeddings
-embed_filter = ['SD', 'XL']
-embeddings_list = get_all_files_list(embed_dir, ('.safetensors', '.pt'), embed_filter)
-embeddings_widget = output_container_generator('Embeddings', embeddings_list)
-# LoRAs
-loras_list = get_all_files_list(lora_dir, ('.safetensors',))
-loras_widget = output_container_generator('LoRAs', loras_list)
-# Extensions
-extensions_list = get_folders_list(extension_dir)
-extension_type = 'Nodes' if UI == 'ComfyUI' else 'Extensions'
-extensions_widget = output_container_generator(extension_type, extensions_list, is_grid=True)
-# ADetailers
-adetailers_list = get_all_files_list(adetailer_dir, ('.safetensors', '.pt'))
-adetailers_widget = output_container_generator('ADetailers', adetailers_list)
-# Clips
-clips_list = get_all_files_list(clip_dir, ('.safetensors',))
-clips_widget = output_container_generator('Clips', clips_list)
-# Unets
-unets_list = get_all_files_list(unet_dir, ('.safetensors',))
-unets_widget = output_container_generator('Unets', unets_list)
-# (Clip) Visions
-visions_list = get_all_files_list(vision_dir, ('.safetensors',))
-visions_widget = output_container_generator('Visions', visions_list)
-# (Text) Encoders
-encoders_list = get_all_files_list(encoder_dir, ('.safetensors',))
-encoders_widget = output_container_generator('Encoders', encoders_list)
-# Diffusions (Models)
-diffusions_list = get_all_files_list(diffusion_dir, ('.safetensors',))
-diffusions_widget = output_container_generator('Diffusions', diffusions_list)
-# ControlNet
-controlnets_list = get_controlnets_list(control_dir, r'^[^_]*_[^_]*_[^_]*_(.*)_fp16\.safetensors')
-controlnets_widget = output_container_generator('ControlNets', controlnets_list)
 
-## Sorting and Output
-widgets_dict = {
-    models_widget: models_list,
-    vaes_widget: vaes_list,
-    embeddings_widget: embeddings_list,
-    loras_widget: loras_list,
-    extensions_widget: extensions_list,
-    adetailers_widget: adetailers_list,
-    clips_widget: clips_list,
-    unets_widget: unets_list,
-    visions_widget: visions_list,
-    encoders_widget: encoders_list,
-    diffusions_widget: diffusions_list,
-    controlnets_widget: controlnets_list
-}
+# =================== DISPLAY / SETTINGS ===================
 
-outputs_widgets_list = [widget for widget, widget_list in widgets_dict.items() if widget_list]
-result_output_widget = factory.create_hbox(outputs_widgets_list).add_class('result-output-container')
+factory.load_css(widgets_css)   # load CSS (widgets)
 
-container_widget = factory.create_vbox([header_widget, HR, result_output_widget, HR],
-                                       layout={'width': '1080px'}).add_class('result-container')
-factory.display(container_widget)
+header = factory.create_html(
+    f'<div><span class="header-main-title">{HEADER_DL}</span>'
+    f'<span style="color: grey; opacity: 0.25;"> | {VERSION}</span></div>'
+)
+
+widget_section = create_all_sections()
+output_widgets = [widget for widget, items in widget_section.items() if items]
+result_output_container = factory.create_hbox(
+    output_widgets,
+    class_names=['sectionsContainer'],
+    layout={'width': '100%'}
+)
+
+main_container = factory.create_vbox(
+    [header, HR, result_output_container, HR],
+    class_names=['mainResult-container'],
+    layout={'min_width': CONTAINER_WIDTH, 'max_width': CONTAINER_WIDTH}
+)
+
+factory.display(main_container)

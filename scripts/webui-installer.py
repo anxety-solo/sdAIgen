@@ -1,8 +1,6 @@
 # ~ webui-installer.py | by ANXETY ~
 
-import json_utils as js          # JSON
-
-from IPython.display import clear_output
+import json_utils as js
 from IPython.utils import capture
 from IPython import get_ipython
 from pathlib import Path
@@ -12,27 +10,28 @@ import aiohttp
 import os
 
 
+# =============== ENVIRONMENT VARIABLES ====================
+
 osENV = os.environ
 CD = os.chdir
 ipySys = get_ipython().system
+ipyRun = get_ipython().run_line_magic
 
-# Constants (auto-convert env vars to Path)
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}   # k -> key; v -> value
+# Auto-convert *_path env vars to Path
+PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
+HOME, VENV, SCR_PATH, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+)
 
-HOME = PATHS['home_path']
-VENV = PATHS['venv_path']
-SCR_PATH = PATHS['scr_path']
-SETTINGS_PATH = PATHS['settings_path']
+UI         = js.read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI      = HOME / UI
+EXTS       = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+EMBED      = Path(js.read(SETTINGS_PATH, 'WEBUI.embed_dir'))
+UPSC       = Path(js.read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
 
-UI = js.read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI = HOME / UI
-ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-FORK_REPO = js.read(SETTINGS_PATH, 'ENVIRONMENT.fork')
-BRANCH = js.read(SETTINGS_PATH, 'ENVIRONMENT.branch')
-
-EMBED = Path(js.read(SETTINGS_PATH, 'WEBUI.embed_dir'))
-UPSC = Path(js.read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
-EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+ENV_NAME   = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+FORK_REPO  = js.read(SETTINGS_PATH, 'ENVIRONMENT.fork')
+BRANCH     = js.read(SETTINGS_PATH, 'ENVIRONMENT.branch')
 
 CONFIG_URL = f"https://raw.githubusercontent.com/{FORK_REPO}/{BRANCH}/__configs__"
 
@@ -42,7 +41,7 @@ CD(HOME)
 # ==================== WEBUI OPERATIONS ====================
 
 async def _download_file(url, directory=WEBUI, filename=None):
-    """Download single file."""
+    """Download a file into given directory."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     file_path = directory / (filename or Path(url).name)
@@ -57,8 +56,9 @@ async def _download_file(url, directory=WEBUI, filename=None):
     )
     await process.communicate()
 
+
 async def get_extensions_list():
-    """Fetch list of extensions from config file."""
+    """Fetch list of extensions from config repo."""
     ext_file_url = f"{CONFIG_URL}/{UI}/_extensions.txt"
     extensions = []
 
@@ -67,8 +67,9 @@ async def get_extensions_list():
             async with session.get(ext_file_url) as response:
                 if response.status == 200:
                     extensions = [
-                        line.strip() for line in (await response.text()).splitlines()
-                        if line.strip() and not line.startswith('#')  # Skip empty lines and comments
+                        line.strip()
+                        for line in (await response.text()).splitlines()
+                        if line.strip() and not line.startswith('#')
                     ]
     except Exception as e:
         print(f"Error fetching extensions list: {e}")
@@ -82,7 +83,6 @@ async def get_extensions_list():
 
 # ================= CONFIGURATION HANDLING =================
 
-# For Forge/ReForge/SD-UX - default is used: A1111
 CONFIG_MAP = {
     'A1111': [
         f"{CONFIG_URL}/{UI}/config.json",
@@ -91,7 +91,8 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/user.css",
         f"{CONFIG_URL}/card-no-preview.png, {WEBUI}/html",
         f"{CONFIG_URL}/notification.mp3",
-        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.10/site-packages/gradio_tunneling, main.py"
+        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.10/site-packages/gradio_tunneling, main.py",
+        f"{CONFIG_URL}/tagcomplete-tags-parser.py"
     ],
     'ComfyUI': [
         f"{CONFIG_URL}/{UI}/install-deps.py",
@@ -105,18 +106,28 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/{UI}/ui-config.json",
         f"{CONFIG_URL}/styles.csv",
         f"{CONFIG_URL}/user.css",
+        f"{CONFIG_URL}/card-no-preview.png, {WEBUI}/html, card-no-preview.jpg",
         f"{CONFIG_URL}/notification.mp3",
-        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.11/site-packages/gradio_tunneling, main.py"
+        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.11/site-packages/gradio_tunneling, main.py",
+        f"{CONFIG_URL}/tagcomplete-tags-parser.py"
     ]
 }
 
+
 async def download_configuration():
-    """Download all configuration files for current UI"""
+    """Download all configuration files for current UI."""
     configs = CONFIG_MAP.get(UI, CONFIG_MAP['A1111'])
-    await asyncio.gather(*[
-        _download_file(*map(str.strip, config.split(',')))
-        for config in configs
-    ])
+
+    tasks = []
+    for config in configs:
+        parts = [p.strip() for p in config.split(",")]
+        url = parts[0]
+        directory = Path(parts[1]) if len(parts) > 1 else WEBUI
+        filename = parts[2] if len(parts) > 2 else None
+        tasks.append(_download_file(url, directory, filename))
+
+    await asyncio.gather(*tasks)
+
 
 # ================= EXTENSIONS INSTALLATION ================
 
@@ -147,10 +158,10 @@ REPO_MAP = {
     'SD-UX':   'https://github.com/anapnoe/stable-diffusion-webui-ux'
 }
 
+
 def clone_webui():
     """Clone WebUI repository instead of downloading archive."""
     repo_url = REPO_MAP.get(UI)
-
     process = subprocess.run(
         f"git clone --depth 1 {repo_url} {WEBUI}",
         shell=True,
@@ -159,6 +170,7 @@ def clone_webui():
     )
     if process.returncode != 0:
         raise RuntimeError(f"Failed to clone {UI} repository")
+
 
 def apply_classic_fixes():
     """Apply specific fixes for Classic UI."""
@@ -169,29 +181,34 @@ def apply_classic_fixes():
     if not cmd_args_path.exists():
         return
 
-    marker = '# Arguments added by ANXETY'
+    marker = '# === Arguments added by ANXETY ==='
     with cmd_args_path.open('r+', encoding='utf-8') as f:
-        if marker in f.read():
+        content = f.read()
+        if marker in content:
             return
         f.write(f"\n\n{marker}\n")
         f.write('parser.add_argument("--hypernetwork-dir", type=normalized_filepath, '
-               'default=os.path.join(models_path, \'hypernetworks\'), help="hypernetwork directory")')
+                'default=os.path.join(models_path, \'hypernetworks\'), '
+                'help="hypernetwork directory")')
 
 
-# ======================== MAIN CODE =======================
+def run_tagcomplete_tag_parser():
+    if (WEBUI / "tagcomplete-tags-parser.py").exists():
+        ipyRun('run', f"{WEBUI}/tagcomplete-tags-parser.py")
+
+
+# =================== ARCHIVES HANDLING ====================
 
 async def process_archives():
-    """Download and process required archives."""
+    """Download and extract embeds & upscalers archives."""
     archives = [
-        ("https://huggingface.co/NagisaNao/ANXETY/resolve/main/embeds.zip", EMBED),
-        ("https://huggingface.co/NagisaNao/ANXETY/resolve/main/upscalers.zip", UPSC)
+        ('https://huggingface.co/NagisaNao/ANXETY/resolve/main/embeds.zip', EMBED),
+        ('https://huggingface.co/NagisaNao/ANXETY/resolve/main/upscalers.zip', UPSC)
     ]
 
     async def download_and_extract(url, extract_to):
-        """Nested function to download and extract a single archive."""
         archive_path = WEBUI / Path(url).name
         extract_to = Path(extract_to)
-
         extract_to.mkdir(parents=True, exist_ok=True)
 
         # Download & unzip
@@ -203,12 +220,21 @@ async def process_archives():
         for url, extract_dir in archives
     ])
 
+
+# ======================== MAIN CODE =======================
+
 async def main():
     clone_webui()
     await download_configuration()
     await install_extensions()
     await process_archives()
-    apply_classic_fixes()
+
+    # if UI == 'Classic':
+    #     apply_classic_fixes()
+
+    if UI != 'ComfyUI':
+        run_tagcomplete_tag_parser()
+
 
 if __name__ == '__main__':
     with capture.capture_output():

@@ -1,8 +1,8 @@
 <div align="center">
-<img width="1080px" height="auto" src="https://raw.githubusercontent.com/anxety-solo/sdAIgen/main/.Docs/Imgs/sample.png"/></br>
+<img width="1080px" height="auto" src="https://raw.githubusercontent.com/anxety-solo/sdAIgen/main/.Docs/Imgs/preview.png"/></br>
 <h1>~ ANXETY | Stable Diffusion WebUI | NoteBook V2 ~</h1>
 
-[English](README.md) | Русский
+[English](README.md) • Русский
 
 </div>
 
@@ -23,21 +23,23 @@
   - Мультиплатформенный блокнот: **Google Colab, Kaggle.**
   - *Виджеты* для простого взаимодействия.
   - Предустановленные пользовательские: *Настройки* + *Стили* + [*UI Тема*](https://github.com/anxety-solo/anxety-theme)
-  - Скачивание превью для *моделей, LoRa и embedding* (CivitAi) | ***Для Kaggle есть ограничения.***
+  - Скачивание превью для *моделей, LoRa и embedding* (CivitAi)
   - Выбор WebUI между *A1111*, *ComfyUI*, *Forge*, *Classic (Forge)*, *ReForge*, *SD-UX.*
+  - _Эксклюзив для **Google Colab**_: Подключение к GDrive и кнопки для экспорта/импорта настроек виджетов~ | ***Основные виджеты***.
 
 <details>
 <summary>📚 Установленные Расширения</summary>
 
 | ✔️ — Установленно | ❌ — Не установлено | 🔄 — Интегрированная версия | <sup>`†`</sup> — Только в *Kaggle* |
-|----------------|---------------------|-------------------------|----------------------------------|
+|------------------ |-------------------- |----------------------------- |----------------------------------- |
 
 | Extension | A1111 | Forge | Classic | ReForge | SD-UX |
 |-----------|-------|-------|---------|---------|-------|
 | [adetailer](https://github.com/Bing-su/adetailer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [anxety-theme](https://github.com/anxety-solo/anxety-theme) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Aspect-Ratio-Helper](https://github.com/thomasasfk/sd-webui-aspect-ratio-helper) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| [CivitAi-Browser-plus](https://github.com/anxety-solo/sd-civitai-browser-plus) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Civitai-Browser-plus](https://github.com/anxety-solo/sd-civitai-browser-plus) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Civitai-Extension](https://github.com/anxety-solo/sd-civitai-extension) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [ControlNet](https://github.com/Mikubill/sd-webui-controlnet) | ✔️ | 🔄 | 🔄 | 🔄 | ✔️ |
 | [Encrypt-Image](https://github.com/anxety-solo/sd-encrypt-image) | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> | ✔️<sup>†</sup> |
 | [Image-Info](https://github.com/gutris1/sd-image-info) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
@@ -72,17 +74,21 @@
 
 </details>
 
-## 💙 Поддержать:
+## 💙 Поддержать меня:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">
         <img src=".Docs/SVG/DA_Logo_Color.svg" width="250" height="100" alt="DonationAlerts">
     </a>
-    <a href="https://boosty.to/anxety/single-payment/donation/707920">
+    <a href="https://boosty.to/anxety/donate">
         <img src=".Docs/SVG/Boosty_Logo_Color.svg" width="250" height="100" alt="Boosty">
     </a>
 </div>
 
-<div align="center">
-	<h6>Некоторые скрипты взяты у <a href="https://github.com/gutris1">gutris1</a>.</h6>
-</div>
+---
+
+## 😄 Благодарности:
+
+[gutris1](https://github.com/gutris1) - Спасибо ему за работу, скрипты, расширения и за то, что назвал меня геем 💀</br>
+[NoCrypt](https://github.com/NoCrypt) - Блокнот изначально был построен на его версии :3</br>
+[DEX-1101](https://github.com/DEX-1101) - В своё время предоставил нам Kaggle-версию~

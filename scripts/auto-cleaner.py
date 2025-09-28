@@ -3,12 +3,11 @@
 from widget_factory import WidgetFactory    # WIDGETS
 import json_utils as js                     # JSON
 
-from IPython.display import display, HTML, clear_output
+from IPython.display import display, HTML
 import ipywidgets as widgets
 from pathlib import Path
 import psutil
 import json
-import time
 import os
 
 
@@ -23,6 +22,7 @@ SETTINGS_PATH = PATHS['settings_path']
 
 CSS = SCR_PATH / 'CSS'
 cleaner_css = CSS / 'auto-cleaner.css'
+CONTAINER_WIDTH = '1080px'
 
 
 # =================== loading settings V5 ==================
@@ -51,58 +51,45 @@ def _update_memory_info():
     total = disk_space.total / (1024 ** 3)
     used = disk_space.used / (1024 ** 3)
     free = disk_space.free / (1024 ** 3)
-
     storage_info.value = f'''
     <div class="storage_info">Total storage: {total:.2f} GB <span style="color: #555">|</span> Used: {used:.2f} GB <span style="color: #555">|</span> Free: {free:.2f} GB</div>
     '''
 
 def clean_directory(directory, directory_type):
-    trash_extensions = {'.txt', '.aria2', '.ipynb_checkpoints'}
+    trash_extensions = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
     image_extensions = {'.png', '.jpg', '.jpeg', '.gif'}
     deleted_files = 0
 
-    for root, dirs, files in os.walk(directory):
+    for root, _, files in os.walk(directory):
         for file in files:
             file_path = os.path.join(root, file)
-
-            if directory_type == 'Models' and file.endswith(tuple(image_extensions)):
+            if directory_type != 'Output Images' and file.endswith(tuple(image_extensions)):
                 os.remove(file_path)
                 continue
-
             if not file.endswith(tuple(trash_extensions)) and '.' in file:
                 deleted_files += 1
-
             os.remove(file_path)
 
     return deleted_files
 
 def generate_messages(deleted_files_dict):
-    messages = []
+    return [f"Deleted {value} {key}" for key, value in deleted_files_dict.items()]
 
-    for key, value in deleted_files_dict.items():
-        object_word = key
-        messages.append(f"Deleted {value} {object_word}")
-    return messages
+def execute_button_press(_):
+    deleted_files_dict = {
+        option: clean_directory(directories[option], option)
+        for option in selection_widget.value
+        if option in directories
+    }
 
-def execute_button_press(button):
-    selected_cleaners = auto_cleaner_widget.value
-    deleted_files_dict = {}
-
-    for option in selected_cleaners:
-        if option in directories:
-            deleted_files_dict[option] = clean_directory(directories[option], option)
-
-    output.clear_output()
-
-    with output:
+    output_widget.clear_output()
+    with output_widget:
         for message in generate_messages(deleted_files_dict):
-            message_widget = HTML(f'<p class="output_message animated_message">{message}</p>')
-            display(message_widget)
-
+            display(HTML(f'<p class="output-message">{message}</p>'))
     _update_memory_info()
 
-def hide_button_press(button):
-    factory.close(container, class_names=['hide'], delay=0.5)
+def hide_button_press(_):
+    factory.close(mainContainer, class_names=['hide'], delay=0.5)
 
 
 # =================== AutoCleaner Widgets ==================
@@ -115,46 +102,65 @@ HR = widgets.HTML('<hr>')
 factory.load_css(cleaner_css)
 
 directories = {
-    'Images': output_dir,
+    'Output Images': output_dir,
     'Models': model_dir,
-    'Vae': vae_dir,
-    'LoRa': lora_dir,
-    'ControlNet Models': control_dir
+    'VAE': vae_dir,
+    'LoRA': lora_dir,
+    'ControlNet Models': control_dir,
+    'CLIP Models': clip_dir,
+    'UNET Models': unet_dir,
+    'Vision Models': vision_dir,
+    'Encoder Models': encoder_dir,
+    'Diffusion Models': diffusion_dir
 }
 
-# --- storage memory ---
+# UI Components
 disk_space = psutil.disk_usage(os.getcwd())
-total = disk_space.total / (1024 ** 3)
-used = disk_space.used / (1024 ** 3)
-free = disk_space.free / (1024 ** 3)
-
-# UI Code
-clean_options = list(directories.keys())
+total, used, free = (x / (1024 ** 3) for x in (disk_space.total, disk_space.used, disk_space.free))
 
 instruction_label = factory.create_html('''
 <span class="instruction">Use <span style="color: #B2B2B2;">ctrl</span> or <span style="color: #B2B2B2;">shift</span> for multiple selections.</span>
 ''')
-auto_cleaner_widget = factory.create_select_multiple(clean_options, '', [], layout={'width': 'auto'}, class_names=['custom_select_multiple'])
-output = widgets.Output().add_class('output_panel')
-# ---
-execute_button = factory.create_button('Execute Cleaning', class_names=['button_execute', 'cleaner_button'])
-hide_button = factory.create_button('Hide Widget', class_names=['button_hide', 'cleaner_button'])
 
-# Button Click
+selection_widget = factory.create_select_multiple(
+    list(directories.keys()),
+    '',
+    [],
+    class_names=['selection-panel']
+)
+output_widget = widgets.Output().add_class('output-panel')
+
+execute_button = factory.create_button('Execute Cleaning', class_names=['cleaner_button', 'button_execute'])
+hide_button = factory.create_button('Hide Widget', class_names=['cleaner_button', 'button_hide'])
 execute_button.on_click(execute_button_press)
 hide_button.on_click(hide_button_press)
-# ---
+
 storage_info = factory.create_html(f'''
 <div class="storage_info">Total storage: {total:.2f} GB <span style="color: #555">|</span> Used: {used:.2f} GB <span style="color: #555">|</span> Free: {free:.2f} GB</div>
 ''')
-# ---
-buttons = factory.create_hbox([execute_button, hide_button])
-lower_information_panel = factory.create_hbox([buttons, storage_info], class_names=['lower_information_panel'])
 
-# Create a horizontal layout for the selection and output areas
-hbox_layout = factory.create_hbox([auto_cleaner_widget, output], class_names=['selection_output_layout'])
+# Containers
+buttons_box = factory.create_hbox(
+    [execute_button, hide_button],
+    class_names=['lower_buttons_box']
+)
 
-container = factory.create_vbox([instruction_label, HR, hbox_layout, HR, lower_information_panel],
-                                layout={'width': '1080px'}, class_names=['cleaner_container'])
+lower_information_panel_box = factory.create_hbox(
+    [buttons_box, storage_info],
+    class_names=['lower_information-panel'],
+    layout={'justify_content': 'space-between'}
+)
 
-factory.display(container)
+selection_output_panel_box = factory.create_hbox(
+    [selection_widget, output_widget],
+    class_names=['selection_output-layout'],
+    layout={'width': '100%'}
+)
+
+mainContainer = factory.create_vbox(
+    [instruction_label, HR, selection_output_panel_box, HR, lower_information_panel_box],
+    class_names=['mainCleaner-container'],
+    layout={'min_width': CONTAINER_WIDTH, 'max_width': CONTAINER_WIDTH}
+)
+
+factory.display(mainContainer)

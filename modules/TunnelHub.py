@@ -8,7 +8,7 @@ Use the original script of the author cupang-afk.
 """
 
 
-from typing import Callable, List, Optional, Tuple, TypedDict, Union, get_args
+from typing import Callable, List, Optional, Tuple, TypedDict, Union
 from threading import Event, Lock, Thread
 from pathlib import Path
 import subprocess
@@ -399,7 +399,7 @@ class Tunnel:
             interval=1,
             timeout=self.timeout,
         ):
-            self.logger.warning('Timeout while getting tunnel URLs, print available URLs')
+            self.logger.warning('⏳ Timeout while getting tunnel URLs, print available URLs:')
 
         if not self.stop_event.is_set():
             self.display_urls()

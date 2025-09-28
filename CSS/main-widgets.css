@@ -3,6 +3,7 @@
 :root {
     /* Accent Color */
     --aw-accent-color: #ff97ef;
+    --aw-elements-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
 
     /* Text - Fonts */
     --aw-font-family-primary: "Shantell Sans", serif;
@@ -59,6 +60,12 @@
     --aw-button-api-hover: radial-gradient(circle at top left, purple 10%, #1d94bb 90%);
 }
 
+/* Suka Blyat' KAGGLE! */
+.widget-label {
+    font-weight: 350 !important;
+    margin-bottom: 0 !important;
+}
+
 
 /* General Styles */
 
@@ -112,7 +119,6 @@ a {
 
 
 /* Special Styles */
-
 ::selection {
     background: #3d4142;
 }
@@ -160,13 +166,13 @@ a {
 .widget-dropdown select,
 .widget-textarea textarea,
 .widget-text input[type="text"] {
-    font-family: var(--aw-font-family-primary);
+    font-family: var(--aw-font-family-primary) !important;
     font-optical-sizing: auto;
     /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); */
 }
 
 
-/* Element text style */
+/* Element Text Style */
 
 .widget-text,
 .widget-button,
@@ -176,31 +182,34 @@ a {
 .widget-dropdown select,
 .widget-textarea textarea,
 .widget-text input[type="text"] {
-    font-style: normal;
-    font-size: var(--aw-text-size);
+    font-style: normal !important;
+    font-size: var(--aw-text-size) !important;
     color: var(--aw-color-text-primary) !important;
-    user-select: none;
+    user-select: none !important;
 }
 .widget-text input[type="text"]::placeholder {
     color: grey;
-    font-size: var(--aw-text-size);
+    font-size: var(--aw-text-size) !important;
 }
 
 /* TextArea */
 .widget-textarea textarea,
 .widget-textarea textarea::placeholder {
-    font-size: var(--aw-text-size-small);
+    font-size: var(--aw-text-size-small) !important;
 }
 
 
-/* Containers style */
+/* Containers Style */
 
 .mainContainer * { overflow: visible !important; } /* Fix For Containers Shadow */
 .mainContainer {
-    padding: var(--aw-conteiner-gap);
-    gap: calc(var(--aw-conteiner-gap) + 10px);
+    padding: calc(var(--aw-conteiner-gap) + 5px);
+    gap: calc(var(--aw-conteiner-gap) + 5px);
 }
-.widgetContainer { gap: var(--aw-conteiner-gap); }
+.widgetContainer,
+.sideContainer {
+    gap: var(--aw-conteiner-gap);
+}
 .widgetContainer > .model-vae {
     gap: var(--aw-conteiner-gap);
     align-items: stretch;
@@ -213,7 +222,7 @@ a {
     background-color: var(--aw-container-bg);
     border: var(--aw-container-border);
     border-radius: 16px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--aw-elements-shadow), inset 0 0 10px rgba(0, 0, 0, 0.3);
     overflow: hidden !important;
 }
 .container::after {
@@ -237,52 +246,181 @@ a {
     height: 305px;
 }
 
-/* GDrive Button */
-.gdrive-btn {
+/* === SideContainer Buttons === */
+.sideContainer-btn {
     align-self: flex-start;
     margin: 0 !important;
     padding: 0 !important;
-    background-size: 70%;
+    background-size: 65%;
     background-position: center;
     background-repeat: no-repeat;
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg');
     background-color: var(--aw-container-bg);
     border: var(--aw-container-border);
     border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: var(--aw-elements-shadow), inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
     cursor: pointer;
     outline: none;
     transition: all 0.15s ease;
 }
+.sideContainer-btn:active {
+    background-color: var(--aw-container-bg);
+    transform: scale(0.95) !important;
+}
+
+/* GDrive Button */
+.gdrive-btn {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg');
+}
 .gdrive-btn.active {
     background-color: #006d33;
     border-color: #00d062;
-    transform: scale(0.9) !important;
+    /* transform: scale(0.9) !important; */
+}
+
+/* Export/Import Button */
+/* (↓ arrow) --> SVG Icon Page: https://www.svgrepo.com/svg/357903/import */
+.export-btn {
+  background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRabS05LjcxLDEuNzFhMSwxLDAsMCwwLC4zMy4yMS45NC45NCwwLDAsMCwuNzYsMCwxLDEsMCwwLDAsLjMzLS4yMWw0LTRhMSwxLDAsMCwwLTEuNDItMS40MkwxMywxMi41OVYzYTEsMSwwLDAsMC0yLDB2OS41OWwtMi4yOS0yLjNhMSwxLDAsMSwwLTEuNDIsMS40MloiLz4KDTwvZz4KDTwvc3ZnPg==);
+}
+/* (↑ arrow) --> SVG Icon Page: https://www.svgrepo.com/svg/357723/export */
+.import-btn {
+  background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik04LjcxLDcuNzEsMTEsNS40MVYxNWExLDEsMCwwLDAsMiwwVjUuNDFsMi4yOSwyLjNhMSwxLDAsMCwwLDEuNDIsMCwxLDEsMCwwLDAsMC0xLjQybC00LTRhMSwxLDAsMCwwLS4zMy0uMjEsMSwxLDAsMCwwLS43NiwwLDEsMSwwLDAsMC0uMzMuMjFsLTQsNEExLDEsMCwxLDAsOC43MSw3LjcxWk0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRaIi8+Cg08L2c+Cg08L3N2Zz4=);
+}
+
+/* Notification PopUp */
+.notification-popup {
+    margin: 0;
+    cursor: default;
+    user-select: none;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.notification-popup.hidden {
+    margin-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(15px) scale(0.9);
+}
+.notification-popup.visible {
+    margin-top: 10px;
+    opacity: 1;
+    overflow: hidden;
+    transform: translateY(0) scale(1);
+}
+
+.notification {
+    position: relative;
+    display: flex;
+    align-items: center;
+    font-family: var(--aw-font-family-primary);
+    font-size: var(--aw-text-size);
+    color: var(--aw-color-text-primary);
+    padding: 14px 18px;
+    background-color: var(--aw-container-bg);
+    /* border-left: 4px solid transparent; */
+    border: var(--aw-container-border);
+    border-radius: 16px;
+    box-shadow: var(--aw-elements-shadow), inset 0 0 6px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    gap: 10px;
+    animation: fadeOut 0.5s ease-in-out 2.5s forwards;
+}
+
+/* Status BG Color */
+.notification.success { --aw-status-color: #4caf50; }
+.notification.error   { --aw-status-color: #f44336; }
+.notification.info    { --aw-status-color: #2196f3; }
+.notification.warning { --aw-status-color: #ffc107; }
+
+/*
+.notification.success,
+.notification.error,
+.notification.info,
+.notification.warning {
+    border-left-color: var(--aw-status-color);
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--aw-status-color) 10%, transparent) 0%,
+        var(--aw-container-bg) 50%,
+        color-mix(in srgb, var(--aw-status-color) 20%, transparent) 100%
+    );
+}
+*/
+
+.notification-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+.notification-text {
+    font-weight: 400;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Animated progress bar */
+.notification.success::after,
+.notification.error::after,
+.notification.info::after,
+.notification.warning::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--aw-status-color) 80%,
+        transparent 100%
+    );
+    animation: notificationProgress 3s ease-out forwards;
+}
+
+/* Progress bar animation */
+@keyframes notificationProgress {
+    0% { width: 0%; opacity: 0; }
+    50% { opacity: 1; }
+    100% { width: 100%; opacity: 0; }
+}
+
+/* Fade out after timeout */
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(15px);
+    }
 }
 
 
-/* Input field styles */
+/* Input Field Styles */
 
 .widget-dropdown select,
 .widget-text input[type="text"],
 .widget-textarea textarea {
-    height: 30px;
+    font-weight: 350 !important;
+    height: 30px !important;
     margin: 0 !important;
     background-color: var(--aw-input-bg);
-    border: var(--aw-input-border);
-    border-radius: 10px;
+    border: var(--aw-input-border) !important;
+    border-radius: 10px !important;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
     transition: all 0.25s ease-in-out;
 }
-.widget-textarea textarea {
-    height: 200px;
+.widget-textarea{ /* Kaggle... */
+    height: 200px !important;
     resize: none;
+    line-height: 1.2;
+}
+.widget-textarea textarea {
+    height: 200px !important;
+    resize: none;
+    line-height: 1.2;
 }
 
 .widget-dropdown select:focus,
 .widget-text input[type="text"]:focus,
 .widget-textarea textarea:focus {
-    border-color: var(--aw-input-border-focus);
+    border-color: var(--aw-input-border-focus) !important;
 }
 
 .widget-dropdown select:hover,
@@ -303,28 +441,41 @@ a {
 }
 /* Standard state */
 .widget-text.empowerment-text-field {
-    opacity: 1;
-    max-height: 30px;
-    visibility: visible;
+    opacity: 1 !important;
+    max-height: 30px !important;
+    visibility: visible !important;
 }
 .widget-textarea.empowerment-output {
-    opacity: 1;
-    max-height: 200px;
-    visibility: visible;
+    opacity: 1 !important;
+    max-height: 200px !important;
+    visibility: visible !important;
 }
 /* Hidden state */
 .widget-text.empowerment-text-field.hidden,
 .widget-textarea.empowerment-output.hidden {
-    opacity: 0;
-    max-height: 0;
-    margin-top: 0;
-    margin-bottom: 0;
-    visibility: hidden;
+    opacity: 0 !important;
+    max-height: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    visibility: hidden !important;
 }
 
 
-/* Slider Checkbox style */
+/* Disabled state */
+._disable {
+    opacity: 0.5 !important;
+    filter: grayscale(100%) brightness(0.6) !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    cursor: not-allowed !important;
+}
+._disable * {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
 
+
+/* Slider Checkbox Style */
 /* .widget-checkbox label { pointer-events: none; } */
 
 .widget-checkbox input[type="checkbox"] {
@@ -373,7 +524,7 @@ a {
 }
 
 
-/* Popup style of `INFO` window */
+/* Popup Style of `INFO` Window */
 
 .info {
     position: absolute;
@@ -470,6 +621,7 @@ a {
     background-size: 200% 100%;
     background-position: left bottom;
     border-radius: 15px;
+    box-shadow: var(--aw-elements-shadow);
 }
 .button_api {
     position: relative;
@@ -537,14 +689,15 @@ a {
 /* Animation of elements */
 
 .container,
-.gdrive-btn,
-.button_save {
+.button_save,
+.sideContainer-btn {
     animation: showedWidgets 0.8s forwards ease;
 }
 
 .container.hide,
-.gdrive-btn.hide,
-.button_save.hide {
+.button_save.hide,
+.sideContainer-btn.hide,
+.notification-popup.hide {
     animation: hideWidgets 0.5s forwards ease;
 }
 

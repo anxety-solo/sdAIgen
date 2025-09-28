@@ -45,7 +45,7 @@
         "Train"
     ],
     "extra_networks_default_multiplier": 0.7,
-    "samples_filename_pattern": "M=[model_name]_S=[seed]_D=[date]",
+    "samples_filename_pattern": "M=[model_name]_D=[date]",
     "grid_save": true,
     "grid_format": "png",
     "grid_extended_filename": true,
@@ -97,8 +97,10 @@
     ],
     "tac_maxResults": 12.0,
     "tac_showWikiLinks": true,
+    "model_desc_to_json": false,
     "custom_api_key": "65b66176dcf284b266579de57fbdc024",
     "aria2_flags": "--header=\"User-Agent: Mozilla/5.0\" --allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5",
     "unpack_zip": true,
+    "video_playback": false,
     "sd_image_info_layout": "side by side"
 }

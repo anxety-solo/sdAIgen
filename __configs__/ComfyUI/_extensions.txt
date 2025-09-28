@@ -9,3 +9,4 @@ https://github.com/pythongosssss/ComfyUI-Custom-Scripts
 https://github.com/pythongosssss/ComfyUI-WD14-Tagger
 https://github.com/ssitu/ComfyUI_UltimateSDUpscale
 https://github.com/WASasquatch/was-node-suite-comfyui
+https://github.com/city96/ComfyUI-GGUF

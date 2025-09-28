@@ -1,5 +1,6 @@
 """ JSON Utilities Module | by ANXETY """
 
+from typing import Any, Dict, List, Union
 from functools import wraps
 from pathlib import Path
 import logging
@@ -43,11 +44,18 @@ def validate_args(min_args: int, max_args: int):
     def decorator(func):
         @wraps(func)
         def wrapper(*args):
-            if not (min_args <= len(args) <= max_args):
-                logger.error(
-                    f"Invalid argument count for {func.__name__}. "
-                    f"Expected {min_args}-{max_args}, got {len(args)}"
-                )
+            arg_count = len(args)
+            if not (min_args <= arg_count <= max_args):
+                if min_args == max_args:
+                    logger.error(
+                        f"Invalid argument count for {func.__name__}. "
+                        f"Expected exactly {min_args}, got {arg_count}"
+                    )
+                else:
+                    logger.error(
+                        f"Invalid argument count for {func.__name__}. "
+                        f"Expected {min_args}-{max_args}, got {arg_count}"
+                    )
                 return None
             return func(*args)
         return wrapper
@@ -56,7 +64,7 @@ def validate_args(min_args: int, max_args: int):
 
 # =================== Core Functionality ===================
 
-def parse_key(key: str) -> list[str]:
+def parse_key(key: str) -> List[str]:
     """
     Parse dot-separated key with escape support for double dots
 
@@ -74,7 +82,7 @@ def parse_key(key: str) -> list[str]:
     parts = key.replace('..', temp_char).split('.')
     return [p.replace(temp_char, '.') for p in parts]
 
-def _get_nested_value(data: dict, keys: list) -> any:
+def _get_nested_value(data: Dict[str, Any], keys: List[str]) -> Any:
     """
     Get value using explicit path through nested dictionaries
 
@@ -94,7 +102,7 @@ def _get_nested_value(data: dict, keys: list) -> any:
             return None
     return current
 
-def _set_nested_value(data: dict, keys: list, value: any):
+def _set_nested_value(data: Dict[str, Any], keys: List[str], value: Any):
     """
     Update existing nested structure without overwriting sibling keys
 
@@ -110,7 +118,7 @@ def _set_nested_value(data: dict, keys: list, value: any):
         current = current[key]
     current[keys[-1]] = value
 
-def _read_json(filepath: str | Path) -> dict:
+def _read_json(filepath: Union[str, Path]) -> Dict[str, Any]:
     """
     Safely read JSON file, returning empty dict on error/missing file
 
@@ -128,7 +136,7 @@ def _read_json(filepath: str | Path) -> dict:
         logger.error(f"Read error ({filepath}): {str(e)}")
         return {}
 
-def _write_json(filepath: str | Path, data: dict):
+def _write_json(filepath: Union[str, Path], data: Dict[str, Any]):
     """
     Write JSON file with directory creation and error handling
 
@@ -146,7 +154,7 @@ def _write_json(filepath: str | Path, data: dict):
 # ===================== Main Functions =====================
 
 @validate_args(1, 3)
-def read(*args) -> any:
+def read(*args) -> Any:
     """
     Read value from JSON file using explicit path
 
