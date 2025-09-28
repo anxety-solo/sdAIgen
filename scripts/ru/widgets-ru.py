@@ -427,6 +427,7 @@ factory.display(mainContainer)
 
 # Initialize visibility | hidden
 # check_custom_nodes_deps_widget.layout.display = 'none'
+check_custom_nodes_deps_widget.add_class('_disable')
 empowerment_output_widget.add_class('empowerment-output')
 empowerment_output_widget.add_class('hidden')
 
