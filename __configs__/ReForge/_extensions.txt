@@ -15,7 +15,6 @@ https://github.com/gutris1/sd-hub SD-Hub
 https://github.com/Bing-su/adetailer
 https://github.com/Haoming02/sd-forge-couple SD-Couple
 https://github.com/hako-mikan/sd-webui-regional-prompter Regional-Prompter
-https://github.com/thomasasfk/sd-webui-aspect-ratio-helper Aspect-Ratio-Helper
 https://github.com/zanllp/sd-webui-infinite-image-browsing Infinite-Image-Browsing
 https://github.com/ilian6806/stable-diffusion-webui-state State
 https://github.com/hako-mikan/sd-webui-supermerger Supermerger
