@@ -144,6 +144,7 @@ if venv_needs_reinstall:
     HF_VENV_URL = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
     venv_config = {
         'Classic': (f"{HF_VENV_URL}/python31113-venv-torch260-cu124-C-Classic.tar.lz4", '(3.11.13)'),
+        'ComfyUI': (f"{HF_VENV_URL}/python31018-venv-torch260-cu124-C-ComfyUI.tar.lz4", '(3.10.18)'),
         'default': (f"{HF_VENV_URL}/python31018-venv-torch260-cu124-C-fca.tar.lz4", '(3.10.18)')
     }
     venv_url, py_version = venv_config.get(current_ui, venv_config['default'])
