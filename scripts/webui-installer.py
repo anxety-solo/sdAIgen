@@ -1,13 +1,12 @@
 # ~ webui-installer.py | by ANXETY ~
 
-from Manager import m_download    # Every Download
-import json_utils as js           # JSON
-
+import json_utils as js
 from IPython.utils import capture
 from IPython import get_ipython
 from pathlib import Path
 import subprocess
-import requests
+import asyncio
+import aiohttp
 import os
 
 
@@ -39,19 +38,38 @@ CD(HOME)
 
 # ==================== WEBUI OPERATIONS ====================
 
-def get_extensions_list():
-    """Fetch list of extensions from config repo."""
+async def _download_file(url, directory=WEBUI, filename=None):
+    """Download a file into given directory."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    file_path = directory / (filename or Path(url).name)
+
+    if file_path.exists():
+        file_path.unlink()
+
+    process = await asyncio.create_subprocess_shell(
+        f"curl -sLo {file_path} {url}",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    await process.communicate()
+
+
+async def get_extensions_list():
+    """Fetch list of extensions from config repo (async)."""
     ext_file_url = f"{CONFIG_URL}/{UI}/_extensions.txt"
     extensions = []
 
     try:
-        resp = requests.get(ext_file_url, timeout=10)
-        if resp.status_code == 200:
-            extensions = [
-                line.strip()
-                for line in resp.text.splitlines()
-                if line.strip() and not line.startswith('#')
-            ]
+        async with aiohttp.ClientSession() as session:
+            async with session.get(ext_file_url) as resp:
+                if resp.status == 200:
+                    text = await resp.text()
+                    extensions = [
+                        line.strip()
+                        for line in text.splitlines()
+                        if line.strip() and not line.startswith('#')
+                    ]
     except Exception as e:
         print(f"Error fetching extensions list: {e}")
 
@@ -95,28 +113,37 @@ CONFIG_MAP = {
 }
 
 
-def download_configuration():
+async def download_configuration():
     """Download all configuration files for current UI."""
     configs = CONFIG_MAP.get(UI, CONFIG_MAP['A1111'])
+
+    tasks = []
     for config in configs:
-        m_download(config, log=True)
+        parts = [p.strip() for p in config.split(",")]
+        url = parts[0]
+        directory = Path(parts[1]) if len(parts) > 1 else WEBUI
+        filename = parts[2] if len(parts) > 2 else None
+        tasks.append(_download_file(url, directory, filename))
+
+    await asyncio.gather(*tasks)
 
 
 # ================= EXTENSIONS INSTALLATION ================
 
-def install_extensions():
+async def install_extensions():
     """Install all required extensions."""
-    extensions = get_extensions_list()
+    extensions = await get_extensions_list()
     EXTS.mkdir(parents=True, exist_ok=True)
     CD(EXTS)
 
-    for ext in extensions:
-        subprocess.run(
+    tasks = [
+        asyncio.create_subprocess_shell(
             f"git clone --depth 1 {ext}",
-            shell=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
-        )
+        ) for ext in extensions
+    ]
+    await asyncio.gather(*tasks)
 
 
 # =================== WEBUI SETUP & FIXES ==================
@@ -171,23 +198,35 @@ def run_tagcomplete_tag_parser():
 
 # =================== ARCHIVES HANDLING ====================
 
-def process_archives():
+async def process_archives():
     """Download and extract embeds & upscalers archives."""
     archives = [
-        f"https://huggingface.co/NagisaNao/ANXETY/resolve/main/embeds.zip, {EMBED}",
-        f"https://huggingface.co/NagisaNao/ANXETY/resolve/main/upscalers.zip, {UPSC}"
+        ("https://huggingface.co/NagisaNao/ANXETY/resolve/main/embeds.zip", EMBED),
+        ("https://huggingface.co/NagisaNao/ANXETY/resolve/main/upscalers.zip", UPSC)
     ]
-    for archive in archives:
-        m_download(archive, log=True, unzip=True)
+
+    async def download_and_extract(url, extract_to):
+        archive_path = WEBUI / Path(url).name
+        extract_to = Path(extract_to)
+        extract_to.mkdir(parents=True, exist_ok=True)
+
+        # Download & unzip
+        await _download_file(url, WEBUI)
+        ipySys(f"unzip -q -o {archive_path} -d {extract_to} && rm -f {archive_path}")
+
+    await asyncio.gather(*[
+        download_and_extract(url, extract_dir)
+        for url, extract_dir in archives
+    ])
 
 
 # ======================== MAIN CODE =======================
 
-def main():
+async def main():
     clone_webui()
-    download_configuration()
-    install_extensions()
-    process_archives()
+    await download_configuration()
+    await install_extensions()
+    await process_archives()
 
     # if UI == 'Classic':
     #     apply_classic_fixes()
@@ -198,4 +237,4 @@ def main():
 
 if __name__ == '__main__':
     with capture.capture_output():
-        main()
+        asyncio.run(main())
