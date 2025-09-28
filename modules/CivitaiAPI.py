@@ -18,10 +18,10 @@ class APILogger:
     def __init__(self, verbose: bool = True):
         self.verbose = verbose
 
-    def log(self, msg: str, level: str = "info"):
-        if not self.verbose and level != "error":
+    def log(self, msg: str, level: str = 'info'):
+        if not self.verbose and level != 'error':
             return
-        colors = {"error": 31, "success": 32, "warning": 33, "info": 34}
+        colors = {'error': 31, 'success': 32, 'warning': 33, 'info': 34}
         print(f"\033[{colors[level]}m[API {level.title()}]:\033[0m {msg}")
 
 
@@ -76,13 +76,13 @@ class CivitAiAPI:
             res.raise_for_status()
             return res.json()
         except requests.RequestException as e:
-            self.logger.log(f"{url} failed: {e}", "error")
+            self.logger.log(f"{url} failed: {e}", 'error')
             return None
 
     def _extract_version_id(self, url: str) -> Optional[str]:
         """Extract version ID from various CivitAI URL formats"""
         if not url.startswith(('http://', 'https://')):
-            self.logger.log("Invalid URL format", "error")
+            self.logger.log('Invalid URL format', 'error')
             return None
 
         if 'modelVersionId=' in url:
@@ -151,7 +151,7 @@ class CivitAiAPI:
             data = self._get(self._build_url(f"model-versions/{version_id}"))
         if not data:
             return None
-        return data.get("files", [{}])[0].get("hashes", {}).get("SHA256")
+        return data.get('files', [{}])[0].get('hashes', {}).get('SHA256')
 
     # === sdAIgen ===
     def validate_download(self, url: str, file_name: Optional[str] = None) -> Optional[ModelData]:
@@ -183,8 +183,8 @@ class CivitAiAPI:
             early_access=False,
             image_url=preview_url,
             image_name=preview_name,
-            base_model=data.get("baseModel"),
-            trained_words=data.get("trainedWords"),
+            base_model=data.get('baseModel'),
+            trained_words=data.get('trainedWords'),
             sha256=self.get_sha256(data)
         )
 
@@ -193,12 +193,12 @@ class CivitAiAPI:
         """Fetch full model version metadata from CivitAI by URL"""
         version_id = self._extract_version_id(url)
         if not version_id:
-            self.logger.log(f"Cannot get model data — failed to extract version ID from URL: {url}", "error")
+            self.logger.log(f"Cannot get model data — failed to extract version ID from URL: {url}", 'error')
             return None
 
         data = self._get(self._build_url(f"model-versions/{version_id}"))
         if not data:
-            self.logger.log(f"Failed to retrieve model version data for ID: {version_id}", "error")
+            self.logger.log(f"Failed to retrieve model version data for ID: {version_id}", 'error')
 
         return data
 
@@ -221,11 +221,11 @@ class CivitAiAPI:
             resize: If True, resize image to 512px max (default: False)
         """
         if model_data is None:
-            self.logger.log("ModelData is None — skipping download_preview_image", "warning")
+            self.logger.log('ModelData is None — skipping download_preview_image', 'warning')
             return
 
         if not model_data.image_url:
-            self.logger.log("No preview image URL available", "warning")
+            self.logger.log('No preview image URL available', 'warning')
             return
 
         save_dir = Path(save_path) if save_path else Path.cwd()
@@ -240,9 +240,9 @@ class CivitAiAPI:
             res.raise_for_status()
             img_data = self._resize_image(res.content) if resize else io.BytesIO(res.content)
             file_path.write_bytes(img_data.read())
-            self.logger.log(f"Saved preview: {file_path}", "success")
+            self.logger.log(f"Saved preview: {file_path}", 'success')
         except Exception as e:
-            self.logger.log(f"Failed to download preview: {e}", "error")
+            self.logger.log(f"Failed to download preview: {e}", 'error')
 
     def _resize_image(self, raw: bytes, size: int = 512) -> io.BytesIO:
         """Resize image to target size while preserving aspect ratio"""
@@ -256,7 +256,7 @@ class CivitAiAPI:
             output.seek(0)
             return output
         except Exception as e:
-            self.logger.log(f"Resize failed: {e}", "warning")
+            self.logger.log(f"Resize failed: {e}", 'warning')
             return io.BytesIO(raw)
 
     def save_model_info(self, model_data: ModelData, save_path: Optional[Union[str, Path]] = None):
@@ -268,7 +268,7 @@ class CivitAiAPI:
             save_path: Directory path (str or Path) to save metadata. Defaults to current directory.
         """
         if model_data is None:
-            self.logger.log("ModelData is None — skipping save_model_info", "warning")
+            self.logger.log('ModelData is None — skipping save_model_info', 'warning')
             return
 
         save_dir = Path(save_path) if save_path else Path.cwd()
@@ -283,16 +283,16 @@ class CivitAiAPI:
             'SDXL': 'SDXL', 'Pony': 'SDXL', 'Illustrious': 'SDXL',
         }
         info = {
-            "model_type": model_data.model_type,
-            "sd_version": next((v for k, v in base_mapping.items() if k in (model_data.base_model or '')), ''),
-            "modelId": model_data.model_id,
-            "modelVersionId": model_data.version_id,
-            "activation_text": ', '.join(model_data.trained_words or []),
-            "sha256": model_data.sha256
+            'model_type': model_data.model_type,
+            'sd_version': next((v for k, v in base_mapping.items() if k in (model_data.base_model or '')), ''),
+            'modelId': model_data.model_id,
+            'modelVersionId': model_data.version_id,
+            'activation_text': ', '.join(model_data.trained_words or []),
+            'sha256': model_data.sha256
         }
 
         try:
             info_file.write_text(json.dumps(info, indent=4))
-            self.logger.log(f"Saved model info: {info_file}", "success")
+            self.logger.log(f"Saved model info: {info_file}", 'success')
         except Exception as e:
-            self.logger.log(f"Failed to save info: {e}", "error")
+            self.logger.log(f"Failed to save info: {e}", 'error')

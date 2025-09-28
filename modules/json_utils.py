@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 class CustomFormatter(logging.Formatter):
-    """Custom log formatter with color support for warnings/errors"""
     colors = {
         logging.WARNING: '\033[33m',
         logging.ERROR: '\033[31m',
@@ -35,7 +34,7 @@ logger.propagate = False
 # ============= Argument Validation Decorator ==============
 
 def validate_args(min_args: int, max_args: int):
-    """Decorator to validate number of arguments in variadic functions
+    """Decorator to validate number of arguments in variadic functions.
 
     Args:
         min_args: Minimum required arguments (inclusive)
@@ -66,7 +65,7 @@ def validate_args(min_args: int, max_args: int):
 
 def parse_key(key: str) -> List[str]:
     """
-    Parse dot-separated key with escape support for double dots
+    Parse dot-separated key with escape support for double dots.
 
     Args:
         key: Input key string (e.g., 'parent..child.prop')
@@ -84,7 +83,7 @@ def parse_key(key: str) -> List[str]:
 
 def _get_nested_value(data: Dict[str, Any], keys: List[str]) -> Any:
     """
-    Get value using explicit path through nested dictionaries
+    Get value using explicit path through nested dictionaries.
 
     Args:
         data: Root dictionary
@@ -104,7 +103,7 @@ def _get_nested_value(data: Dict[str, Any], keys: List[str]) -> Any:
 
 def _set_nested_value(data: Dict[str, Any], keys: List[str], value: Any):
     """
-    Update existing nested structure without overwriting sibling keys
+    Update existing nested structure without overwriting sibling keys.
 
     Args:
         data: Root dictionary to modify
@@ -120,7 +119,7 @@ def _set_nested_value(data: Dict[str, Any], keys: List[str], value: Any):
 
 def _read_json(filepath: Union[str, Path]) -> Dict[str, Any]:
     """
-    Safely read JSON file, returning empty dict on error/missing file
+    Safely read JSON file, returning empty dict on error/missing file.
 
     Args:
         filepath: Path to JSON file (str or Path object)
@@ -138,7 +137,7 @@ def _read_json(filepath: Union[str, Path]) -> Dict[str, Any]:
 
 def _write_json(filepath: Union[str, Path], data: Dict[str, Any]):
     """
-    Write JSON file with directory creation and error handling
+    Write JSON file with directory creation and error handling.
 
     Args:
         filepath: Destination path (str or Path object)
@@ -156,7 +155,7 @@ def _write_json(filepath: Union[str, Path], data: Dict[str, Any]):
 @validate_args(1, 3)
 def read(*args) -> Any:
     """
-    Read value from JSON file using explicit path
+    Read value from JSON file using explicit path.
 
     Args:
         filepath (str): Path to JSON file
@@ -184,7 +183,7 @@ def read(*args) -> Any:
 @validate_args(3, 3)
 def save(*args):
     """
-    Save value creating full path
+    Save value creating full path.
 
     Args:
         filepath (str): JSON file path
@@ -204,7 +203,7 @@ def save(*args):
 @validate_args(3, 3)
 def update(*args):
     """
-    Update existing path preserving surrounding data
+    Update existing path preserving surrounding data.
 
     Args:
         filepath (str): JSON file path
@@ -236,7 +235,7 @@ def update(*args):
 @validate_args(2, 2)
 def delete_key(*args):
     """
-    Remove specified key from JSON data
+    Remove specified key from JSON data.
 
     Args:
         filepath (str): JSON file path
@@ -263,7 +262,7 @@ def delete_key(*args):
 @validate_args(2, 3)
 def key_exists(*args) -> bool:
     """
-    Check if key path exists with optional value check
+    Check if key path exists with optional value check.
 
     Args:
         filepath (str): JSON file path

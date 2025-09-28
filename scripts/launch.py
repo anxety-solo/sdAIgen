@@ -21,22 +21,20 @@ import os
 import re
 
 
-osENV = os.environ
-CD = os.chdir
-ipySys = get_ipython().system
+osENV   = os.environ
+CD      = os.chdir
+ipySys  = get_ipython().system
 
-# Constants (auto-convert env vars to Path)
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}   # k -> key; v -> value
-
-HOME = PATHS['home_path']
-VENV = PATHS['venv_path']
-SCR_PATH = PATHS['scr_path']
-SETTINGS_PATH = PATHS['settings_path']
+# Auto-convert *_path env vars to Path
+PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
+HOME, VENV, SCR_PATH, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+)
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-UI = js.read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI = js.read(SETTINGS_PATH, 'WEBUI.webui_path')
-EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+UI       = js.read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI    = Path(js.read(SETTINGS_PATH, 'WEBUI.webui_path'))
+EXTS     = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
 nest_asyncio.apply()  # Async support for Jupyter
@@ -115,7 +113,7 @@ def _trashing():
         subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 def find_latest_tag_file(target='danbooru'):
-    """Find the latest tag file for specified target in TagComplete extension."""
+    """Find the latest tag file for specified target in TagComplete extension"""
     from datetime import datetime
     import re
 
@@ -176,8 +174,6 @@ def _update_config_paths(tagger=None):
         'tac_tagFile': find_latest_tag_file(target_tagger),
         'tagger_hf_cache_dir': f"{WEBUI}/models/interrogators/",
         'ad_extra_models_dir': adetailer_dir,
-        # 'sd_checkpoint_hash': '',
-        # 'sd_model_checkpoint': '',
         # 'sd_vae': 'None'
     }
 
@@ -300,11 +296,6 @@ class TunnelManager:
                 'command': f"gradio-tun {self.tunnel_port}",
                 'pattern': re.compile(r'[\w-]+\.gradio\.live')
             }),
-            ## RIP
-            # ('Serveo', {
-            #     'command': f"ssh -T -N -o StrictHostKeyChecking=no -R 80:localhost:{self.tunnel_port} serveo.net",
-            #     'pattern': re.compile(r'[\w-]+\.serveo\.net')
-            # }),
             ('Pinggy', {
                 'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{self.tunnel_port} a.pinggy.io",
                 'pattern': re.compile(r'[\w-]+\.a\.free\.pinggy\.link')

@@ -12,12 +12,11 @@ import os
 
 osENV = os.environ
 
-# Constants (auto-convert env vars to Path)
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}   # k -> key; v -> value
-
-HOME = PATHS['home_path']
-SCR_PATH = PATHS['scr_path']
-SETTINGS_PATH = PATHS['settings_path']
+# Auto-convert *_path env vars to Path
+PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
+HOME, SCR_PATH, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['settings_path']
+)
 
 UI = js.read(SETTINGS_PATH, 'WEBUI.current')
 

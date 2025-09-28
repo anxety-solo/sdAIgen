@@ -21,11 +21,11 @@ HOME, VENV, SCR_PATH, SETTINGS_PATH = (
     PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
 )
 
-UI         = js.read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI      = HOME / UI
-EXTS       = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
-EMBED      = Path(js.read(SETTINGS_PATH, 'WEBUI.embed_dir'))
-UPSC       = Path(js.read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
+UI     = js.read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI  = HOME / UI
+EXTS   = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+EMBED  = Path(js.read(SETTINGS_PATH, 'WEBUI.embed_dir'))
+UPSC   = Path(js.read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
 
 ENV_NAME   = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 FORK_REPO  = js.read(SETTINGS_PATH, 'ENVIRONMENT.fork')

@@ -16,20 +16,19 @@ import os
 
 osENV = os.environ
 
-# Constants (auto-convert env vars to Path)
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}   # k -> key; v -> value
+# Auto-convert *_path env vars to Path
+PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
+HOME, SCR_PATH, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['settings_path']
+)
 
-HOME = PATHS['home_path']
-SCR_PATH = PATHS['scr_path']
-SETTINGS_PATH = PATHS['settings_path']
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 
-SCRIPTS = SCR_PATH / 'scripts'
-
-CSS = SCR_PATH / 'CSS'
-JS = SCR_PATH / 'JS'
-widgets_css = CSS / 'main-widgets.css'
-widgets_js = JS / 'main-widgets.js'
+SCRIPTS  = SCR_PATH / 'scripts'
+CSS      = SCR_PATH / 'CSS'
+JS       = SCR_PATH / 'JS'
+WIDGETS_CSS = CSS / 'main-widgets.css'
+WIDGETS_JS  = JS / 'main-widgets.js'
 
 
 # ================ WIDGETS (Main Container) ================
@@ -43,7 +42,7 @@ def create_expandable_button(text, url):
     ''')
 
 def read_model_data(file_path, data_type):
-    """Reads model, VAE, or ControlNet data from the specified file."""
+    """Reads model, VAE, or ControlNet data from the specified file"""
     type_map = {
         'model': ('model_list', ['none']),
         'vae': ('vae_list', ['none', 'ALL']),
@@ -59,9 +58,9 @@ def read_model_data(file_path, data_type):
     return prefixes + names
 
 def fetch_github_branches(repo_url, max_retries=3):
-    """Fetch branch names from GitHub API."""
+    """Fetch branch names from GitHub API"""
     repo_path = repo_url.replace('https://github.com/', '')
-    api_url = f'https://api.github.com/repos/{repo_path}/branches'
+    api_url = f"https://api.github.com/repos/{repo_path}/branches"
 
     for attempt in range(max_retries):
         try:
@@ -238,9 +237,9 @@ save_button = factory.create_button('Сохранить', class_names=['button',
 
 # ===================== Side Container =====================
 # --- GDrive Toggle Button ---
-"""Create Google Drive toggle button for Colab only."""
+"""Create Google Drive toggle button for Colab only"""
 BTN_STYLE = {'width': '48px', 'height': '48px'}
-TOOLTIPS = ("Отключить Гугл Диск", "Подключить Гугл Диск")
+TOOLTIPS = ('Отключить Гугл Диск', 'Подключить Гугл Диск')
 
 GD_status = js.read(SETTINGS_PATH, 'mountGDrive', False)
 GDrive_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'gdrive-btn'])
@@ -262,7 +261,7 @@ else:
     GDrive_button.on_click(handle_toggle)
 
 # === Export/Import Widget Settings Buttons ===
-"""Create buttons to export/import widget settings to JSON for Colab only."""
+"""Create buttons to export/import widget settings to JSON for Colab only"""
 export_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'export-btn'])
 export_button.tooltip = "Экспорт настроек в JSON"
 
@@ -288,10 +287,10 @@ def export_settings(button=None, filter_empty=False):
             # 'mountGDrive': GDrive_button.toggle
         }
 
-        display(Javascript(f'downloadJson({json.dumps(settings_data)});'))
-        show_notification("Settings exported successfully!", "success")
+        display(Javascript(f"downloadJson({json.dumps(settings_data)});"))
+        show_notification('Settings exported successfully!', 'success')
     except Exception as e:
-        show_notification(f"Export failed: {str(e)}", "error")
+        show_notification(f"Export failed: {str(e)}", 'error')
 
 # IMPORT
 def import_settings(button=None):
@@ -321,16 +320,16 @@ def apply_imported_settings(data):
                 GDrive_button.remove_class('active')
 
         if success_count == total_count:
-            show_notification("Settings imported successfully!", "success")
+            show_notification('Settings imported successfully!', 'success')
         else:
-            show_notification(f"Imported {success_count}/{total_count} settings", "warning")
+            show_notification(f"Imported {success_count}/{total_count} settings", 'warning')
 
     except Exception as e:
         show_notification(f"Import failed: {str(e)}", "error")
         pass
 
 # === NOTIFICATION for Export/Import ===
-"""Create widget-popup displaying status of Export/Import settings."""
+"""Create widget-popup displaying status of Export/Import settings"""
 notification_popup = factory.create_html('', class_names=['notification-popup', 'hidden'])
 
 def show_notification(message, message_type='info'):
@@ -523,7 +522,7 @@ SETTINGS_KEYS = [
 ]
 
 def save_settings():
-    """Save widget values to settings."""
+    """Save widget values to settings"""
     widgets_values = {key: globals()[f"{key}_widget"].value for key in SETTINGS_KEYS}
     js.save(SETTINGS_PATH, 'WIDGETS', widgets_values)
     js.save(SETTINGS_PATH, 'mountGDrive', True if GDrive_button.toggle else False)  # Save Status GDrive-btn
@@ -531,7 +530,7 @@ def save_settings():
     update_current_webui(change_webui_widget.value)  # Update Selected WebUI in settings.json
 
 def load_settings():
-    """Load widget values from settings."""
+    """Load widget values from settings"""
     if js.key_exists(SETTINGS_PATH, 'WIDGETS'):
         widget_data = js.read(SETTINGS_PATH, 'WIDGETS')
         for key in SETTINGS_KEYS:
@@ -547,13 +546,14 @@ def load_settings():
         GDrive_button.remove_class('active')
 
 def save_data(button):
-    """Handle save button click."""
+    """Handle save button click"""
     save_settings()
     all_widgets = [
         model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
         GDrive_button, export_button, import_button, notification_popup         # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
+
 
 load_settings()
 save_button.on_click(save_data)

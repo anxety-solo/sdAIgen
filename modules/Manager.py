@@ -15,21 +15,20 @@ import os
 osENV = os.environ
 CD = os.chdir
 
-# Constants (auto-convert env vars to Path)
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}   # k -> key; v -> value
-
-HOME = PATHS['home_path']
-SCR_PATH = PATHS['scr_path']
-SETTINGS_PATH = PATHS['settings_path']
+# Auto-convert *_path env vars to Path
+PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
+HOME, SCR_PATH, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['settings_path']
+)
 
 CAI_TOKEN = js.read(SETTINGS_PATH, 'WIDGETS.civitai_token') or '65b66176dcf284b266579de57fbdc024'
-HF_TOKEN = js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
+HF_TOKEN  = js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
 
 
 # ========================= Logging ========================
 
 def log_message(message, log=False, status='info'):
-    """Display colored log messages."""
+    """Display colored log messages"""
     if not log:
         return
     colors = {
@@ -43,7 +42,7 @@ def log_message(message, log=False, status='info'):
 
 # Error handling decorator
 def handle_errors(func):
-    """Catch and log exceptions."""
+    """Catch and log exceptions"""
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -56,7 +55,7 @@ def handle_errors(func):
 # ===================== Core Utilities =====================
 
 def _get_file_name(url, is_git=False):
-    """Get the file name based on the URL."""
+    """Get the file name based on the URL"""
     if any(domain in url for domain in ['civitai.com', 'drive.google.com']):
         return None
 
@@ -72,7 +71,7 @@ def _get_file_name(url, is_git=False):
     return filename
 
 def handle_path_and_filename(parts, url, is_git=False):
-    """Extract path and filename from parts."""
+    """Extract path and filename from parts"""
     path, filename = None, None
 
     if len(parts) >= 3:
@@ -104,7 +103,7 @@ def handle_path_and_filename(parts, url, is_git=False):
 
 @handle_errors
 def strip_url(url):
-    """Normalize special URLs (civitai, huggingface, github)."""
+    """Normalize special URLs (civitai, huggingface, github)"""
     if 'civitai.com/models/' in url:
         api = CivitAiAPI(CAI_TOKEN)
         data = api.validate_download(url)
@@ -127,9 +126,9 @@ def is_github_url(url):
 
 @handle_errors
 def m_download(line=None, log=False, unzip=False):
-    """Download files from a comma-separated list of URLs or file paths."""
+    """Download files from a comma-separated list of URLs or file paths"""
     if not line:
-        return log_message("Missing URL argument, nothing to download", log, 'error')
+        return log_message('Missing URL argument, nothing to download', log, 'error')
 
     links = [link.strip() for link in line.split(',') if link.strip()]
 
@@ -147,7 +146,7 @@ def m_download(line=None, log=False, unzip=False):
 
 @handle_errors
 def _process_download(line, log, unzip):
-    """Process an individual download line."""
+    """Process an individual download line"""
     parts = line.split()
     url = parts[0].replace('\\', '')
     url = strip_url(url)
@@ -159,10 +158,10 @@ def _process_download(line, log, unzip):
     try:
         parsed = urlparse(url)
         if not all([parsed.scheme, parsed.netloc]):
-            log_message(f'Invalid URL format: {url}', log, 'warning')
+            log_message(f"Invalid URL format: {url}", log, 'warning')
             return
     except Exception as e:
-        log_message(f'URL validation failed for {url}: {str(e)}', log, 'warning')
+        log_message(f"URL validation failed for {url}: {str(e)}", log, 'warning')
         return
 
 
@@ -182,20 +181,20 @@ def _process_download(line, log, unzip):
         CD(current_dir)
 
 def _download_file(url, filename, log):
-    """Dispatch download method by domain."""
+    """Dispatch download method by domain"""
     if any(domain in url for domain in ['civitai.com', 'huggingface.co', 'github.com']):
         _aria2_download(url, filename, log)
     elif 'drive.google.com' in url:
         _gdrive_download(url, filename, log)
     else:
-        """Download using curl."""
+        """Download using curl"""
         cmd = f"curl -#JL '{url}'"
         if filename:
             cmd += f" -o '{filename}'"
         _run_command(cmd, log)
 
 def _aria2_download(url, filename, log):
-    """Download using aria2c."""
+    """Download using aria2c"""
     user_agent = 'CivitaiLink:Automatic1111' if 'civitai.com' in url else 'Mozilla/5.0'
     aria2_args = f'aria2c --header="User-Agent: {user_agent}" --allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5'
 
@@ -205,22 +204,22 @@ def _aria2_download(url, filename, log):
     if not filename:
         filename = _get_file_name(url)
 
-    cmd = f"{aria2_args} '{url}'"
+    cmd = f'{aria2_args} "{url}"'
     if filename:
-        cmd += f" -o '{filename}'"
+        cmd += f' -o "{filename}"'
 
     _aria2_monitor(cmd, log)
 
 def _gdrive_download(url, filename, log):
     cmd = f"gdown --fuzzy {url}"
     if filename:
-        cmd += f" -O '{filename}'"
+        cmd += f' -O "{filename}"'
     if 'drive/folders' in url:
-        cmd += " --folder"
+        cmd += ' --folder'
     _run_command(cmd, log)
 
 def _unzip_file(file, log):
-    """Extract the ZIP file to a directory named after archive."""
+    """Extract the ZIP file to a directory named after archive"""
     path = Path(file)
     with zipfile.ZipFile(path, 'r') as zip_ref:
         zip_ref.extractall(path.parent / path.stem)
@@ -228,7 +227,7 @@ def _unzip_file(file, log):
     log_message(f"Unpacked {file} to {path.parent / path.stem}", log)
 
 def _aria2_monitor(command, log):
-    """Monitor aria2c download progress."""
+    """Monitor aria2c download progress"""
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     result, error_codes, error_messages = '', [], []
     br = False
@@ -268,7 +267,7 @@ def _aria2_monitor(command, log):
         log_message("Download interrupted", log)
 
 def _format_aria_line(line):
-    """Format a line of output with ANSI color codes."""
+    """Format a line of output with ANSI color codes"""
     line = re.sub(r'\[', '\033[35m【\033[0m', line)
     line = re.sub(r'\]', '\033[35m】\033[0m', line)
     line = re.sub(r'(#)(\w+)', r'\1\033[32m\2\033[0m', line)
@@ -279,14 +278,14 @@ def _format_aria_line(line):
     return line
 
 def _handle_aria_errors(line, error_codes, error_messages):
-    """Check and collect error messages from the output."""
+    """Check and collect error messages from the output"""
     if 'errorCode' in line or 'Exception' in line:
         error_codes.append(line)
     if '|' in line and 'ERR' in line:
         error_messages.append(re.sub(r'(ERR)', '\033[31m\\1\033[0m', line))
 
 def _run_command(command, log):
-    """Execute a shell command."""
+    """Execute a shell command"""
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if log:
         for line in process.stderr:
@@ -300,7 +299,7 @@ def _run_command(command, log):
 def m_clone(input_source=None, recursive=True, depth=1, log=False):
     """Main function to clone repositories"""
     if not input_source:
-        return log_message("Missing repository source", log, 'error')
+        return log_message('Missing repository source', log, 'error')
 
     sources = [link.strip() for link in input_source.split(',') if link.strip()]
 
@@ -320,7 +319,7 @@ def m_clone(input_source=None, recursive=True, depth=1, log=False):
 def _process_clone(line, recursive, depth, log):
     parts = shlex.split(line)
     if not parts:
-        return log_message("Empty clone entry", log, 'error')
+        return log_message('Empty clone entry', log, 'error')
 
     url = parts[0].replace('\\', '')
     if not is_github_url(url):
