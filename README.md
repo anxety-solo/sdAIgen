@@ -48,13 +48,13 @@ English • [Русский](README-ru-RU.md)
 | [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter) | ✔️ | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | [SD-Couple](https://github.com/Haoming02/sd-forge-couple) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SD-Hub](https://github.com/gutris1/sd-hub) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [sdAIgen-Misc](https://github.com/anxety-solo/sdaigen-misc) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
 | [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Ultimate-Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | ✔️ | ❌ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [WD14-Tagger](https://github.com/picobyte/stable-diffusion-webui-wd14-tagger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
-| [webui_timer](https://github.com/anxety-solo/webui_timer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 
 </details>
 
