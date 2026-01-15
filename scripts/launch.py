@@ -177,7 +177,7 @@ def get_launch_command():
     base_args = commandline_arguments
     password = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
 
-    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'
+    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'  # nah: --no-gradio-queue
     if ENV_NAME == 'Kaggle':
         common_args += f" --encrypt-pass={password}"
 
@@ -284,10 +284,10 @@ def setup_tunnels(tunnel_port):
         print(f"- 🕒 Checking {COL.lB}{name}{COL.X}...", end=' ')
         if is_command_available(config['command']):
             available_tunnels.append((name, config))
-            print(f"{COL.G} ✓{COL.X}")
+            print(f"{COL.G}✓{COL.X}")
         else:
             unavailable_tunnels.append(name)
-            print(f"{COL.R} ✗{COL.X}")
+            print(f"{COL.R}✗{COL.X}")
 
     return available_tunnels, len(services), len(available_tunnels), unavailable_tunnels
 
@@ -300,7 +300,8 @@ if __name__ == '__main__':
     print('Please Wait...\n')
 
     osENV.setdefault('IIB_ACCESS_CONTROL', 'disable')
-    osENV.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')    # (thx: github.com/zanllp/sd-webui-infinite-image-browsing/issues/880)
+    osENV['UVICORN_LOG_LEVEL'] = 'error'
+    # osENV.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')    # (thx: github.com/zanllp/sd-webui-infinite-image-browsing/issues/880)
 
     # Initialize tunnel manager
     tunnel_port = 8188 if UI == 'ComfyUI' else 7860

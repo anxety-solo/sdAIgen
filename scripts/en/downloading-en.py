@@ -92,7 +92,7 @@ def setup_venv(url):
     PKG = str(VENV / f'lib/{PYTHON_VERSION }/site-packages')
 
     osENV.update({
-        'PYTHONWARNINGS': 'ignore',
+        # 'PYTHONWARNINGS': 'ignore',
         'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
         'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH']
     })

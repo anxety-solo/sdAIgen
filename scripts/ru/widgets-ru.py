@@ -99,13 +99,13 @@ REPO_MAP = {
 }
 
 WEBUI_PARAMS = {
-    'A1111':   "--xformers --no-half-vae",
+    'A1111':   "--xformers",
     'ComfyUI': "--dont-print-server",
     'Forge':   "--xformers --cuda-stream",                       # Remove: --disable-xformers --opt-sdp-attention --pin-shared-memory
     'Classic': "--xformers --cuda-stream --persistent-patches",  # Remove: --pin-shared-memory
     'Neo':     "--xformers --cuda-stream --skip-version-check",
     'ReForge': "--xformers",                                     # Remove: --pin-shared-memory --cuda-stream
-    'SD-UX':   "--xformers --no-half-vae"
+    'SD-UX':   "--xformers"
 }
 
 # Initialize the WidgetFactory
