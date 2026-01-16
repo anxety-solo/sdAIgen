@@ -27,8 +27,8 @@ osENV['PYTHONWARNINGS'] = 'ignore'
 
 # Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, VENV, SCR_PATH, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+HOME, SCR_PATH, VENV, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
 )
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')

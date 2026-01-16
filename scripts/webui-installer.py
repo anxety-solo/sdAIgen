@@ -19,8 +19,8 @@ ipyRun = get_ipython().run_line_magic
 
 # Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, VENV, SCR_PATH, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+HOME, SCR_PATH, VENV, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
 )
 
 UI    = js.read(SETTINGS_PATH, 'WEBUI.current')
@@ -34,9 +34,9 @@ FORK_REPO = js.read(SETTINGS_PATH, 'ENVIRONMENT.fork')
 BRANCH    = js.read(SETTINGS_PATH, 'ENVIRONMENT.branch')
 
 # === Common Repo Base ===
-HF_URL_BASE = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
+HF_REPO_URL = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
 
-REPO_URL   = f"{HF_URL_BASE}/{UI}.zip"
+REPO_URL   = f"{HF_REPO_URL}/{UI}.zip"
 CONFIG_URL = f"https://raw.githubusercontent.com/{FORK_REPO}/{BRANCH}/__configs__"
 ARIA_FLAGS = '--allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5'
 
@@ -151,8 +151,8 @@ async def install_extensions():
 async def process_archives():
     """Download and extract embed & upscaler archives via aria2"""
     archives = [
-        (f"{HF_URL_BASE}/embeds.zip", EMBED),
-        (f"{HF_URL_BASE}/upscalers.zip", UPSC)
+        (f"{HF_REPO_URL}/embeds.zip", EMBED),
+        (f"{HF_REPO_URL}/upscalers.zip", UPSC)
     ]
 
     async def download_and_extract(url, extract_to):

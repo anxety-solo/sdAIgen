@@ -30,14 +30,16 @@ CD = os.chdir
 ipySys = get_ipython().system
 ipyRun = get_ipython().run_line_magic
 
+HF_REPO_URL = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
+
 # Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, VENV, SCR_PATH, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+HOME, SCR_PATH, VENV, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
 )
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-SCRIPTS = SCR_PATH / 'scripts'
+SCRIPTS = PATHS['scripts_path']
 
 LANG = js.read(SETTINGS_PATH, 'ENVIRONMENT.lang')
 UI = js.read(SETTINGS_PATH, 'WEBUI.current')
@@ -146,12 +148,11 @@ if not SKIP_INSTALL_VENV and venv_needs_reinstall:
         shutil.rmtree(VENV)
         clear_output()
 
-    HF_VENV_URL = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main'
     venv_config = {
-        'Neo':     (f"{HF_VENV_URL}/python31113-venv-torch280-cu126-C-Neo.tar.lz4", 'Neo • 3.11.13'),
-        'Classic': (f"{HF_VENV_URL}/python31113-venv-torch260-cu124-C-Classic.tar.lz4", 'Classic • 3.11.13'),
-        'ComfyUI': (f"{HF_VENV_URL}/python31018-venv-torch260-cu124-C-ComfyUI.tar.lz4", 'ComfyUI • 3.10.18'),
-        'default': (f"{HF_VENV_URL}/python31018-venv-torch260-cu124-C-fa.tar.lz4", 'Default • 3.10.18')
+        'Neo':     (f"{HF_REPO_URL}/python31113-venv-torch280-cu126-C-Neo.tar.lz4", 'Neo • 3.11.13'),
+        'Classic': (f"{HF_REPO_URL}/python31113-venv-torch260-cu124-C-Classic.tar.lz4", 'Classic • 3.11.13'),
+        'ComfyUI': (f"{HF_REPO_URL}/python31018-venv-torch260-cu124-C-ComfyUI.tar.lz4", 'ComfyUI • 3.10.18'),
+        'default': (f"{HF_REPO_URL}/python31018-venv-torch260-cu124-C-fa.tar.lz4", 'Default • 3.10.18')
     }
     venv_url, venv_version = venv_config.get(current_ui, venv_config['default'])
 
@@ -190,7 +191,7 @@ if UI in ['A1111', 'SD-UX']:
         print('🚚 Unpacking ADetailer model cache...')
 
         name_zip = 'hf_cache_adetailer'
-        chache_url = 'https://huggingface.co/NagisaNao/ANXETY/resolve/main/hf_cache_adetailer.zip'
+        chache_url = f"{HF_REPO_URL}/hf_cache_adetailer.zip"
 
         zip_path = HOME / f"{name_zip}.zip"
         parent_cache_dir = os.path.dirname(cache_path)

@@ -1,6 +1,6 @@
 # ~ setup.py | by ANXETY ~
 
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Literal
 from IPython.display import clear_output
 from pathlib import Path
 from tqdm import tqdm
@@ -9,6 +9,7 @@ import importlib
 import argparse
 import aiohttp
 import asyncio
+import shutil
 import time
 import json
 import sys
@@ -21,39 +22,52 @@ nest_asyncio.apply()  # Async support for Jupyter
 # === Remove default Colab sample_data ===
 sample_data_path = Path('/content/sample_data')
 if sample_data_path.exists() and sample_data_path.is_dir():
-    os.system(f"rm -rf {sample_data_path}")
+    shutil.rmtree(sample_data_path)
 
 
-# ======================== CONSTANTS =======================
+# ================= PATH & GLOBAL CONSTANTS ================
 
 HOME = Path.home()
+
+# Base project paths
 SCR_PATH = HOME / 'ANXETY'
-SETTINGS_PATH = SCR_PATH / 'settings.json'
 VENV_PATH = HOME / 'venv'
 MODULES_FOLDER = SCR_PATH / 'modules'
+SCRIPTS_FOLDER = SCR_PATH / 'scripts'
+SETTINGS_PATH = SCR_PATH / 'settings.json'
 
 # Add paths to the environment
 os.environ.update({
     'home_path': str(HOME),
     'scr_path': str(SCR_PATH),
     'venv_path': str(VENV_PATH),
+    'scripts_path': str(SCRIPTS_FOLDER),
+    'modules_path': str(MODULES_FOLDER),
     'settings_path': str(SETTINGS_PATH)
 })
+
+
+# ====================== REMOTE SOURCES ====================
 
 # GitHub configuration
 DEFAULT_USER = 'anxety-solo'
 DEFAULT_REPO = 'sdAIgen'
 DEFAULT_BRANCH = 'main'
 DEFAULT_LANG = 'en'
-BASE_GITHUB_URL = 'https://raw.githubusercontent.com'
 
-# Environment detection
+GITHUB_RAW = 'https://raw.githubusercontent.com'
+GITHUB_API = 'https://api.github.com'
+HUGGINGFACE_BASE = 'https://huggingface.co'
+
+DEFAULT_HF_REPO = 'NagisaNao/ANXETY'
+
+# Environments
 SUPPORTED_ENVS = {
     'COLAB_GPU': ('Google Colab', '/content'),
     'KAGGLE_URL_BASE': ('Kaggle', '/kaggle/working')
 }
 
-# File structure configuration
+# GitHub Source File (GSF)
 FILE_STRUCTURE = {
     'CSS': ['main-widgets.css', 'download-result.css', 'auto-cleaner.css'],
     'JS': ['main-widgets.js'],
@@ -69,6 +83,19 @@ FILE_STRUCTURE = {
         ]
     }
 }
+
+# Another Source File (ASF)
+ANOTHER_SOURCE_FILES: List[Dict] = []
+"""
+# SAMPLE:
+ANOTHER_SOURCE_FILES = [
+    {
+        "url": "https://example.com/custom.py",
+        "save_path": "custom/extra",
+        "filename": "custom_file.py"  # optional
+    }
+]
+"""
 
 
 # =================== UTILITY FUNCTIONS ====================
@@ -153,7 +180,6 @@ def detect_environment(force_env=None):
 
     for var, env_info in SUPPORTED_ENVS.items():
         if var in os.environ:
-            # Set home_work_path for detected environment
             name, work_path = env_info
             os.environ['home_work_path'] = work_path
             return name
@@ -190,18 +216,17 @@ def create_environment_data(env, lang, fork_user, fork_repo, branch):
     }
 
 
-# ===================== DOWNLOAD LOGIC =====================
+# ==================== DOWNLOAD HELPERS ====================
 
 def _format_lang_path(path: str, lang: str) -> str:
     """Format path with language placeholder"""
     return path.format(lang=lang) if '{lang}' in path else path
 
-def generate_file_list(structure: Dict, base_url: str, lang: str) -> List[Tuple[str, Path]]:
+def generate_github_file_list(structure: Dict, base_url: str, lang: str) -> List[Tuple[str, Path]]:
     """Generate flat list of (url, path) from nested structure"""
     def walk(struct: Dict, path_parts: List[str]) -> List[Tuple[str, Path]]:
         items = []
         for key, value in struct.items():
-            # Handle language-specific paths
             current_key = _format_lang_path(key, lang)
             current_path = [*path_parts, current_key] if current_key else path_parts
 
@@ -210,7 +235,6 @@ def generate_file_list(structure: Dict, base_url: str, lang: str) -> List[Tuple[
             else:
                 url_path = '/'.join(current_path)
                 for file in value:
-                    # Handle language-specific files
                     formatted_file = _format_lang_path(file, lang)
                     url = f"{base_url}/{url_path}/{formatted_file}" if url_path else f"{base_url}/{formatted_file}"
                     file_path = SCR_PATH / '/'.join(current_path) / formatted_file
@@ -219,7 +243,38 @@ def generate_file_list(structure: Dict, base_url: str, lang: str) -> List[Tuple[
 
     return walk(structure, [])
 
-async def download_file(session: aiohttp.ClientSession, url: str, path: Path) -> Tuple[bool, str, Path, Optional[str]]:
+def normalize_another_source_files(files: List[Dict]) -> List[Tuple[str, Path]]:
+    """Converts another_source to a uniform format (URL, Path)
+
+    - If save_path is absolute -> use it directly
+    - If save_path is relative -> default to relative to SCR_PATH
+    - If rooted=True is specified -> also save outside SCR_PATH
+    - If save_path is not specified -> save next to setup.py
+    """
+    result = []
+
+    for item in files:
+        url = item.get('url')
+        if not url:
+            continue
+
+        filename = item.get('filename') or url.rsplit('/', 1)[-1]
+        save_path = item.get('save_path')
+        rooted = item.get('rooted', False)
+
+        if save_path is None:
+            base_path = Path(__file__).parent
+        else:
+            p = Path(save_path)
+            base_path = p if (p.is_absolute() or rooted) else SCR_PATH / p
+
+        result.append((url, base_path / filename))
+
+    return result
+
+# ===================== ASYNC DOWNLOAD =====================
+
+async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -> Tuple[bool, str, Path, Optional[str]]:
     """Download and save single file with error handling"""
     try:
         async with session.get(url) as resp:
@@ -232,13 +287,17 @@ async def download_file(session: aiohttp.ClientSession, url: str, path: Path) ->
     except Exception as e:
         return (False, url, path, f"Error: {str(e)}")
 
-async def download_files_async(lang, fork_user, fork_repo, branch, log_errors):
-    """Main download executor with error logging"""
-    base_url = f"{BASE_GITHUB_URL}/{fork_user}/{fork_repo}/{branch}"
-    file_list = generate_file_list(FILE_STRUCTURE, base_url, lang)
+async def download_files_async(lang, fork_user, fork_repo, branch, log):
+    """Main download executor"""
+    base_url = f"{GITHUB_RAW}/{fork_user}/{fork_repo}/{branch}"
+
+    github_files = generate_github_file_list(FILE_STRUCTURE, base_url, lang)
+    extra_files = normalize_another_source_files(ANOTHER_SOURCE_FILES)
+
+    all_files = github_files + extra_files
 
     async with aiohttp.ClientSession() as session:
-        tasks = [download_file(session, url, path) for url, path in file_list]
+        tasks = [_download_file(session, url, path) for url, path in all_files]
         errors = []
 
         for future in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc='Downloading files', unit='file'):
@@ -248,7 +307,7 @@ async def download_files_async(lang, fork_user, fork_repo, branch, log_errors):
 
         clear_output()
 
-        if log_errors and errors:
+        if log and errors:
             print('\nErrors occurred during download:')
             for url, path, error in errors:
                 print(f"URL: {url}\nPath: {path}\nError: {error}\n")
@@ -256,9 +315,8 @@ async def download_files_async(lang, fork_user, fork_repo, branch, log_errors):
 
 # ===================== MAIN EXECUTION =====================
 
-async def main_async(args=None):
-    """Entry point"""
-    parser = argparse.ArgumentParser(description='ANXETY Download Manager')
+async def main(args=None):
+    parser = argparse.ArgumentParser(description='SDAIGEN Setup Manager')
     parser.add_argument('--lang', default=DEFAULT_LANG, help=f"Language to be used (default: {DEFAULT_LANG})")
     parser.add_argument('--branch', default=DEFAULT_BRANCH, help=f"Branch to download files from (default: {DEFAULT_BRANCH})")
     parser.add_argument('--fork', default=None, help='Specify project fork (user or user/repo)')
@@ -291,4 +349,4 @@ async def main_async(args=None):
 
 
 if __name__ == '__main__':
-    asyncio.run(main_async())
+    asyncio.run(main())

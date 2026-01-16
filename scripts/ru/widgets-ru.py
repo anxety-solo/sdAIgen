@@ -23,7 +23,7 @@ HOME, SCR_PATH, SETTINGS_PATH = (
 )
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-SCRIPTS = SCR_PATH / 'scripts'
+SCRIPTS = PATHS['scripts_path']
 
 CSS = SCR_PATH / 'CSS'
 JS = SCR_PATH / 'JS'
