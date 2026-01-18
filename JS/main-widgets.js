@@ -12,15 +12,29 @@ function toggleContainer() {
     elements.empowerment.classList.toggle(SHOW_CLASS);
 }
 
-// Hide Notification PopUp
-function hideNotification(delay = 2500) {
+// Show/Hide Notification
+function showNotification(message, type='info', duration=2500) {
+    const ICONS = { success:'✅', error:'❌', info:'💡', warning:'⚠️' };
+    const sideContainer = document.querySelector('.sideContainer');
+    if (!sideContainer) return;
+
+    const popup = document.createElement('div');
+    popup.className = `notification-popup ${type}`;
+    popup.innerHTML = `
+        <div class="notification ${type}">
+            <span class="notification-icon">${ICONS[type] || ICONS.info}</span>
+            <span class="notification-text">${message}</span>
+        </div>
+    `;
+
+    sideContainer.appendChild(popup);
+
+    // FadeIn
+    requestAnimationFrame(() => popup.classList.add('show'));
+
+    // Hide и remove
     setTimeout(() => {
-        const popup = document.querySelector('.notification-popup');
-        if (popup) {
-            setTimeout(() => {
-                popup.classList.add('hidden')
-                popup.classList.remove('visible')
-            }, 500);
-        };
-    }, delay);
+        popup.classList.remove('show'); // fadeOut
+        setTimeout(() => popup.remove(), 500);
+    }, duration);
 }

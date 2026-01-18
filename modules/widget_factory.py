@@ -94,9 +94,9 @@ class WidgetFactory:
         return widget
 
     ## Creation functions
-    def create_file_upload(self, options, multiple=False, description='', class_names=None, **kwargs):
+    def create_file_upload(self, accept, multiple=False, description='', class_names=None, **kwargs):
         """Create a FileUpload widget"""
-        accept = options if isinstance(options, str) else ','.join(options)
+        accept = accept if isinstance(accept, str) else ','.join(accept)
 
         return self._create_widget(
             widgets.FileUpload,

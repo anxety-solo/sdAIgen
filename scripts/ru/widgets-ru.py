@@ -242,6 +242,7 @@ save_button = factory.create_button('Сохранить', class_names=['button',
 
 
 # ===================== Side Container =====================
+
 # --- GDrive Toggle Button ---
 """Create Google Drive toggle button for Colab only"""
 BTN_STYLE = {'width': '48px', 'height': '48px'}
@@ -276,6 +277,13 @@ import_button.tooltip = 'Импорт настроек из JSON'
 
 export_output = widgets.Output(layout={'display': 'none'})
 export_output.add_class('export-output-widget')
+
+# --- PopUp Notification (Alias) ---
+def show_notification(message, message_type='info', duration=2500):
+    """Call the already defined JS function showNotification"""
+    message_escaped = message.replace("`", "\\`").replace("\n", "\\n")
+    js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
+    display(Javascript(js_code))
 
 # EXPORT
 def export_settings(button=None, filter_empty=False):
@@ -346,34 +354,7 @@ def apply_imported_settings(data):
         show_notification(f"Import failed: {str(e)}", 'error')
         pass
 
-# --- NOTIFICATION for Export/Import ---
-"""Create widget-popup displaying status of Export/Import settings"""
-notification_popup = factory.create_html('', class_names=['notification-popup', 'hidden'])
-
-def show_notification(message, message_type='info'):
-    icon_map = {
-        'success':  '✅',
-        'error':    '❌',
-        'info':     '💡',
-        'warning':  '⚠️'
-    }
-    icon = icon_map.get(message_type, 'info')
-
-    notification_popup.value = f'''
-    <div class="notification {message_type}">
-        <span class="notification-icon">{icon}</span>
-        <span class="notification-text">{message}</span>
-    </div>
-    '''
-
-    # Trigger re-show | Anxety-Tip: JS Script removes class only from DOM but not from widgets?!
-    notification_popup.remove_class('visible')
-    notification_popup.remove_class('hidden')
-    notification_popup.add_class('visible')
-
-    # Auto-hide PopUp After 2.5s
-    display(Javascript("hideNotification(delay = 2500);"))
-
+# OBSERVE (CALLBACK)
 def handle_file_upload(change):
     if not change.get('new'):
         return
@@ -443,7 +424,7 @@ widgetContainer = factory.create_vbox(
     layout={'min_width': CONTAINERS_WIDTH, 'max_width': CONTAINERS_WIDTH}
 )
 sideContainer = factory.create_vbox(
-    [GDrive_button, export_button, import_button, notification_popup],
+    [GDrive_button, export_button, import_button],
     class_names=['sideContainer']
 )
 mainContainer = factory.create_hbox(
@@ -577,7 +558,7 @@ def save_data(button):
     save_settings()
     all_widgets = [
         model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
-        GDrive_button, export_button, import_button, notification_popup         # sideContainer
+        GDrive_button, export_button, import_button                             # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 
