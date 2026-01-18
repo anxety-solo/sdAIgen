@@ -266,18 +266,16 @@ else:
 
     GDrive_button.on_click(handle_toggle)
 
-# === Export/Import Widget Settings Buttons ===
-"""Create buttons to export/import widget settings to JSON for Colab only"""
+# --- Export/Import Widget Settings Buttons ---
+"""Create buttons to export/import widget settings to JSON"""
 export_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'export-btn'])
 export_button.tooltip = 'Export settings to JSON'
 
-import_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
+import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
 import_button.tooltip = 'Import settings from JSON'
 
-if ENV_NAME != 'Google Colab':
-    # Hide buttons if not Colab
-    export_button.layout.display = 'none'
-    import_button.layout.display = 'none'
+export_output = widgets.Output(layout={'display': 'none'})
+export_output.add_class('export-output-widget')
 
 # EXPORT
 def export_settings(button=None, filter_empty=False):
@@ -290,17 +288,31 @@ def export_settings(button=None, filter_empty=False):
 
         settings_data = {
             'widgets': widgets_data,
-            # 'mountGDrive': GDrive_button.toggle
+            'mountGDrive': GDrive_button.toggle
         }
 
-        display(Javascript(f'downloadJson({json.dumps(settings_data)});'))
+        json_str = json.dumps(settings_data, indent=2, ensure_ascii=False)
+        b64 = base64.b64encode(json_str.encode()).decode()
+
+        webui = change_webui_widget.value
+        date = datetime.now().strftime("%Y%m%d")
+        filename = f'widget_settings-{webui}-{date}.json'
+
+        with export_output:
+            export_output.clear_output()
+            display(HTML(f'''
+                <a download="{filename}"
+                   href="data:application/json;base64,{b64}"
+                   id="download-link"
+                   style="display:none;"></a>
+                <script>
+                    document.getElementById('download-link').click();
+                </script>
+            '''))
+
         show_notification('Settings exported successfully!', 'success')
     except Exception as e:
         show_notification(f"Export failed: {str(e)}", 'error')
-
-# IMPORT
-def import_settings(button=None):
-    display(Javascript('openFilePicker();'))
 
 # APPLY SETTINGS
 def apply_imported_settings(data):
@@ -334,7 +346,7 @@ def apply_imported_settings(data):
         show_notification(f"Import failed: {str(e)}", 'error')
         pass
 
-# === NOTIFICATION for Export/Import ===
+# --- NOTIFICATION for Export/Import ---
 """Create widget-popup displaying status of Export/Import settings"""
 notification_popup = factory.create_html('', class_names=['notification-popup', 'hidden'])
 
@@ -362,16 +374,31 @@ def show_notification(message, message_type='info'):
     # Auto-hide PopUp After 2.5s
     display(Javascript("hideNotification(delay = 2500);"))
 
-# REGISTER CALLBACK
-"""
-Registers the Python function 'apply_imported_settings' under the name 'importSettingsFromJS'
-so it can be called from JavaScript via google.colab.kernel.invokeFunction(...)
-"""
-output.register_callback('importSettingsFromJS', apply_imported_settings)
-output.register_callback('showNotificationFromJS', show_notification)
+def handle_file_upload(change):
+    if not change.get('new'):
+        return
 
+    try:
+        uploaded_data = change['new']
+
+        # Get content, support dict (Colab) and tuple/list (Kaggle)
+        file_data = list(uploaded_data.values())[0] if isinstance(uploaded_data, dict) else uploaded_data[0]
+        content = file_data['content']
+
+        # Decode if necessary
+        json_str = bytes(content).decode('utf-8') if isinstance(content, (bytes, memoryview)) else content
+
+        data = json.loads(json_str)
+        apply_imported_settings(data)
+    except Exception as e:
+        show_notification(f"Import failed: {e}", 'error')
+    finally:
+        # Reset for re-uploading
+        import_button._counter = 0
+        import_button.value.clear()
+
+import_button.observe(handle_file_upload, names='value')
 export_button.on_click(export_settings)
-import_button.on_click(import_settings)
 
 
 # =================== DISPLAY / SETTINGS ===================

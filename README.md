@@ -25,7 +25,7 @@ English • [Русский](README-ru-RU.md)
   - Preset custom: *Settings* + *Styles* + [*UI Theme*](https://github.com/anxety-solo/anxety-theme)
   - Download previews for *models, LoRa and embedding* (CivitAi)
   - Choosing WebUI between *A1111*, *ComfyUI*, *Forge*, *Classic/Neo (Forge)*, *ReForge*, *SD-UX.*
-  - _Exclusive to **Google Colab**_: Connection to GDrive and buttons to export/import widget settings~ | ***Main Widgets***
+  - _Exclusive to **Google Colab**_: Connection to GDrive.
 
 <details>
 <summary>📚 Installed Extensions</summary>
