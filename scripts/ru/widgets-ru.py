@@ -277,6 +277,9 @@ export_button.tooltip = 'Экспорт настроек в JSON'
 import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
 import_button.tooltip = 'Импорт настроек из JSON'
 
+export_output = widgets.Output(layout={'display': 'none'})
+export_output.add_class('export-output-widget')
+
 # --- PopUp Notification (Alias) ---
 def show_notification(message, message_type='info', duration=2500):
     """Call the already defined JS function showNotification"""
@@ -305,22 +308,18 @@ def export_settings(filter_empty=False):
         date = datetime.now().strftime("%Y%m%d")
         filename = f'widget_settings-{webui}-{date}.json'
 
-        display(HTML(f'''
-            <a download="{filename}"
-               href="data:application/json;base64,{b64}"
-               id="download-link-{int(time.time())}"
-               style="display:none;"></a>
-            <script>
-                (function() {{
-                    var link = document.querySelector('#download-link-{int(time.time())}');
-                    if (link) {{
-                        link.click();
-                        setTimeout(function() {{ link.remove(); }}, 100);
-                    }}
-                }})();
-            </script>
-        '''))
-        show_notification('Настройки успешно экспортированы!', 'success')
+        with export_output:
+            export_output.clear_output()
+            display(HTML(f'''
+                <a download="{filename}" 
+                   href="data:application/json;base64,{b64}" 
+                   id="download-link"
+                   style="display:none;">Download</a>
+                <script>
+                    document.getElementById('download-link').click();
+                </script>
+            '''))
+            show_notification('Настройки успешно экспортированы!', 'success')
     except Exception as e:
         show_notification(f"Ошибка экспорта: {str(e)}", 'error')
 
@@ -424,7 +423,7 @@ widgetContainer = factory.create_vbox(
     layout={'min_width': CONTAINERS_WIDTH, 'max_width': CONTAINERS_WIDTH}
 )
 sideContainer = factory.create_vbox(
-    [GDrive_button, export_button, import_button],
+    [GDrive_button, export_button, import_button, export_output],
     class_names=['sideContainer']
 )
 mainContainer = factory.create_hbox(
@@ -558,7 +557,7 @@ def save_data(button):
     save_settings()
     all_widgets = [
         model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
-        GDrive_button, export_button, import_button                             # sideContainer
+        GDrive_button, export_button, import_button, export_output              # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 
