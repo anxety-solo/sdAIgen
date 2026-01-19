@@ -6,9 +6,11 @@ import json_utils as js                         # JSON
 
 from IPython.display import display, HTML, Javascript
 from google.colab import output
+from datetime import datetime
 import ipywidgets as widgets
 from pathlib import Path
 import requests
+import base64
 import time
 import json
 import os
@@ -275,9 +277,6 @@ export_button.tooltip = 'Export settings to JSON'
 import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
 import_button.tooltip = 'Import settings from JSON'
 
-export_output = widgets.Output(layout={'display': 'none'})
-export_output.add_class('export-output-widget')
-
 # --- PopUp Notification (Alias) ---
 def show_notification(message, message_type='info', duration=2500):
     """Call the already defined JS function showNotification"""
@@ -286,7 +285,7 @@ def show_notification(message, message_type='info', duration=2500):
     display(Javascript(js_code))
 
 # EXPORT
-def export_settings(button=None, filter_empty=False):
+def export_settings(filter_empty=False):
     try:
         widgets_data = {}
         for key in SETTINGS_KEYS:
@@ -306,18 +305,21 @@ def export_settings(button=None, filter_empty=False):
         date = datetime.now().strftime("%Y%m%d")
         filename = f'widget_settings-{webui}-{date}.json'
 
-        with export_output:
-            export_output.clear_output()
-            display(HTML(f'''
-                <a download="{filename}"
-                   href="data:application/json;base64,{b64}"
-                   id="download-link"
-                   style="display:none;"></a>
-                <script>
-                    document.getElementById('download-link').click();
-                </script>
-            '''))
-
+        display(HTML(f'''
+            <a download="{filename}"
+               href="data:application/json;base64,{b64}"
+               id="download-link-{int(time.time())}"
+               style="display:none;"></a>
+            <script>
+                (function() {{
+                    var link = document.querySelector('#download-link-{int(time.time())}');
+                    if (link) {{
+                        link.click();
+                        setTimeout(function() {{ link.remove(); }}, 100);
+                    }}
+                }})();
+            </script>
+        '''))
         show_notification('Settings exported successfully!', 'success')
     except Exception as e:
         show_notification(f"Export failed: {str(e)}", 'error')
@@ -349,7 +351,6 @@ def apply_imported_settings(data):
             show_notification('Settings imported successfully!', 'success')
         else:
             show_notification(f"Imported {success_count}/{total_count} settings", 'warning')
-
     except Exception as e:
         show_notification(f"Import failed: {str(e)}", 'error')
         pass
@@ -358,7 +359,6 @@ def apply_imported_settings(data):
 def handle_file_upload(change):
     if not change.get('new'):
         return
-
     try:
         uploaded_data = change['new']
 
