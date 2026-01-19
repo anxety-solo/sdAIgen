@@ -278,7 +278,7 @@ import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, cla
 import_button.tooltip = 'Import settings from JSON'
 
 export_output = widgets.Output(layout={'display': 'none'})
-export_output.add_class('export-output-widget')
+# export_output.add_class('export-output-widget')
 
 # --- PopUp Notification (Alias) ---
 def show_notification(message, message_type='info', duration=2500):
@@ -293,8 +293,9 @@ def export_settings(filter_empty=False):
         widgets_data = {}
         for key in SETTINGS_KEYS:
             value = globals()[f"{key}_widget"].value
-            if not filter_empty or (value not in [None, '', False]):
-                widgets_data[key] = value
+            # if not filter_empty or (value not in [None, '', False]):
+            #     widgets_data[key] = value
+            widgets_data[key] = value
 
         settings_data = {
             'widgets': widgets_data,
@@ -311,15 +312,15 @@ def export_settings(filter_empty=False):
         with export_output:
             export_output.clear_output()
             display(HTML(f'''
-                <a download="{filename}" 
-                   href="data:application/json;base64,{b64}" 
+                <a download="{filename}"
+                   href="data:application/json;base64,{b64}"
                    id="download-link"
-                   style="display:none;">Download</a>
+                   style="display:none;"></a>
                 <script>
                     document.getElementById('download-link').click();
                 </script>
             '''))
-            show_notification('Settings exported successfully!', 'success')
+        show_notification('Settings exported successfully!', 'success')
     except Exception as e:
         show_notification(f"Export failed: {str(e)}", 'error')
 
@@ -352,7 +353,6 @@ def apply_imported_settings(data):
             show_notification(f"Imported {success_count}/{total_count} settings", 'warning')
     except Exception as e:
         show_notification(f"Import failed: {str(e)}", 'error')
-        pass
 
 # OBSERVE (CALLBACK)
 def handle_file_upload(change):

@@ -255,7 +255,7 @@ a {
     background-position: center;
     background-repeat: no-repeat;
     background-color: var(--aw-container-bg) !important;
-    border: var(--aw-container-border);
+    border: var(--aw-container-border) !important;
     border-radius: 8px !important;
     box-shadow: var(--aw-elements-shadow), inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
     cursor: pointer;
@@ -264,7 +264,6 @@ a {
 }
 .sideContainer-btn:active {
     background-color: var(--aw-container-bg) !important;
-    border: var(--aw-container-border) !important;
     transform: scale(0.95) !important;
 }
 
@@ -273,8 +272,8 @@ a {
     background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg');
 }
 .gdrive-btn.active {
-    background-color: #006d33;
-    border-color: #00d062;
+    background-color: #006d33 !important;
+    border-color: #00d062 !important;
     /* transform: scale(0.9) !important; */
 }
 
