@@ -614,7 +614,7 @@ a {
 .button_api .icon {
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotateX(0);
     transition: all 0.4s ease;
     pointer-events: none;
 }
@@ -639,7 +639,7 @@ a {
 }
 .button_api:hover .icon {
     left: 15px;
-    transform: translateX(0);
+    transform: translateX(0) rotateX(180deg);
 }
 .button_api:hover .text {
     max-width: 200px;

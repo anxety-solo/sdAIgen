@@ -281,11 +281,15 @@ export_output = widgets.Output(layout={'display': 'none'})
 # export_output.add_class('export-output-widget')
 
 # --- PopUp Notification (Alias) ---
+_out_notify = widgets.Output()
+display(_out_notify)
+
 def show_notification(message, message_type='info', duration=2500):
     """Call the already defined JS function showNotification"""
     message_escaped = message.replace("`", "\\`").replace("\n", "\\n")
-    js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
-    display(Javascript(js_code))
+    js_code = f"""showNotification(`{message_escaped}`, '{message_type}', {duration});"""
+    with _out_notify:
+        display(Javascript(js_code))
 
 # EXPORT
 def export_settings(filter_empty=False):

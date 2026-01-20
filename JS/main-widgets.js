@@ -18,6 +18,8 @@ function showNotification(message, type='info', duration=2500) {
     const sideContainer = document.querySelector('.sideContainer');
     if (!sideContainer) return;
 
+    document.querySelectorAll('.notification-popup').forEach(p => p.remove());
+
     const popup = document.createElement('div');
     popup.className = `notification-popup ${type}`;
     popup.innerHTML = `
