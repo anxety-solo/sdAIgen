@@ -616,7 +616,7 @@ def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, in
         if key in model_dict:
             selected.extend(model_dict[key])
 
-    # text selection
+    # Selection
     if selection.lower() != 'none':
         if selection == 'ALL':
             selected = sum(model_dict.values(), [])
@@ -625,13 +625,12 @@ def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, in
             original = re.sub(r'^\d+\.\s*', '', found)
             add_by_key(original)
 
-    # numeric selection
-    if num_selection:
-        for num in _parse_selection_numbers(num_selection, len(keys)):
-            if 1 <= num <= len(keys):
-                add_by_key(keys[num - 1])
+        if num_selection:
+            for num in _parse_selection_numbers(num_selection, len(keys)):
+                if 1 <= num <= len(keys):
+                    add_by_key(keys[num - 1])
 
-    # deduplicate + filter
+    # Deduplicate + Filter
     unique = {}
     for m in selected:
         name = m.get('name') or os.path.basename(m['url'])
@@ -643,7 +642,7 @@ def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, in
             'name': name
         }
 
-    # build result
+    # Build result
     suffix = ''.join(
         f"{m['url']} {m['dst_dir']} {m['name']}, "
         for m in unique.values()

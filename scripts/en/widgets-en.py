@@ -455,7 +455,7 @@ def update_XL_options(change, widget):
     data_file = '_xl-models-data.py' if is_xl else '_models-data.py'
     data_path = f"{SCRIPTS}/{data_file}"
 
-    # load options
+    # Load options
     def load_opts(kind):
         return read_model_data(data_path, kind)
 
@@ -463,14 +463,14 @@ def update_XL_options(change, widget):
     vae_widget.options = load_opts('vae')
     controlnet_widget.options = load_opts('cnet')
 
-    # defaults
+    # Defaults set
     defaults = {
         True:  ('Nova-IL', 'sdxl.vae', 'none'),
         False: ('BluMix',  'Blessed2.vae', 'none')
     }
     p_model, p_vae, p_cnet = defaults[is_xl]
 
-    # load full dictionaries
+    # Load full dictionaries
     scope = {}
     with open(data_path) as f:
         exec(f.read(), {}, scope)
@@ -482,7 +482,7 @@ def update_XL_options(change, widget):
     vae_dict   = indexed(scope['vae_list'])
     cnet_dict  = indexed(scope['controlnet_list'])
 
-    # apply values with fallback
+    # Apply values with fallback
     def pick(partial, dictionary, fallback):
         return find_model_by_partial_name(partial, dictionary) or fallback
 
@@ -490,7 +490,7 @@ def update_XL_options(change, widget):
     vae_widget.value   = pick(p_vae, vae_dict, vae_widget.options[1])
     controlnet_widget.value = pick(p_cnet, cnet_dict, p_cnet)
 
-    # inpainting toggle
+    # Inpainting toggle
     if is_xl:
         inpainting_model_widget.add_class('_disable')
         inpainting_model_widget.value = False
