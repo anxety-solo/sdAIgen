@@ -1,8 +1,8 @@
 # ~ widgets.py | by ANXETY ~
 
-from widget_factory import WidgetFactory        # WIDGETS
-from webui_utils import update_current_webui    # WEBUI
-import json_utils as js                         # JSON
+from widget_factory import WidgetFactory    # WIDGETS
+from webui_utils import *                   # WEBUI / MODELs-DATA
+import json_utils as js                     # JSON
 
 from IPython.display import display, HTML, Javascript
 from google.colab import output
@@ -44,7 +44,7 @@ def create_expandable_button(text, url):
     ''')
 
 def read_model_data(file_path, data_type):
-    """Reads model, VAE, or ControlNet data from the specified file"""
+    """Reads model, VAE, or ControlNet data from the specified file with auto-numbering"""
     type_map = {
         'model': ('model_list', ['none']),
         'vae': ('vae_list', ['none', 'ALL']),
@@ -56,8 +56,11 @@ def read_model_data(file_path, data_type):
     with open(file_path) as f:
         exec(f.read(), {}, local_vars)
 
-    names = list(local_vars[key].keys())
-    return prefixes + names
+    # Auto-numbering: add "n. " prefix to each model name
+    original_dict = local_vars[key]
+    numbered_names = [f"{i}. {name}" for i, name in enumerate(original_dict.keys(), start=1)]
+
+    return prefixes + numbered_names
 
 def fetch_github_branches(repo_url, webui=None):
     """Fetch branch names from GitHub API with optional filtering"""
@@ -449,20 +452,45 @@ empowerment_output_widget.add_class('hidden')
 # Callback functions for XL options
 def update_XL_options(change, widget):
     is_xl = change['new']
-    defaults = {
-        True: ('3. Nova-IL [Anime] [V15] [XL]', '1. sdxl.vae', 'none'),     # XL models
-        False: ('2. BluMix [Anime] [V7] + INP', '3. Blessed2.vae', 'none')  # SD 1.5 models
-    }
-
     data_file = '_xl-models-data.py' if is_xl else '_models-data.py'
-    model_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'model')
-    vae_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'vae')
-    controlnet_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'cnet')
+    data_path = f"{SCRIPTS}/{data_file}"
 
-    # Set default values from the dictionary
-    model_widget.value, vae_widget.value, controlnet_widget.value = defaults[is_xl]
+    # load options
+    def load_opts(kind):
+        return read_model_data(data_path, kind)
 
-    # Disable/enable inpainting checkbox based on SDXL state
+    model_widget.options = load_opts('model')
+    vae_widget.options = load_opts('vae')
+    controlnet_widget.options = load_opts('cnet')
+
+    # defaults
+    defaults = {
+        True:  ('Nova-IL', 'sdxl.vae', 'none'),
+        False: ('BluMix',  'Blessed2.vae', 'none')
+    }
+    p_model, p_vae, p_cnet = defaults[is_xl]
+
+    # load full dictionaries
+    scope = {}
+    with open(data_path) as f:
+        exec(f.read(), {}, scope)
+
+    def indexed(d):
+        return {f"{i}. {k}": v for i, (k, v) in enumerate(d.items(), 1)}
+
+    model_dict = indexed(scope['model_list'])
+    vae_dict   = indexed(scope['vae_list'])
+    cnet_dict  = indexed(scope['controlnet_list'])
+
+    # apply values with fallback
+    def pick(partial, dictionary, fallback):
+        return find_model_by_partial_name(partial, dictionary) or fallback
+
+    model_widget.value = pick(p_model, model_dict, model_widget.options[1])
+    vae_widget.value   = pick(p_vae, vae_dict, vae_widget.options[1])
+    controlnet_widget.value = pick(p_cnet, cnet_dict, p_cnet)
+
+    # inpainting toggle
     if is_xl:
         inpainting_model_widget.add_class('_disable')
         inpainting_model_widget.value = False

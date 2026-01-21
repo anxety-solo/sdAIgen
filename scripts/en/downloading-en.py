@@ -1,9 +1,9 @@
 # ~ download.py | by ANXETY ~
 
-from webui_utils import handle_setup_timer    # WEBUI
-from Manager import m_download, m_clone       # Every Download | Clone
-from CivitaiAPI import CivitAiAPI             # CivitAI API
-import json_utils as js                       # JSON
+from Manager import m_download, m_clone   # Every Download | Clone
+from CivitaiAPI import CivitAiAPI         # CivitAI API
+from webui_utils import *                 # WEBUI
+import json_utils as js                   # JSON
 
 from IPython.display import clear_output
 from IPython.utils import capture
@@ -609,34 +609,47 @@ def _parse_selection_numbers(num_str, max_num):
 def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url, inpainting_model=False):
     selected = []
 
+    keys = list(model_dict)
+    numbered = {f"{i}. {k}": v for i, (k, v) in enumerate(model_dict.items(), 1)}
+
+    def add_by_key(key):
+        if key in model_dict:
+            selected.extend(model_dict[key])
+
+    # text selection
     if selection.lower() != 'none':
         if selection == 'ALL':
             selected = sum(model_dict.values(), [])
-        elif selection in model_dict:
-            selected.extend(model_dict[selection])
+        else:
+            found = find_model_by_partial_name(selection, numbered) or selection
+            original = re.sub(r'^\d+\.\s*', '', found)
+            add_by_key(original)
 
-        if num_selection:
-            max_num = len(model_dict)
-            for num in _parse_selection_numbers(num_selection, max_num):
-                if 1 <= num <= max_num:
-                    name = list(model_dict.keys())[num - 1]
-                    selected.extend(model_dict[name])
+    # numeric selection
+    if num_selection:
+        for num in _parse_selection_numbers(num_selection, len(keys)):
+            if 1 <= num <= len(keys):
+                add_by_key(keys[num - 1])
 
-    unique_models = {}
-    for model in selected:
-        name = model.get('name') or os.path.basename(model['url'])    # Note: `name` is an optional parameter
-        if not inpainting_model and "inpainting" in name:
+    # deduplicate + filter
+    unique = {}
+    for m in selected:
+        name = m.get('name') or os.path.basename(m['url'])
+        if not inpainting_model and 'inpainting' in name:
             continue
-        unique_models[name] = {
-            'url': model['url'],
-            'dst_dir': model.get('dst_dir', dst_dir),
+        unique[name] = {    # Note: `name` is an optional parameter
+            'url': m['url'],
+            'dst_dir': m.get('dst_dir', dst_dir),
             'name': name
         }
 
-    for model in unique_models.values():
-        base_url += f"{model['url']} {model['dst_dir']} {model['name']}, "
+    # build result
+    suffix = ''.join(
+        f"{m['url']} {m['dst_dir']} {m['name']}, "
+        for m in unique.values()
+    )
 
-    return base_url
+    return base_url + suffix
 
 line = ''
 line = handle_submodels(model, model_num, model_list, model_dir, line)
