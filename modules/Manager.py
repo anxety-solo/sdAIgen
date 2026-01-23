@@ -164,7 +164,6 @@ def _process_download(line, log, unzip):
         log_message(f"URL validation failed for {url}: {str(e)}", log, 'warning')
         return
 
-
     path, filename = handle_path_and_filename(parts, url)
     current_dir = Path.cwd()
 
@@ -211,6 +210,7 @@ def _aria2_download(url, filename, log):
     _aria2_monitor(cmd, log)
 
 def _gdrive_download(url, filename, log):
+    """Download using gdown"""
     cmd = f"gdown --fuzzy {url}"
     if filename:
         cmd += f' -O "{filename}"'

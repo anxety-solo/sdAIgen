@@ -326,7 +326,7 @@ def build_symlink_config(ui: str) -> list[dict]:
         {'local': extension_dir,  'gdrive': 'CustomNodes' if is_comfy else 'Extensions'},
         {'local': control_dir,    'gdrive': 'ControlNet'},
         {'local': upscale_dir,    'gdrive': 'Upscale'},
-        {'local': output_dir,     'gdrive': 'Output'},
+        {'local': output_dir,     'gdrive': 'Output', 'direct_link': True},
         # Others
         {'local': adetailer_dir,  'gdrive': 'Adetailer'},
         {'local': clip_dir,       'gdrive': 'Clip'},
@@ -336,47 +336,89 @@ def build_symlink_config(ui: str) -> list[dict]:
         {'local': diffusion_dir,  'gdrive': 'Diffusion'}
     ]
 
-def create_symlink(src, dst, log=False):
-    """Create symlink with optional migration of existing content"""
+def create_symlink(src, dst, direct_link=False, log=False):
+    """Create symlink with optional migration of existing content
+
+    Args:
+        src: Source path (where the symlink will be created)
+        dst: Destination path (target in Google Drive)
+        direct_link: If True, create direct symlink (src -> dst),
+                     If False, create symlink in subdirectory (src/GDrive -> dst)
+    """
     try:
-        # Migrate contents if src is a real dir
-        if os.path.isdir(src) and os.path.islink(src) != True and os.path.exists(dst):
+        # Migrate contents if src is a real dir (not a symlink)
+        if os.path.isdir(src) and not os.path.islink(src) and os.path.exists(dst):
             for item in os.listdir(src):
-                shutil.move(os.path.join(src, item), dst)
+                src_item = os.path.join(src, item)
+                dst_item = os.path.join(dst, item)
+                # Skip if item already exists in dst
+                if not os.path.exists(dst_item):
+                    shutil.move(src_item, dst)
+                elif os.path.isdir(src_item):
+                    shutil.rmtree(src_item)
+                else:
+                    os.remove(src_item)
+
             shutil.rmtree(src)
             if log:
                 print(f"📦 Moved contents: {src} → {dst}")
 
-        # Remove old link or file
+        # Remove old symlink or file
         if os.path.islink(src) or os.path.isfile(src):
             os.remove(src)
 
-        # Create new symlink
+        # Create new symlink if it doesn't exist
         if not os.path.exists(src):
+            # Create parent directory if needed
+            os.makedirs(os.path.dirname(src), exist_ok=True)
             os.symlink(dst, src)
             if log:
-                print(f"🔗 Symlink: {src} → {dst}")
+                link_type = "Direct symlink" if direct_link else "Symlink"
+                print(f"🔗 {link_type}: {src} → {dst}")
 
     except Exception as e:
         print(f"❌ Error processing {src}: {str(e)}")
 
+
 def handle_gdrive(mount_flag, ui='A1111', log=False):
-    """Main handler for Google Drive mounting and symlink setup"""
+    """Handler for Google Drive mounting and symlink setup"""
     if not mount_flag:
         # Unmount logic
         if os.path.exists('/content/drive/MyDrive'):
             try:
-                print('⏳ Отсоединение Google Drive...', end='')
+                print('⏳ Отключение Google Drive...', end='')
+
+                # First, copy back content from GDrive for direct_link directories
+                for cfg in build_symlink_config(ui):
+                    direct_link = cfg.get('direct_link', False)
+
+                    if direct_link and os.path.islink(cfg['local']):
+                        gdrive_path = os.path.join(GD_BASE, cfg['gdrive'])
+
+                        # Copy files from GDrive back to local before unmounting
+                        if os.path.exists(gdrive_path):
+                            os.unlink(cfg['local'])
+                            os.makedirs(cfg['local'], exist_ok=True)
+
+                            for item in os.listdir(gdrive_path):
+                                src_item = os.path.join(gdrive_path, item)
+                                dst_item = os.path.join(cfg['local'], item)
+                                if os.path.isdir(src_item):
+                                    shutil.copytree(src_item, dst_item, dirs_exist_ok=True)
+                                else:
+                                    shutil.copy2(src_item, dst_item)
+
                 with capture.capture_output():
                     drive.flush_and_unmount()
                     os.system('rm -rf /content/drive')
-                print('\r✅ Google Drive отсоединён и очищен!')
+                print('\r✅ Google Drive отключён и очищен!')
 
-                # Remove symlinks
+                # Remove remaining symlinks (for standard mode)
                 for cfg in build_symlink_config(ui):
-                    link_path = os.path.join(cfg['local'], 'GDrive')
-                    if os.path.islink(link_path):
-                        os.unlink(link_path)
+                    if not cfg.get('direct_link', False):
+                        link_path = os.path.join(cfg['local'], 'GDrive')
+                        if os.path.islink(link_path):
+                            os.unlink(link_path)
 
                 print('🗑️ Симлинки успешно удалены!')
             except Exception as e:
@@ -389,9 +431,8 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
             print('⏳ Подключение Google Drive...', end='')
             with capture.capture_output():
                 drive.mount('/content/drive')
-            print('\r🚀 Google Drive успешно подключён!')
+            print('\r💿 Google Drive успешно подключён!')
         except Exception as e:
-            # clear_output()
             print(f"\r❌ Mounting failed: {str(e)}")
             return
     else:
@@ -403,10 +444,16 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
         # Create structure in Drive and symlinks
         for cfg in build_symlink_config(ui):
             dst = os.path.join(GD_BASE, cfg['gdrive'])
-            src = os.path.join(cfg['local'], 'GDrive')
             os.makedirs(dst, exist_ok=True)
-            os.makedirs(os.path.dirname(src), exist_ok=True)
-            create_symlink(src, dst, log)
+
+            direct_link = cfg.get('direct_link', False)
+            src = cfg['local'] if direct_link else os.path.join(cfg['local'], 'GDrive')
+
+            # Ensure parent directory exists for standard mode
+            if not direct_link:
+                os.makedirs(os.path.dirname(src), exist_ok=True)
+
+            create_symlink(src, dst, log, direct_link)
 
         print('✅ Симлинки успешно созданы!')
 
