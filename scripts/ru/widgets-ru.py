@@ -290,7 +290,7 @@ display(_out_notify)
 def show_notification(message, message_type='info', duration=2500):
     """Call the already defined JS function showNotification"""
     message_escaped = message.replace("`", "\\`").replace("\n", "\\n")
-    js_code = f"""showNotification(`{message_escaped}`, '{message_type}', {duration});"""
+    js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
     with _out_notify:
         display(Javascript(js_code))
 

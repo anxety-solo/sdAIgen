@@ -326,13 +326,14 @@ def build_symlink_config(ui: str) -> list[dict]:
         {'local': extension_dir,  'gdrive': 'CustomNodes' if is_comfy else 'Extensions'},
         {'local': control_dir,    'gdrive': 'ControlNet'},
         {'local': upscale_dir,    'gdrive': 'Upscale'},
+        {'local': output_dir,     'gdrive': 'Output'},
         # Others
         {'local': adetailer_dir,  'gdrive': 'Adetailer'},
         {'local': clip_dir,       'gdrive': 'Clip'},
         {'local': unet_dir,       'gdrive': 'Unet'},
         {'local': vision_dir,     'gdrive': 'Vision'},
         {'local': encoder_dir,    'gdrive': 'Encoder'},
-        {'local': diffusion_dir,  'gdrive': 'Diffusion'},
+        {'local': diffusion_dir,  'gdrive': 'Diffusion'}
     ]
 
 def create_symlink(src, dst, log=False):
