@@ -26,6 +26,9 @@ CONTAINER_WIDTH = '1080px'
 TRASH_EXTENSIONS = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
 
+# Google Drive base path
+GD_BASE = '/content/drive/MyDrive/sdAIgen'
+
 
 # =================== loading settings V5 ==================
 
@@ -112,8 +115,10 @@ def update_storage_display():
 
 def on_execute_click(_):
     """Handle execute button click"""
+    is_gdrive_mode = gdrive_mode_widget.value if show_gdrive_toggle else False
+
     results = {
-        option: clean_directory(DIRECTORIES[option], option)
+        option: clean_directory(DIRECTORIES[option][is_gdrive_mode], option)
         for option in selection_widget.value
         if option in DIRECTORIES
     }
@@ -131,6 +136,13 @@ def on_hide_click(_):
     factory.close(main_container, class_names=['hide'], delay=0.5)
 
 
+def on_gdrive_mode_change(change):
+    """Handle GDrive mode checkbox change"""
+    is_gdrive = change['new']
+    button_suffix = ' (GD)' if is_gdrive else ''
+    execute_button.description = f'Execute Cleaning{button_suffix}'
+
+
 # ===================== UI Construction ====================
 
 # Initialize the WidgetFactory
@@ -138,19 +150,37 @@ factory = WidgetFactory()
 factory.load_css(CSS_PATH)
 HR = widgets.HTML('<hr>')
 
-# Directory mapping
-DIRECTORIES = {
-    'Output Images': output_dir,
-    'Models': model_dir,
-    'VAE': vae_dir,
-    'LoRA': lora_dir,
-    'ControlNet Models': control_dir,
-    'CLIP Models': clip_dir,
-    'UNET Models': unet_dir,
-    'Vision Models': vision_dir,
-    'Encoder Models': encoder_dir,
-    'Diffusion Models': diffusion_dir
-}
+# Check GDrive toggle
+ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+mount_gdrive = js.read(SETTINGS_PATH, 'mountGDrive', False)
+show_gdrive_toggle = (ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE))
+
+# Directory mapping - returns tuple (local_path, gdrive_path)
+def get_directory_paths():
+    """Build directory mapping with local and GDrive paths"""
+    gdrive_map = {
+        # Display Names | Name Dirs in GD | path to dir
+        'Models': ('Checkpoints', model_dir),
+        'VAE': ('VAE', vae_dir),
+        'LoRA': ('Lora', lora_dir),
+        'ControlNet Models': ('ControlNet', control_dir),
+        'CLIP Models': ('Clip', clip_dir),
+        'UNET Models': ('Unet', unet_dir),
+        'Vision Models': ('Vision', vision_dir),
+        'Encoder Models': ('Encoder', encoder_dir),
+        'Diffusion Models': ('Diffusion', diffusion_dir),
+        'Output Images': ('Output', output_dir),
+    }
+
+    return {
+        name: {
+            False: local,
+            True: os.path.join(GD_BASE, gd) if show_gdrive_toggle else local
+        }
+        for name, (gd, local) in gdrive_map.items()
+    }
+
+DIRECTORIES = get_directory_paths()
 
 # Create widgets
 instruction_label = factory.create_html(
@@ -177,6 +207,15 @@ hide_button = factory.create_button(
     class_names=['cleaner_button', 'button_hide']
 )
 
+# GDrive mode checkbox (only shown in Colab when GDrive is mounted)
+gdrive_mode_widget = factory.create_checkbox(
+    'GDrive',
+    False,
+    class_names=['gdrive-mode']
+)
+if not show_gdrive_toggle:
+    gdrive_mode_widget.layout.display = 'none'
+
 stats = get_disk_usage()
 storage_info = factory.create_html(
     f'<div class="storage_info">Total storage: {stats["total"]:.2f} GB '
@@ -187,10 +226,11 @@ storage_info = factory.create_html(
 # Attach event handlers
 execute_button.on_click(on_execute_click)
 hide_button.on_click(on_hide_click)
+gdrive_mode_widget.observe(on_gdrive_mode_change, names='value')
 
 # Build layout
 buttons_box = factory.create_hbox(
-    [execute_button, hide_button],
+    [execute_button, hide_button, gdrive_mode_widget],
     class_names=['lower_buttons_box']
 )
 
