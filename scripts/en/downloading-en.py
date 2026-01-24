@@ -825,6 +825,7 @@ if mountGDrive:
             dst = os.path.join(extension_dir, folder)
             if os.path.isdir(src):
                 shutil.copytree(src, dst, dirs_exist_ok=True)
+        os.unlink(gdrive_path)
 
 
 ## List Models and stuff

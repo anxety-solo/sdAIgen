@@ -379,7 +379,6 @@ def create_symlink(src, dst, direct_link=False, log=False):
     except Exception as e:
         print(f"❌ Error processing {src}: {str(e)}")
 
-
 def handle_gdrive(mount_flag, ui='A1111', log=False):
     """Handler for Google Drive mounting and symlink setup"""
     if not mount_flag:
@@ -825,11 +824,8 @@ if mountGDrive:
             src = os.path.join(gdrive_path, folder)
             dst = os.path.join(extension_dir, folder)
             if os.path.isdir(src):
-                # Copy directory tree; if dst exists, merge contents
-                if os.path.exists(dst):
-                    shutil.copytree(src, dst, dirs_exist_ok=True)
-                else:
-                    shutil.copytree(src, dst)
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+        os.unlink(gdrive_path)
 
 
 ## List Models and stuff
