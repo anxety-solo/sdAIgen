@@ -452,7 +452,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
             if not direct_link:
                 os.makedirs(os.path.dirname(src), exist_ok=True)
 
-            create_symlink(src, dst, log, direct_link)
+            create_symlink(src, dst, direct_link, log)
 
         print('✅ Symlinks created successfully!')
 
