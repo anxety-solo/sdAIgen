@@ -27,6 +27,18 @@ HF_TOKEN  = js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
 
 # ========================= Logging ========================
 
+COLORS = {
+    'red':    '\033[31m',
+    'green':  '\033[32m',
+    'yellow': '\033[33m',
+    'gray':   '\033[34m',
+    'purple': '\033[35m',
+    'cyan':   '\033[36m',
+    'reset':  '\033[0m',
+}
+def color(text: str, key: str) -> str:
+    return f"{COLORS[key]}{text}{COLORS['reset']}"
+
 def log_message(message, log=False, status='info'):
     """Display colored log messages"""
     if not log:
@@ -226,63 +238,89 @@ def _unzip_file(file, log):
     path.unlink()
     log_message(f"Unpacked {file} to {path.parent / path.stem}", log)
 
-def _aria2_monitor(command, log):
+ARIA_PROGRESS_RE = re.compile(
+    r"\[#([0-9a-f]+)\s+"
+    r"([\d.]+\w+)/([\d.]+\w+)\((\d+)%\)\s+"
+    r"CN:(\d+)\s+"
+    r"DL:([\d.]+\w+)\s+"
+    r"ETA:([\w\d]+)\]"
+)
+
+def _aria2_monitor(command, log=True):
     """Monitor aria2c download progress"""
-    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    result, error_codes, error_messages = '', [], []
-    br = False
+    cmd = command if isinstance(command, list) else shlex.split(command)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    errors = []
+    last_stats = None
+    filename = None
+
+    if '-o' in cmd:
+        try:
+            idx = cmd.index('-o')
+            if idx + 1 < len(cmd):
+                filename = cmd[idx + 1]
+        except Exception:
+            pass
 
     try:
         while True:
             line = process.stderr.readline()
-            if line == '' and process.poll() is not None:
+            if not line and process.poll() is not None:
                 break
 
-            result += line
-            for raw_line in line.splitlines():
-                _handle_aria_errors(raw_line, error_codes, error_messages)
-                if re.match(r'\[#\w{6}\s.*\]', raw_line):
-                    formatted = _format_aria_line(raw_line)
-                    if log:
-                        print(f"\r{' ' * 180}\r{formatted}", end='', flush=True)
-                        br = True
+            # Collect errors
+            if 'errorCode' in line or 'Exception' in line or ('|' in line and 'ERR' in line):
+                errors.append(line.replace('ERR', color('ERR', 'red')))
 
-        if log:
-            if error_codes or error_messages:
-                print()
-            for err in error_codes + error_messages:
-                print(err)
+            # Parse progress
+            match = ARIA_PROGRESS_RE.search(line)
+            if not match or not log:
+                continue
 
-            if br:
-                print()
+            gid, done, total, percent, cn, speed, eta = match.groups()
+            percent = int(percent)
+            last_stats = (total, speed)
 
-            if '======+====+===========' in result:
-                for line in result.splitlines():
-                    if '|' in line and 'OK' in line:
-                        print(re.sub(r'(OK)', '\033[32m\\1\033[0m', line))
+            # Progress bar
+            bar_width = 25
+            filled = bar_width * percent // 100
+            bar = '■' * filled + ' ' * (bar_width - filled)
+
+            output = (
+                f"{color('[', 'purple')}{color(f'#{gid}', 'green')}{color(']', 'purple')} "
+                f"[{bar}] "
+                f"{percent}% "
+                f"{color(done, 'cyan')}/{color(total, 'cyan')} "
+                f"{color(speed + '/s', 'green')} "
+                f"{color('CN:', 'gray')}{cn} "
+                f"{color('ETA:', 'yellow')}{eta}"
+            )
+            print(f"\r{' ' * 180}\r{output}", end='', flush=True)
 
         process.wait()
+
+        # Clear progress line and show result
+        if log:
+            print(f"\r{' ' * 180}\r", end='', flush=True)
+            if errors:
+                print()
+                for err in errors:
+                    print(err)
+
+            if last_stats:
+                total, speed = last_stats
+                file_info = color(filename, 'gray') if filename else ''
+                stats_info = color(f"({total} @ {speed}/s)", 'cyan')
+                if file_info:
+                    print(f"{color('✔ Done', 'green')} | {file_info} {stats_info}")
+                else:
+                    print(f"{color('✔ Done', 'green')} {stats_info}")
+            else:
+                print(f"{color('✔ Download Complete', 'green')}")
     except KeyboardInterrupt:
         print()
         log_message("Download interrupted", log)
-
-def _format_aria_line(line):
-    """Format a line of output with ANSI color codes"""
-    line = re.sub(r'\[', '\033[35m【\033[0m', line)
-    line = re.sub(r'\]', '\033[35m】\033[0m', line)
-    line = re.sub(r'(#)(\w+)', r'\1\033[32m\2\033[0m', line)
-    line = re.sub(r'(\(\d+%\))', r'\033[36m\1\033[0m', line)
-    line = re.sub(r'(CN:)(\d+)', r'\1\033[34m\2\033[0m', line)
-    line = re.sub(r'(DL:)([^\s]+)', r'\1\033[32m\2\033[0m', line)
-    line = re.sub(r'(ETA:)([^\s]+)', r'\1\033[33m\2\033[0m', line)
-    return line
-
-def _handle_aria_errors(line, error_codes, error_messages):
-    """Check and collect error messages from the output"""
-    if 'errorCode' in line or 'Exception' in line:
-        error_codes.append(line)
-    if '|' in line and 'ERR' in line:
-        error_messages.append(re.sub(r'(ERR)', '\033[31m\\1\033[0m', line))
 
 def _run_command(command, log):
     """Execute a shell command"""
