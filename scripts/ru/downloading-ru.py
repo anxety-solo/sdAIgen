@@ -344,7 +344,6 @@ def build_symlink_config(ui: str) -> dict:
         (encoder_dir,   'Encoder'),
         (diffusion_dir, 'Diffusion'),
     ]
-
     _files = [
         {'local': local, 'gdrive': f"{GD_FILES}/{gdir}"}
         for local, gdir in base_files
@@ -355,8 +354,13 @@ def build_symlink_config(ui: str) -> dict:
     })
 
     # Output structure
+    outputs_base = f"{GD_OUTPUTS}/{ui}"
     _outputs = [
-        {'local': output_dir, 'gdrive': GD_OUTPUTS, 'direct_link': True}
+        {
+            'local': output_dir,
+            'gdrive': outputs_base,
+            'direct_link': True
+        }
     ]
 
     # Config structure (settings & workflows)
@@ -365,7 +369,6 @@ def build_symlink_config(ui: str) -> dict:
         config_base = f"{GD_CONFIGS}/ComfyUI"
         user_default = f"{WEBUI}/user/default"
         user_manager = f"{WEBUI}/user/__manager"
-
         _configs = [
             {
                 'local': f"{user_default}/comfy.settings.json",
@@ -387,9 +390,8 @@ def build_symlink_config(ui: str) -> dict:
             }
         ]
     else:
-        # A1111/Forge/ReForge/SD-UX config structure
+        # A1111/Forge config structure
         config_base = f"{GD_CONFIGS}/{ui}"
-
         _configs = [
             {
                 'local': f"{WEBUI}/config.json",
