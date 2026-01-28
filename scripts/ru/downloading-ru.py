@@ -23,7 +23,7 @@ import os
 
 # === Parse CLI arguments ===
 SKIP_INSTALL_VENV = '-s' in sys.argv or '--skip-install-venv' in sys.argv
-
+GDRIVE_LOG        = '-l' in sys.argv or '--gdrive-log' in sys.argv
 
 osENV = os.environ
 CD = os.chdir
@@ -382,10 +382,10 @@ def build_symlink_config(ui: str) -> dict:
         'direct_link': True
     }]
 
-    # Config structure (settings & workflows)
+    # Config structure
+    config_base = f"{GD_CONFIGS}/{ui}"
     if is_comfy:
         # ComfyUI specific config structure
-        config_base = f"{GD_CONFIGS}/ComfyUI"
         user_default = f"{WEBUI}/user/default"
         user_manager = f"{WEBUI}/user/__manager"
         _configs = [
@@ -410,7 +410,6 @@ def build_symlink_config(ui: str) -> dict:
         ]
     else:
         # A1111/Forge config structure
-        config_base = f"{GD_CONFIGS}/{ui}"
         _configs = [
             {
                 'local': f"{WEBUI}/config.json",
@@ -442,9 +441,8 @@ def create_symlink(src, dst, symlink_name='GDrive', direct_link=False, log=False
         if direct_link:
             # Direct link mode: replace entire directory with symlink
             if src.exists() and src.is_dir() and not src.is_symlink():
-                merge_dirs(src, dst, label="Migrated", log=log)
+                merge_dirs(src, dst, label='Migrated', log=log)
 
-            # Remove old symlink if exists
             if src.is_symlink():
                 src.unlink()
             src.parent.mkdir(parents=True, exist_ok=True)
@@ -460,9 +458,8 @@ def create_symlink(src, dst, symlink_name='GDrive', direct_link=False, log=False
 
             # Migrate contents if GDrive subfolder exists and is real dir
             if symlink_path.exists() and not symlink_path.is_symlink():
-                merge_dirs(symlink_path, dst, symlink_path, log=log)
+                merge_dirs(symlink_path, dst, label='Migrated', log=log)
 
-            # Remove old link or directory
             fs_remove(symlink_path)
             src.mkdir(parents=True, exist_ok=True)
 
@@ -479,7 +476,6 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
     try:
         local_path = Path(local_path)
         gdrive_path = Path(gdrive_path)
-
         gdrive_path.parent.mkdir(parents=True, exist_ok=True)
         local_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -502,7 +498,6 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
             elif local_path.exists() and not local_path.is_symlink():
                 fs_remove(local_path)
 
-        # Remove old symlink if exists
         if local_path.is_symlink():
             local_path.unlink()
 
@@ -511,7 +506,7 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
             is_dir = (config_type == 'dir')
             local_path.symlink_to(gdrive_path, target_is_directory=is_dir)
             if log:
-                icon = "📁" if is_dir else "📄"
+                icon = '📁' if is_dir else '📄'
                 print(f"{COL.G}{icon} Config symlink [{config_name}]: {COL.lB}{local_path.name}{COL.X} → {COL.G}GDrive{COL.X}")
     except Exception as e:
         print(f"{COL.R}❌ Error [{config_name}]:{COL.X} {local_path.name} - {str(e)}")
@@ -529,15 +524,11 @@ def restore_from_symlink(local_path, gdrive_path, config_type='file', config_nam
         local_path.unlink()
 
         is_dir = (config_type == 'dir')
-        if is_dir and gdrive_path.is_dir():
-            shutil.copytree(gdrive_path, local_path)
+        if (gdrive_path.is_dir() if is_dir else gdrive_path.is_file()):
+            (shutil.copytree if is_dir else shutil.copy2)(gdrive_path, local_path)
             if log:
-                print(f"{COL.Y}📁 Restored [{config_name}]: {COL.lB}{local_path.name}{COL.X} ← {COL.B}GDrive{COL.X}")
-
-        elif not is_dir and gdrive_path.is_file():
-            shutil.copy2(gdrive_path, local_path)
-            if log:
-                print(f"{COL.Y}📄 Restored [{config_name}]: {COL.lB}{local_path.name}{COL.X} ← {COL.B}GDrive{COL.X}")
+                icon = '📁' if is_dir else '📄'
+                print(f"{COL.Y}{icon} Restored [{config_name}]: {COL.lB}{local_path.name}{COL.X} ← {COL.B}GDrive{COL.X}")
     except Exception as e:
         print(f"{COL.R}❌ Error restoring [{config_name}]:{COL.X} {str(e)}")
 
@@ -659,7 +650,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
             create_symlink(
                 cfg['local'],
                 cfg['gdrive'],
-                direct_link=cfg.get('direct_link', False),
+                direct_link=cfg.get('direct_link', True),
                 log=log
             )
 
@@ -679,7 +670,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
     except Exception as e:
         print(f"{COL.R}❌ Setup error:{COL.X} {str(e)}")
 
-handle_gdrive(mountGDrive, ui=UI, log=False)
+handle_gdrive(mountGDrive, ui=UI, log=GDRIVE_LOG)
 
 
 # ======================= DOWNLOADING ======================
