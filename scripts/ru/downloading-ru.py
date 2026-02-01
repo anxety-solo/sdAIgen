@@ -592,7 +592,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False):
         for p in paths:
             os.makedirs(p, exist_ok=True)
 
-    cleanup_ipynb_checkpoints(GD_BASE, log=log)   # Remove Jupyter shits
+    cleanup_ipynb_checkpoints(GD_BASE)   # Remove Jupyter shits
 
     if not mount_flag:
         # Unmount logic
@@ -981,7 +981,7 @@ prefixed_urls = [f"{p}:{u}" for p, u in zip(PREFIX_MAP, urls_sources) if u for u
 line += ', '.join(prefixed_urls + [process_file_downloads(file_urls, empowerment_output)])
 
 if detailed_download == 'on':
-    print(f"\n\n{COL.Y}# ====== Подробная Загрузка ====== #\n{COL.X}")
+    print(f"\n\n{COL.Y}# ====== Подробная Загрузка ====== #{COL.X}")
     download(line)
     print(f"\n{COL.Y}# =============================== #\n{COL.X}")
 else:
