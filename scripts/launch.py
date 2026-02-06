@@ -39,7 +39,7 @@ EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 BIN = str(VENV / 'bin')
 PYTHON_VERSION = '3.11' if UI in ['Classic', 'Neo'] else '3.10'
-PKG = str(VENV / f'lib/python{PYTHON_VERSION}/site-packages')
+PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
@@ -177,7 +177,7 @@ def get_launch_command():
     base_args = commandline_arguments
     password = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
 
-    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'  # nah: --no-gradio-queue
+    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --skip-torch-cuda-test --theme dark'  # nah: --no-gradio-queue
     if ENV_NAME == 'Kaggle':
         common_args += f" --encrypt-pass={password}"
 

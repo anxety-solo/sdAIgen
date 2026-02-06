@@ -140,7 +140,7 @@ def on_gdrive_mode_change(change):
     """Handle GDrive mode checkbox change"""
     is_gdrive = change['new']
     button_suffix = ' (GD)' if is_gdrive else ''
-    execute_button.description = f'Execute Cleaning{button_suffix}'
+    execute_button.description = f"Execute Cleaning{button_suffix}"
 
 
 # ===================== UI Construction ====================

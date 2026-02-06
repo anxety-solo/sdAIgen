@@ -359,7 +359,7 @@ class Tunnel:
                     try:
                         tunnel['callback'](link, tunnel.get('note'), tunnel['name'])
                     except Exception:
-                        self.logger.error("An error occurred while invoking URL callback", exc_info=True)
+                        self.logger.error('An error occurred while invoking URL callback', exc_info=True)
 
                 return True
         return False

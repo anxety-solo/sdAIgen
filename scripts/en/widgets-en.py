@@ -65,7 +65,7 @@ def read_model_data(file_path, data_type):
 def fetch_github_branches(repo_url, webui=None):
     """Fetch branch names from GitHub API with optional filtering"""
     repo_path = repo_url.replace('https://github.com/', '')
-    api_url = f'https://api.github.com/repos/{repo_path}/branches'
+    api_url = f"https://api.github.com/repos/{repo_path}/branches"
 
     try:
         r = requests.get(api_url, timeout=10)

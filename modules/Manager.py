@@ -320,7 +320,7 @@ def _aria2_monitor(command, log=True):
                 print(f"{color('✔ Download Complete', 'green')}")
     except KeyboardInterrupt:
         print()
-        log_message("Download interrupted", log)
+        log_message('Download interrupted', log)
 
 def _run_command(command, log):
     """Execute a shell command"""

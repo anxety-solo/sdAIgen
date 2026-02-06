@@ -206,7 +206,7 @@ class CivitAiAPI:
     def get_model_versions(self, model_id: str) -> Optional[List[Dict]]:
         """Get all available versions of a model by ID"""
         data = self._get(self._build_url(f"models/{model_id}"))
-        return data.get("modelVersions") if data else None
+        return data.get('modelVersions') if data else None
 
     def find_by_sha256(self, sha256: str) -> Optional[Dict]:
         """Find model version data by SHA256 hash"""

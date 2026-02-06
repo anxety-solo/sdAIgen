@@ -11,8 +11,8 @@ osENV = os.environ
 
 # Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, SCR_PATH, VENV, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
+HOME, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['settings_path']
 )
 
 DEFAULT_UI = 'A1111'
@@ -136,7 +136,4 @@ def find_model_by_partial_name(partial_name, model_dict):
 
     target = normalize(partial_name)
 
-    return next(
-        (key for key in model_dict if target in normalize(key)),
-        None
-    )
+    return next((key for key in model_dict if target in normalize(key)), None)
