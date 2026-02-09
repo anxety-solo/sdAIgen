@@ -172,6 +172,19 @@ def _update_config_paths(tagger=None):
         else:
             js.save(config_file, key, str(value))
 
+    # Auto-sync VERSION_UID | Fix for NEO
+    if UI == 'Neo':
+        launch_utils_path = Path(WEBUI) / 'modules/launch_utils.py'
+        if launch_utils_path.exists():
+            content = launch_utils_path.read_text(encoding='utf-8')
+            match = re.search(r'VERSION_UID:\s*Final\[str\]\s*=\s*["\'](.+?)["\']', content)
+            if match:
+                version_uid = match.group(1)
+                if js.key_exists(config_file, 'VERSION_UID'):
+                    js.update(config_file, 'VERSION_UID', version_uid)
+                else:
+                    js.save(config_file, 'VERSION_UID', version_uid)
+
 def get_launch_command():
     """Construct launch command based on configuration"""
     base_args = commandline_arguments

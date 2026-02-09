@@ -2,7 +2,7 @@
 https://github.com/anxety-solo/sd-civitai-browser-plus Civitai-Browser-Plus
 https://github.com/anxety-solo/sd-civitai-extension Civitai-Extension
 https://github.com/anxety-solo/sd-aspect-ratio-plus Aspect-Ratio-Plus
-https://github.com/anxety-solo/sdaigen-misc sdAIgen-Misc
+https://github.com/anxety-solo/sdaigen-misc sdAIgen-misc
 https://github.com/anxety-solo/Umi-AI-Wildcards
 https://github.com/anxety-solo/anxety-theme
 

@@ -1,5 +1,4 @@
 {
-    "VERSION_UID": "POSTMEM",
     "sd_t2i_sampler": "Euler a",
     "sd_i2i_sampler": "Euler a",
     "xl_t2i_sampler": "Euler a",

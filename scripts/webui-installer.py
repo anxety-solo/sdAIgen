@@ -187,20 +187,6 @@ def apply_comfyui_cleanup():
     if sd_dir.exists() and sd_dir.is_dir():
         subprocess.run(['rm', '-rf', str(sd_dir)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def apply_classic_fixes():
-    """Apply specific fixes for Classic UI"""
-    cmd_args_path = WEBUI / 'modules/cmd_args.py'
-    if not cmd_args_path.exists():
-        return
-
-    marker = '# === Arguments added by ANXETY ==='
-    with cmd_args_path.open('r+', encoding='utf-8') as f:
-        if marker in f.read():
-            return
-        f.write(f"\n\n{marker}\n")
-        f.write('parser.add_argument("--hypernetwork-dir", type=normalized_filepath, '
-               'default=os.path.join(models_path, \'hypernetworks\'), help="hypernetwork directory")')
-
 def run_tagcomplete_tag_parser():
     ipyRun('run', f"{WEBUI}/tagcomplete-tags-parser.py")
 
@@ -218,10 +204,6 @@ async def main():
     # Special Func
     if UI == 'ComfyUI':
         apply_comfyui_cleanup()
-
-    ## Note: At the moment, this build does not require any fixes.
-    # if UI == 'Classic':
-    #     apply_classic_fixes()
 
     if UI != 'ComfyUI':
         run_tagcomplete_tag_parser()
