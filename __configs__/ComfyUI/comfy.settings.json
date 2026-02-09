@@ -8,6 +8,8 @@
     "Comfy.Sidebar.Size": "small",
     "Comfy.Graph.LinkMarkers": 2,
     "Comfy.NodeSuggestions.number": 15,
+    "Comfy.Execution.PreviewMethod": "latent2rgb",
+    "Comfy.PreviewFormat": "webp",
     "Comfy.ColorPalette": "comfy-anxety",
     "Comfy.CustomColorPalettes": {
         "comfy-anxety": {

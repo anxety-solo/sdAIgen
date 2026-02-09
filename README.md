@@ -25,7 +25,7 @@ English • [Русский](README-ru-RU.md)
   - Preset custom: *Settings* + *Styles* + [*UI Theme*](https://github.com/anxety-solo/anxety-theme)
   - Download previews for *models, LoRa and embedding* (CivitAi)
   - Choosing WebUI between *A1111*, *ComfyUI*, *Forge*, *Classic/Neo (Forge)*, *ReForge*, *SD-UX.*
-  - _Exclusive to **Google Colab**_: Connection to GDrive and buttons to export/import widget settings~ | ***Main Widgets***
+  - _Exclusive to **Google Colab**_: Connection to GDrive.
 
 <details>
 <summary>📚 Installed Extensions</summary>
@@ -48,13 +48,13 @@ English • [Русский](README-ru-RU.md)
 | [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter) | ✔️ | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | [SD-Couple](https://github.com/Haoming02/sd-forge-couple) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SD-Hub](https://github.com/gutris1/sd-hub) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [sdAIgen-Misc](https://github.com/anxety-solo/sdaigen-misc) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
 | [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Ultimate-Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | ✔️ | ❌ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [WD14-Tagger](https://github.com/picobyte/stable-diffusion-webui-wd14-tagger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
-| [webui_timer](https://github.com/anxety-solo/webui_timer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 
 </details>
 
@@ -76,7 +76,7 @@ English • [Русский](README-ru-RU.md)
 
 </details>
 
-## 💙 Support me:
+## 💖 Support me:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">

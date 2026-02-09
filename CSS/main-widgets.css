@@ -254,16 +254,16 @@ a {
     background-size: 65%;
     background-position: center;
     background-repeat: no-repeat;
-    background-color: var(--aw-container-bg);
-    border: var(--aw-container-border);
-    border-radius: 8px;
+    background-color: var(--aw-container-bg) !important;
+    border: var(--aw-container-border) !important;
+    border-radius: 8px !important;
     box-shadow: var(--aw-elements-shadow), inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
     cursor: pointer;
     outline: none;
     transition: all 0.15s ease;
 }
 .sideContainer-btn:active {
-    background-color: var(--aw-container-bg);
+    background-color: var(--aw-container-bg) !important;
     transform: scale(0.95) !important;
 }
 
@@ -272,19 +272,21 @@ a {
     background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg');
 }
 .gdrive-btn.active {
-    background-color: #006d33;
-    border-color: #00d062;
+    background-color: #006d33 !important;
+    border-color: #00d062 !important;
     /* transform: scale(0.9) !important; */
 }
 
 /* Export/Import Button */
-/* (↓ arrow) --> SVG Icon Page: https://www.svgrepo.com/svg/357903/import */
-.export-btn {
-    background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRabS05LjcxLDEuNzFhMSwxLDAsMCwwLC4zMy4yMS45NC45NCwwLDAsMCwuNzYsMCwxLDEsMCwwLDAsLjMzLS4yMWw0LTRhMSwxLDAsMCwwLTEuNDItMS40MkwxMywxMi41OVYzYTEsMSwwLDAsMC0yLDB2OS41OWwtMi4yOS0yLjNhMSwxLDAsMSwwLTEuNDIsMS40MloiLz4KDTwvZz4KDTwvc3ZnPg==);
-}
 /* (↑ arrow) --> SVG Icon Page: https://www.svgrepo.com/svg/357723/export */
-.import-btn {
+.export-btn {
+    font-size: 0 !important;
     background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik04LjcxLDcuNzEsMTEsNS40MVYxNWExLDEsMCwwLDAsMiwwVjUuNDFsMi4yOSwyLjNhMSwxLDAsMCwwLDEuNDIsMCwxLDEsMCwwLDAsMC0xLjQybC00LTRhMSwxLDAsMCwwLS4zMy0uMjEsMSwxLDAsMCwwLS43NiwwLDEsMSwwLDAsMC0uMzMuMjFsLTQsNEExLDEsMCwxLDAsOC43MSw3LjcxWk0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRaIi8+Cg08L2c+Cg08L3N2Zz4=);
+}
+/* (↓ arrow) --> SVG Icon Page: https://www.svgrepo.com/svg/357903/import */
+.import-btn {
+    font-size: 0 !important;
+    background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRabS05LjcxLDEuNzFhMSwxLDAsMCwwLC4zMy4yMS45NC45NCwwLDAsMCwuNzYsMCwxLDEsMCwwLDAsLjMzLS4yMWw0LTRhMSwxLDAsMCwwLTEuNDItMS40MkwxMywxMi41OVYzYTEsMSwwLDAsMC0yLDB2OS41OWwtMi4yOS0yLjNhMSwxLDAsMSwwLTEuNDIsMS40MloiLz4KDTwvZz4KDTwvc3ZnPg==);
 }
 
 /* Notification PopUp */
@@ -293,19 +295,13 @@ a {
     cursor: default;
     user-select: none;
     pointer-events: none;
+    opacity: 0;
+    transform: translateY(15px);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.notification-popup.hidden {
-    margin-top: 0;
-    opacity: 0;
-    overflow: hidden;
-    transform: translateY(15px) scale(0.9);
-}
-.notification-popup.visible {
-    margin-top: 10px;
+.notification-popup.show {
     opacity: 1;
-    overflow: hidden;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
 }
 
 .notification {
@@ -317,16 +313,14 @@ a {
     color: var(--aw-color-text-primary);
     padding: 14px 18px;
     background-color: var(--aw-container-bg);
-    /* border-left: 4px solid transparent; */
     border: var(--aw-container-border);
     border-radius: 16px;
     box-shadow: var(--aw-elements-shadow), inset 0 0 6px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     gap: 10px;
-    animation: fadeOut 0.5s ease-in-out 2.5s forwards;
 }
 
-/* Status BG Color */
+/* Status colors */
 .notification.success { --aw-status-color: #4caf50; }
 .notification.error   { --aw-status-color: #f44336; }
 .notification.info    { --aw-status-color: #2196f3; }
@@ -361,19 +355,10 @@ a {
     animation: notificationProgress 3s ease-out forwards;
 }
 
-/* Progress bar animation */
 @keyframes notificationProgress {
     0% { width: 0%; opacity: 0; }
     50% { opacity: 1; }
     100% { width: 100%; opacity: 0; }
-}
-
-/* Fade out after timeout */
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        transform: translateX(15px);
-    }
 }
 
 
@@ -629,7 +614,7 @@ a {
 .button_api .icon {
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotateX(0);
     transition: all 0.4s ease;
     pointer-events: none;
 }
@@ -654,7 +639,7 @@ a {
 }
 .button_api:hover .icon {
     left: 15px;
-    transform: translateX(0);
+    transform: translateX(0) rotateX(180deg);
 }
 .button_api:hover .text {
     max-width: 200px;

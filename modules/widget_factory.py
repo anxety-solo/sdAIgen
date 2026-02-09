@@ -94,6 +94,19 @@ class WidgetFactory:
         return widget
 
     ## Creation functions
+    def create_file_upload(self, accept, multiple=False, description='', class_names=None, **kwargs):
+        """Create a FileUpload widget"""
+        accept = accept if isinstance(accept, str) else ','.join(accept)
+
+        return self._create_widget(
+            widgets.FileUpload,
+            accept=accept,
+            multiple=multiple,
+            description=description,
+            class_names=class_names,
+            **kwargs
+        )
+
     def create_text(self, description, value='', placeholder='', class_names=None, **kwargs):
         """Create a text input widget"""
         return self._create_widget(

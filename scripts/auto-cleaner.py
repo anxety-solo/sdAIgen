@@ -19,9 +19,15 @@ HOME, SCR_PATH, SETTINGS_PATH = (
     PATHS['home_path'], PATHS['scr_path'], PATHS['settings_path']
 )
 
-CSS = SCR_PATH / 'CSS'
-cleaner_css = CSS / 'auto-cleaner.css'
+CSS_PATH = SCR_PATH / 'CSS' / 'auto-cleaner.css'
 CONTAINER_WIDTH = '1080px'
+
+# File handling rules
+TRASH_EXTENSIONS = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
+
+# Google Drive base path
+GD_BASE = '/content/drive/MyDrive/sdAIgen'
 
 
 # =================== loading settings V5 ==================
@@ -43,123 +49,207 @@ settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
 
-# ================== AutoCleaner function ==================
+# ======================= Core Logic =======================
 
-def _update_memory_info():
-    disk_space = psutil.disk_usage(os.getcwd())
-    total = disk_space.total / (1024 ** 3)
-    used = disk_space.used / (1024 ** 3)
-    free = disk_space.free / (1024 ** 3)
-    storage_info.value = f'''
-    <div class="storage_info">Total storage: {total:.2f} GB <span style="color: #555">|</span> Used: {used:.2f} GB <span style="color: #555">|</span> Free: {free:.2f} GB</div>
-    '''
+def should_delete_file(filename, directory_type):
+    """
+    Determine if file should be deleted and counted.
+    Returns: (should_delete: bool, should_count: bool)
+    """
+    # Skip trash files
+    if any(filename.endswith(ext) for ext in TRASH_EXTENSIONS):
+        return False, False
+
+    is_image = any(filename.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
+    # Output Images: delete and count everything (except trash)
+    if directory_type == 'Output Images':
+        return True, True
+
+    # Other directories: delete images but DON'T count them
+    if is_image:
+        return True, False
+
+    return ('.' in filename), ('.' in filename)  # Delete and count regular files
+
 
 def clean_directory(directory, directory_type):
-    trash_extensions = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
-    image_extensions = {'.png', '.jpg', '.jpeg', '.gif'}
-    deleted_files = 0
+    """Clean directory and return count of deleted files"""
+    deleted_count = 0
 
     for root, _, files in os.walk(directory):
         for file in files:
-            file_path = os.path.join(root, file)
-            if directory_type != 'Output Images' and file.endswith(tuple(image_extensions)):
-                os.remove(file_path)
-                continue
-            if not file.endswith(tuple(trash_extensions)) and '.' in file:
-                deleted_files += 1
-            os.remove(file_path)
+            should_delete, should_count = should_delete_file(file, directory_type)
 
-    return deleted_files
+            if should_delete:
+                file_path = os.path.join(root, file)
+                try:
+                    os.remove(file_path)
+                    if should_count:
+                        deleted_count += 1
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
 
-def generate_messages(deleted_files_dict):
-    return [f"Deleted {value} {key}" for key, value in deleted_files_dict.items()]
+    return deleted_count
 
-def execute_button_press(_):
-    deleted_files_dict = {
-        option: clean_directory(directories[option], option)
+
+def get_disk_usage():
+    """Get disk usage statistics in GB"""
+    disk = psutil.disk_usage(os.getcwd())
+    return {
+        'total': disk.total / (1024 ** 3),
+        'used': disk.used / (1024 ** 3),
+        'free': disk.free / (1024 ** 3)
+    }
+
+
+def update_storage_display():
+    """Update storage information widget"""
+    stats = get_disk_usage()
+    storage_info.value = f'''
+    <div class="storage_info">Total storage: {stats['total']:.2f} GB <span style="color: #555">|</span> Used: {stats['used']:.2f} GB <span style="color: #555">|</span> Free: {stats['free']:.2f} GB</div>
+    '''
+
+
+# ===================== Event Handlers =====================
+
+def on_execute_click(_):
+    """Handle execute button click"""
+    is_gdrive_mode = gdrive_mode_widget.value if show_gdrive_toggle else False
+
+    results = {
+        option: clean_directory(DIRECTORIES[option][is_gdrive_mode], option)
         for option in selection_widget.value
-        if option in directories
+        if option in DIRECTORIES
     }
 
     output_widget.clear_output()
     with output_widget:
-        for message in generate_messages(deleted_files_dict):
-            display(HTML(f'<p class="output-message">{message}</p>'))
-    _update_memory_info()
+        for dir_name, count in results.items():
+            display(HTML(f'<p class="output-message">Deleted {count} {dir_name}</p>'))
 
-def hide_button_press(_):
-    factory.close(mainContainer, class_names=['hide'], delay=0.5)
+    update_storage_display()
 
 
-# =================== AutoCleaner Widgets ==================
+def on_hide_click(_):
+    """Handle hide button click"""
+    factory.close(main_container, class_names=['hide'], delay=0.5)
+
+
+def on_gdrive_mode_change(change):
+    """Handle GDrive mode checkbox change"""
+    is_gdrive = change['new']
+    button_suffix = ' (GD)' if is_gdrive else ''
+    execute_button.description = f"Execute Cleaning{button_suffix}"
+
+
+# ===================== UI Construction ====================
 
 # Initialize the WidgetFactory
 factory = WidgetFactory()
+factory.load_css(CSS_PATH)
 HR = widgets.HTML('<hr>')
 
-# Load Css
-factory.load_css(cleaner_css)
+# Check GDrive toggle
+ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+mount_gdrive = js.read(SETTINGS_PATH, 'mountGDrive', False)
+show_gdrive_toggle = (ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE))
 
-directories = {
-    'Output Images': output_dir,
-    'Models': model_dir,
-    'VAE': vae_dir,
-    'LoRA': lora_dir,
-    'ControlNet Models': control_dir,
-    'CLIP Models': clip_dir,
-    'UNET Models': unet_dir,
-    'Vision Models': vision_dir,
-    'Encoder Models': encoder_dir,
-    'Diffusion Models': diffusion_dir
-}
+# Directory mapping - returns tuple (local_path, gdrive_path)
+def get_directory_paths():
+    """Build directory mapping with local and GDrive paths"""
+    gdrive_map = {
+        # Display Names | Name Dirs in GD | path to dir
+        'Models': ('Checkpoints', model_dir),
+        'VAE': ('VAE', vae_dir),
+        'LoRA': ('Lora', lora_dir),
+        'ControlNet Models': ('ControlNet', control_dir),
+        'CLIP Models': ('Clip', clip_dir),
+        'UNET Models': ('Unet', unet_dir),
+        'Vision Models': ('Vision', vision_dir),
+        'Encoder Models': ('Encoder', encoder_dir),
+        'Diffusion Models': ('Diffusion', diffusion_dir),
+        'Output Images': ('Output', output_dir),
+    }
 
-# UI Components
-disk_space = psutil.disk_usage(os.getcwd())
-total, used, free = (x / (1024 ** 3) for x in (disk_space.total, disk_space.used, disk_space.free))
+    return {
+        name: {
+            False: local,
+            True: os.path.join(GD_BASE, gd) if show_gdrive_toggle else local
+        }
+        for name, (gd, local) in gdrive_map.items()
+    }
 
-instruction_label = factory.create_html('''
-<span class="instruction">Use <span style="color: #B2B2B2;">ctrl</span> or <span style="color: #B2B2B2;">shift</span> for multiple selections.</span>
-''')
+DIRECTORIES = get_directory_paths()
+
+# Create widgets
+instruction_label = factory.create_html(
+    '<span class="instruction">Use <span style="color: #B2B2B2;">ctrl</span> or '
+    '<span style="color: #B2B2B2;">shift</span> for multiple selections.</span>'
+)
 
 selection_widget = factory.create_select_multiple(
-    list(directories.keys()),
+    list(DIRECTORIES.keys()),
     '',
     [],
     class_names=['selection-panel']
 )
+
 output_widget = widgets.Output().add_class('output-panel')
 
-execute_button = factory.create_button('Execute Cleaning', class_names=['cleaner_button', 'button_execute'])
-hide_button = factory.create_button('Hide Widget', class_names=['cleaner_button', 'button_hide'])
-execute_button.on_click(execute_button_press)
-hide_button.on_click(hide_button_press)
+execute_button = factory.create_button(
+    'Execute Cleaning',
+    class_names=['cleaner_button', 'button_execute']
+)
 
-storage_info = factory.create_html(f'''
-<div class="storage_info">Total storage: {total:.2f} GB <span style="color: #555">|</span> Used: {used:.2f} GB <span style="color: #555">|</span> Free: {free:.2f} GB</div>
-''')
+hide_button = factory.create_button(
+    'Hide Widget',
+    class_names=['cleaner_button', 'button_hide']
+)
 
-# Containers
+# GDrive mode checkbox (only shown in Colab when GDrive is mounted)
+gdrive_mode_widget = factory.create_checkbox(
+    'GDrive',
+    False,
+    class_names=['gdrive-mode']
+)
+if not show_gdrive_toggle:
+    gdrive_mode_widget.layout.display = 'none'
+
+stats = get_disk_usage()
+storage_info = factory.create_html(
+    f'<div class="storage_info">Total storage: {stats["total"]:.2f} GB '
+    f'<span style="color: #555">|</span> Used: {stats["used"]:.2f} GB '
+    f'<span style="color: #555">|</span> Free: {stats["free"]:.2f} GB</div>'
+)
+
+# Attach event handlers
+execute_button.on_click(on_execute_click)
+hide_button.on_click(on_hide_click)
+gdrive_mode_widget.observe(on_gdrive_mode_change, names='value')
+
+# Build layout
 buttons_box = factory.create_hbox(
-    [execute_button, hide_button],
+    [execute_button, hide_button, gdrive_mode_widget],
     class_names=['lower_buttons_box']
 )
 
-lower_information_panel_box = factory.create_hbox(
+info_panel = factory.create_hbox(
     [buttons_box, storage_info],
     class_names=['lower_information-panel'],
     layout={'justify_content': 'space-between'}
 )
 
-selection_output_panel_box = factory.create_hbox(
+selection_output_box = factory.create_hbox(
     [selection_widget, output_widget],
     class_names=['selection_output-layout'],
     layout={'width': '100%'}
 )
 
-mainContainer = factory.create_vbox(
-    [instruction_label, HR, selection_output_panel_box, HR, lower_information_panel_box],
+main_container = factory.create_vbox(
+    [instruction_label, HR, selection_output_box, HR, info_panel],
     class_names=['mainCleaner-container'],
     layout={'min_width': CONTAINER_WIDTH, 'max_width': CONTAINER_WIDTH}
 )
 
-factory.display(mainContainer)
+factory.display(main_container)

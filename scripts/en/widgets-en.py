@@ -1,14 +1,16 @@
 # ~ widgets.py | by ANXETY ~
 
-from widget_factory import WidgetFactory        # WIDGETS
-from webui_utils import update_current_webui    # WEBUI
-import json_utils as js                         # JSON
+from widget_factory import WidgetFactory    # WIDGETS
+from webui_utils import *                   # WEBUI / MODELs-DATA
+import json_utils as js                     # JSON
 
 from IPython.display import display, HTML, Javascript
 from google.colab import output
+from datetime import datetime
 import ipywidgets as widgets
 from pathlib import Path
 import requests
+import base64
 import time
 import json
 import os
@@ -23,7 +25,7 @@ HOME, SCR_PATH, SETTINGS_PATH = (
 )
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-SCRIPTS = SCR_PATH / 'scripts'
+SCRIPTS = PATHS['scripts_path']
 
 CSS = SCR_PATH / 'CSS'
 JS = SCR_PATH / 'JS'
@@ -42,7 +44,7 @@ def create_expandable_button(text, url):
     ''')
 
 def read_model_data(file_path, data_type):
-    """Reads model, VAE, or ControlNet data from the specified file"""
+    """Reads model, VAE, or ControlNet data from the specified file with auto-numbering"""
     type_map = {
         'model': ('model_list', ['none']),
         'vae': ('vae_list', ['none', 'ALL']),
@@ -54,13 +56,16 @@ def read_model_data(file_path, data_type):
     with open(file_path) as f:
         exec(f.read(), {}, local_vars)
 
-    names = list(local_vars[key].keys())
-    return prefixes + names
+    # Auto-numbering: add "n. " prefix to each model name
+    original_dict = local_vars[key]
+    numbered_names = [f"{i}. {name}" for i, name in enumerate(original_dict.keys(), start=1)]
+
+    return prefixes + numbered_names
 
 def fetch_github_branches(repo_url, webui=None):
     """Fetch branch names from GitHub API with optional filtering"""
     repo_path = repo_url.replace('https://github.com/', '')
-    api_url = f'https://api.github.com/repos/{repo_path}/branches'
+    api_url = f"https://api.github.com/repos/{repo_path}/branches"
 
     try:
         r = requests.get(api_url, timeout=10)
@@ -79,9 +84,9 @@ def fetch_github_branches(repo_url, webui=None):
 
         # --- FILTERING LOGIC ---
         if webui == 'Classic':
-            branches = [b for b in branches if "neo" not in b.lower()]
+            branches = [b for b in branches if 'neo' not in b.lower()]
         elif webui == 'Neo':
-            branches = [b for b in branches if "classic" not in b.lower()]
+            branches = [b for b in branches if 'classic' not in b.lower()]
 
         return branches
 
@@ -99,13 +104,13 @@ REPO_MAP = {
 }
 
 WEBUI_PARAMS = {
-    'A1111':   "--xformers --no-half-vae",
+    'A1111':   "--xformers",
     'ComfyUI': "--dont-print-server",
     'Forge':   "--xformers --cuda-stream",                       # Remove: --disable-xformers --opt-sdp-attention --pin-shared-memory
     'Classic': "--xformers --cuda-stream --persistent-patches",  # Remove: --pin-shared-memory
-    'Neo':     "--xformers --cuda-stream",
-    'ReForge': "--xformers --cuda-stream",                       # Remove: --pin-shared-memory
-    'SD-UX':   "--xformers --no-half-vae"
+    'Neo':     "--xformers --cuda-stream --skip-version-check",
+    'ReForge': "--xformers",                                     # Remove: --pin-shared-memory --cuda-stream
+    'SD-UX':   "--xformers"
 }
 
 # Initialize the WidgetFactory
@@ -242,6 +247,7 @@ save_button = factory.create_button('Save', class_names=['button', 'button_save'
 
 
 # ===================== Side Container =====================
+
 # --- GDrive Toggle Button ---
 """Create Google Drive toggle button for Colab only"""
 BTN_STYLE = {'width': '48px', 'height': '48px'}
@@ -266,41 +272,64 @@ else:
 
     GDrive_button.on_click(handle_toggle)
 
-# === Export/Import Widget Settings Buttons ===
-"""Create buttons to export/import widget settings to JSON for Colab only"""
+# --- Export/Import Widget Settings Buttons ---
+"""Create buttons to export/import widget settings to JSON"""
 export_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'export-btn'])
 export_button.tooltip = 'Export settings to JSON'
 
-import_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
+import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
 import_button.tooltip = 'Import settings from JSON'
 
-if ENV_NAME != 'Google Colab':
-    # Hide buttons if not Colab
-    export_button.layout.display = 'none'
-    import_button.layout.display = 'none'
+export_output = widgets.Output(layout={'display': 'none'})
+# export_output.add_class('export-output-widget')
+
+# --- PopUp Notification (Alias) ---
+_out_notify = widgets.Output()
+display(_out_notify)
+
+def show_notification(message, message_type='info', duration=2500):
+    """Call the already defined JS function showNotification"""
+    message_escaped = message.replace("`", "\\`").replace("\n", "\\n")
+    js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
+    with _out_notify:
+        display(Javascript(js_code))
 
 # EXPORT
-def export_settings(button=None, filter_empty=False):
+def export_settings(filter_empty=False):
     try:
         widgets_data = {}
         for key in SETTINGS_KEYS:
             value = globals()[f"{key}_widget"].value
-            if not filter_empty or (value not in [None, '', False]):
-                widgets_data[key] = value
+            # if not filter_empty or (value not in [None, '', False]):
+            #     widgets_data[key] = value
+            widgets_data[key] = value
 
         settings_data = {
             'widgets': widgets_data,
-            # 'mountGDrive': GDrive_button.toggle
+            'mountGDrive': GDrive_button.toggle
         }
 
-        display(Javascript(f'downloadJson({json.dumps(settings_data)});'))
+        json_str = json.dumps(settings_data, indent=2, ensure_ascii=False)
+        b64 = base64.b64encode(json_str.encode()).decode()
+
+        webui = change_webui_widget.value
+        date = datetime.now().strftime("%Y%m%d")
+        filename = f'widget_settings-{webui}-{date}.json'
+
+        with export_output:
+            export_output.clear_output()
+            display(HTML(f'''
+                <a download="{filename}"
+                   href="data:application/json;base64,{b64}"
+                   id="download-link"
+                   style="display:none;"></a>
+                <script>
+                    document.getElementById('download-link').click();
+                </script>
+            '''))
         show_notification('Settings exported successfully!', 'success')
     except Exception as e:
         show_notification(f"Export failed: {str(e)}", 'error')
-
-# IMPORT
-def import_settings(button=None):
-    display(Javascript('openFilePicker();'))
 
 # APPLY SETTINGS
 def apply_imported_settings(data):
@@ -329,49 +358,34 @@ def apply_imported_settings(data):
             show_notification('Settings imported successfully!', 'success')
         else:
             show_notification(f"Imported {success_count}/{total_count} settings", 'warning')
-
     except Exception as e:
         show_notification(f"Import failed: {str(e)}", 'error')
-        pass
 
-# === NOTIFICATION for Export/Import ===
-"""Create widget-popup displaying status of Export/Import settings"""
-notification_popup = factory.create_html('', class_names=['notification-popup', 'hidden'])
+# OBSERVE (CALLBACK)
+def handle_file_upload(change):
+    if not change.get('new'):
+        return
+    try:
+        uploaded_data = change['new']
 
-def show_notification(message, message_type='info'):
-    icon_map = {
-        'success':  '✅',
-        'error':    '❌',
-        'info':     '💡',
-        'warning':  '⚠️'
-    }
-    icon = icon_map.get(message_type, 'info')
+        # Get content, support dict (Colab) and tuple/list (Kaggle)
+        file_data = list(uploaded_data.values())[0] if isinstance(uploaded_data, dict) else uploaded_data[0]
+        content = file_data['content']
 
-    notification_popup.value = f'''
-    <div class="notification {message_type}">
-        <span class="notification-icon">{icon}</span>
-        <span class="notification-text">{message}</span>
-    </div>
-    '''
+        # Decode if necessary
+        json_str = bytes(content).decode('utf-8') if isinstance(content, (bytes, memoryview)) else content
 
-    # Trigger re-show | Anxety-Tip: JS Script removes class only from DOM but not from widgets?!
-    notification_popup.remove_class('visible')
-    notification_popup.remove_class('hidden')
-    notification_popup.add_class('visible')
+        data = json.loads(json_str)
+        apply_imported_settings(data)
+    except Exception as e:
+        show_notification(f"Import failed: {e}", 'error')
+    finally:
+        # Reset for re-uploading
+        import_button._counter = 0
+        import_button.value.clear()
 
-    # Auto-hide PopUp After 2.5s
-    display(Javascript("hideNotification(delay = 2500);"))
-
-# REGISTER CALLBACK
-"""
-Registers the Python function 'apply_imported_settings' under the name 'importSettingsFromJS'
-so it can be called from JavaScript via google.colab.kernel.invokeFunction(...)
-"""
-output.register_callback('importSettingsFromJS', apply_imported_settings)
-output.register_callback('showNotificationFromJS', show_notification)
-
+import_button.observe(handle_file_upload, names='value')
 export_button.on_click(export_settings)
-import_button.on_click(import_settings)
 
 
 # =================== DISPLAY / SETTINGS ===================
@@ -416,7 +430,7 @@ widgetContainer = factory.create_vbox(
     layout={'min_width': CONTAINERS_WIDTH, 'max_width': CONTAINERS_WIDTH}
 )
 sideContainer = factory.create_vbox(
-    [GDrive_button, export_button, import_button, notification_popup],
+    [GDrive_button, export_button, import_button, export_output],
     class_names=['sideContainer']
 )
 mainContainer = factory.create_hbox(
@@ -438,20 +452,45 @@ empowerment_output_widget.add_class('hidden')
 # Callback functions for XL options
 def update_XL_options(change, widget):
     is_xl = change['new']
-    defaults = {
-        True: ('3. Nova-IL [Anime] [V14] [XL]', '1. sdxl.vae', 'none'),     # XL models
-        False: ('2. BluMix [Anime] [V7] + INP', '3. Blessed2.vae', 'none')  # SD 1.5 models
-    }
-
     data_file = '_xl-models-data.py' if is_xl else '_models-data.py'
-    model_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'model')
-    vae_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'vae')
-    controlnet_widget.options = read_model_data(f"{SCRIPTS}/{data_file}", 'cnet')
+    data_path = f"{SCRIPTS}/{data_file}"
 
-    # Set default values from the dictionary
-    model_widget.value, vae_widget.value, controlnet_widget.value = defaults[is_xl]
+    # Load options
+    def load_opts(kind):
+        return read_model_data(data_path, kind)
 
-    # Disable/enable inpainting checkbox based on SDXL state
+    model_widget.options = load_opts('model')
+    vae_widget.options = load_opts('vae')
+    controlnet_widget.options = load_opts('cnet')
+
+    # Defaults set
+    defaults = {
+        True:  ('Nova-IL', 'sdxl.vae', 'none'),
+        False: ('BluMix',  'Blessed2.vae', 'none')
+    }
+    p_model, p_vae, p_cnet = defaults[is_xl]
+
+    # Load full dictionaries
+    scope = {}
+    with open(data_path) as f:
+        exec(f.read(), {}, scope)
+
+    def indexed(d):
+        return {f"{i}. {k}": v for i, (k, v) in enumerate(d.items(), 1)}
+
+    model_dict = indexed(scope['model_list'])
+    vae_dict   = indexed(scope['vae_list'])
+    cnet_dict  = indexed(scope['controlnet_list'])
+
+    # Apply values with fallback
+    def pick(partial, dictionary, fallback):
+        return find_model_by_partial_name(partial, dictionary) or fallback
+
+    model_widget.value = pick(p_model, model_dict, model_widget.options[1])
+    vae_widget.value   = pick(p_vae, vae_dict, vae_widget.options[1])
+    controlnet_widget.value = pick(p_cnet, cnet_dict, p_cnet)
+
+    # Inpainting toggle
     if is_xl:
         inpainting_model_widget.add_class('_disable')
         inpainting_model_widget.value = False
@@ -550,7 +589,7 @@ def save_data(button):
     save_settings()
     all_widgets = [
         model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
-        GDrive_button, export_button, import_button, notification_popup         # sideContainer
+        GDrive_button, export_button, import_button, export_output              # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 

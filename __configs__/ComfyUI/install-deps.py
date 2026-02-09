@@ -178,7 +178,7 @@ def main():
         save_state(installed, executed, log_file)
 
     except KeyboardInterrupt:
-        print("\n\033[1;31mInterrupted by user\033[0m")
+        print('\n\033[1;31mInterrupted by user\033[0m')
     except Exception as e:
         print(f"\n\033[1;31mError: {e}\033[0m")
 

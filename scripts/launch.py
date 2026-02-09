@@ -7,12 +7,10 @@ from IPython.display import clear_output
 from IPython import get_ipython
 from datetime import timedelta
 from pathlib import Path
-import nest_asyncio
 import subprocess
 import requests
 import argparse
 import logging
-import asyncio
 import shlex
 import time
 import json
@@ -25,10 +23,12 @@ osENV = os.environ
 CD = os.chdir
 ipySys = get_ipython().system
 
+osENV['PYTHONWARNINGS'] = 'ignore'
+
 # Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, VENV, SCR_PATH, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['venv_path'], PATHS['scr_path'], PATHS['settings_path']
+HOME, SCR_PATH, VENV, SETTINGS_PATH = (
+    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
 )
 
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
@@ -37,39 +37,32 @@ WEBUI = js.read(SETTINGS_PATH, 'WEBUI.webui_path')
 EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
-nest_asyncio.apply()  # Async support for Jupyter
-
-
 BIN = str(VENV / 'bin')
 PYTHON_VERSION = '3.11' if UI in ['Classic', 'Neo'] else '3.10'
-PKG = str(VENV / f'lib/python{PYTHON_VERSION}/site-packages')
+PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
     'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH']
 })
-# sys.path.insert(0, PKG)
 
 
 # Text Colors (\033)
 class COLORS:
-    R  =  '\033[31m'    # Red
-    G  =  '\033[32m'    # Green
-    Y  =  '\033[33m'    # Yellow
-    B  =  '\033[34m'    # Blue
-    lB =  '\033[36m'    # Light Blue
-    X  =  '\033[0m'     # Reset
+    R  = '\033[31m'    # Red
+    G  = '\033[32m'    # Green
+    Y  = '\033[33m'    # Yellow
+    B  = '\033[34m'    # Blue
+    lB = '\033[36m'    # Light Blue
+    X  = '\033[0m'     # Reset
 
 COL = COLORS
 
 # Tag-CSV Mapping
 TAGGER_MAP = {
-    'm': 'merged',
-    'merged': 'merged',
-    'e': 'e621',
-    'e621': 'e621',
-    'd': 'danbooru',
-    'danbooru': 'danbooru'
+    'm': 'merged', 'merged': 'merged',
+    'e': 'e621', 'e621': 'e621',
+    'd': 'danbooru', 'danbooru': 'danbooru'
 }
 
 
@@ -105,7 +98,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def _trashing():
-    dirs = ['A1111', 'ComfyUI', 'Forge', 'Classic', 'ReForge', 'SD-UX']
+    dirs = ['A1111', 'ComfyUI', 'Forge', 'Classic', 'Neo', 'ReForge', 'SD-UX']
     paths = [Path(HOME) / name for name in dirs]
 
     for path in paths:
@@ -115,7 +108,6 @@ def _trashing():
 def find_latest_tag_file(target='danbooru'):
     """Find the latest tag file for specified target in TagComplete extension"""
     from datetime import datetime
-    import re
 
     possible_names = {
         'a1111-sd-webui-tagcomplete',
@@ -127,11 +119,7 @@ def find_latest_tag_file(target='danbooru'):
 
     # Find TagComplete extension directory
     tagcomplete_dir = next(
-        (
-            ext_dir
-            for ext_dir in EXTS.iterdir()
-            if ext_dir.is_dir() and ext_dir.name.lower() in possible_names
-        ),
+        (ext_dir for ext_dir in EXTS.iterdir() if ext_dir.is_dir() and ext_dir.name.lower() in possible_names),
         None
     )
     if not tagcomplete_dir:
@@ -189,7 +177,7 @@ def get_launch_command():
     base_args = commandline_arguments
     password = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
 
-    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'    # Remove: --share
+    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --skip-torch-cuda-test --theme dark'  # nah: --no-gradio-queue
     if ENV_NAME == 'Kaggle':
         common_args += f" --encrypt-pass={password}"
 
@@ -205,175 +193,103 @@ def get_launch_command():
 
 # ======================== Tunneling =======================
 
-class TunnelManager:
-    """Class for managing tunnel services"""
+def is_command_available(command: str) -> bool:
+    """Check if command is available in PATH"""
+    cmd_name = command.split()[0]
+    return any(
+        os.access(os.path.join(path, cmd_name), os.X_OK)
+        for path in os.environ.get('PATH', '').split(os.pathsep)
+    )
 
-    def __init__(self, tunnel_port):
-        self.tunnel_port = tunnel_port
-        self.tunnels = []
-        self.error_reasons = []
-        self.public_ip = self._get_public_ip()
-        self.checking_queue = asyncio.Queue()
-        self.timeout = 10
+def get_public_ip() -> str:
+    """Retrieve and cache public IPv4 address"""
+    cached_ip = js.read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
+    if cached_ip:
+        return cached_ip
 
-    def _get_public_ip(self) -> str:
-        """Retrieve and cache public IPv4 address"""
-        cached_ip = js.read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
-        if cached_ip:
-            return cached_ip
+    try:
+        response = requests.get('https://api64.ipify.org?format=json&ipv4=true', timeout=5)
+        public_ip = response.json().get('ip', 'N/A')
+        js.update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
+        return public_ip
+    except Exception as e:
+        print(f"Error getting public IP: {e}")
+        return 'N/A'
 
-        try:
-            response = requests.get('https://api64.ipify.org?format=json&ipv4=true', timeout=5)
-            public_ip = response.json().get('ip', 'N/A')
-            js.update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
-            return public_ip
-        except Exception as e:
-            print(f"Error getting public IP address: {e}")
-            return 'N/A'
+def setup_tunnels(tunnel_port):
+    """Setup tunnel configurations with command availability check"""
+    public_ip = get_public_ip()
 
-    async def _print_status(self):
-        """Async status printer"""
-        print(f"{COL.Y}>> Tunnels:{COL.X}")
-        while True:
-            service_name = await self.checking_queue.get()
-            print(f"- 🕒 Checking {COL.lB}{service_name}{COL.X}...")
-            self.checking_queue.task_done()
+    services = [
+        ('Gradio', {
+            'command': f"gradio-tun {tunnel_port}",
+            'pattern': r'[\w-]+\.gradio\.live'
+        }),
+        ('Pinggy', {
+            'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{tunnel_port} a.pinggy.io",
+            'pattern': r'[\w-]+\.a\.free\.pinggy\.link'
+        }),
+        ('Cloudflared', {
+            'command': f"cl tunnel --url localhost:{tunnel_port}",
+            'pattern': r'[\w-]+\.trycloudflare\.com'
+        }),
+        ('Localtunnel', {
+            'command': f"lt --port {tunnel_port}",
+            'pattern': r'[\w-]+\.loca\.lt',
+            'note': f"| Password: {COL.G}{public_ip}{COL.X}"
+        })
+    ]
 
-    async def _test_tunnel(self, name, config):
-        """Async tunnel testing"""
-        await self.checking_queue.put(name)
-        try:
-            process = await asyncio.create_subprocess_exec(
-                *shlex.split(config['command']),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
-            )
+    # Zrok setup
+    if zrok_token:
+        env_path = HOME / '.zrok/environment.json'
+        current_token = None
 
-            start_time = time.time()
-            output = []
-            pattern_found = False
-            check_interval = 0.5
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                current_token = json.load(f).get('zrok_token')
 
-            while time.time() - start_time < self.timeout:
-                try:
-                    line = await asyncio.wait_for(
-                        process.stdout.readline(),
-                        timeout=check_interval
-                    )
-                    if not line:
-                        continue
+        if current_token != zrok_token:
+            ipySys('zrok disable &> /dev/null')
+            ipySys(f"zrok enable {zrok_token} &> /dev/null")
 
-                    line = line.decode().strip()
-                    output.append(line)
+        services.append(('Zrok', {
+            'command': f"zrok share public http://localhost:{tunnel_port}/ --headless",
+            'pattern': r'[\w-]+\.share\.zrok\.io'
+        }))
 
-                    if config['pattern'].search(line):
-                        pattern_found = True
-                        break
+    # Ngrok setup
+    if ngrok_token:
+        config_path = HOME / '.config/ngrok/ngrok.yml'
+        current_token = None
 
-                except asyncio.TimeoutError:
-                    continue
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                current_token = yaml.safe_load(f).get('agent', {}).get('authtoken')
 
-            if process.returncode is None:
-                try:
-                    process.terminate()
-                    await asyncio.wait_for(process.wait(), timeout=2)
-                except:
-                    pass
+        if current_token != ngrok_token:
+            ipySys(f"ngrok config add-authtoken {ngrok_token}")
 
-            if pattern_found:
-                return True, None
+        services.append(('Ngrok', {
+            'command': f"ngrok http http://localhost:{tunnel_port} --log stdout",
+            'pattern': r'https://[\w-]+\.ngrok-free\.app'
+        }))
 
-            error_msg = '\n'.join(output[-3:]) or 'No output received'
-            return False, f"{error_msg[:300]}..."
+    # Check command availability
+    available_tunnels = []
+    unavailable_tunnels = []
 
-        except Exception as e:
-            return False, f"Process error: {str(e)}"
+    print(f"{COL.Y}>> Checking Tunnels:{COL.X}")
+    for name, config in services:
+        print(f"- 🕒 Checking {COL.lB}{name}{COL.X}...", end=' ')
+        if is_command_available(config['command']):
+            available_tunnels.append((name, config))
+            print(f"{COL.G}✓{COL.X}")
+        else:
+            unavailable_tunnels.append(name)
+            print(f"{COL.R}✗{COL.X}")
 
-    async def setup_tunnels(self):
-        """Async tunnel configuration"""
-        services = [
-            ('Gradio', {
-                'command': f"gradio-tun {self.tunnel_port}",
-                'pattern': re.compile(r'[\w-]+\.gradio\.live')
-            }),
-            ('Pinggy', {
-                'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{self.tunnel_port} a.pinggy.io",
-                'pattern': re.compile(r'[\w-]+\.a\.free\.pinggy\.link')
-            }),
-            ('Cloudflared', {
-                'command': f"cl tunnel --url localhost:{self.tunnel_port}",
-                'pattern': re.compile(r'[\w-]+\.trycloudflare\.com')
-            }),
-            ('Localtunnel', {
-                'command': f"lt --port {self.tunnel_port}",
-                'pattern': re.compile(r'[\w-]+\.loca\.lt'),
-                'note': f"| Password: {COL.G}{self.public_ip}{COL.X}"
-            })
-        ]
-
-        if zrok_token:
-            env_path = HOME / '.zrok/environment.json'
-            current_token = None
-
-            if env_path.exists():
-                with open(env_path, 'r') as f:
-                    current_token = json.load(f).get('zrok_token')
-
-            if current_token != zrok_token:
-                ipySys('zrok disable &> /dev/null')
-                ipySys(f"zrok enable {zrok_token} &> /dev/null")
-
-            services.append(('Zrok', {
-                'command': f"zrok share public http://localhost:{self.tunnel_port}/ --headless",
-                'pattern': re.compile(r'[\w-]+\.share\.zrok\.io')
-            }))
-
-        if ngrok_token:
-            config_path = HOME / '.config/ngrok/ngrok.yml'
-            current_token = None
-
-            if config_path.exists():
-                with open(config_path, 'r') as f:
-                    current_token = yaml.safe_load(f).get('agent', {}).get('authtoken')
-
-            if current_token != ngrok_token:
-                ipySys(f"ngrok config add-authtoken {ngrok_token}")
-
-            services.append(('Ngrok', {
-                'command': f"ngrok http http://localhost:{self.tunnel_port} --log stdout",
-                'pattern': re.compile(r'https://[\w-]+\.ngrok-free\.app')
-            }))
-
-        # Create status printer task
-        printer_task = asyncio.create_task(self._print_status())
-
-        # Run all tests concurrently
-        tasks = []
-        for name, config in services:
-            tasks.append(self._test_tunnel(name, config))
-
-        results = await asyncio.gather(*tasks)
-
-        # Cancel status printer
-        printer_task.cancel()
-        try:
-            await printer_task
-        except asyncio.CancelledError:
-            pass
-
-        # Process results
-        for (name, config), (success, error) in zip(services, results):
-            if success:
-                self.tunnels.append({**config, 'name': name})
-            else:
-                self.error_reasons.append({'name': name, 'reason': error})
-
-        return (
-            self.tunnels,
-            len(services),
-            len(self.tunnels),
-            len(self.error_reasons)
-        )
+    return available_tunnels, len(services), len(available_tunnels), unavailable_tunnels
 
 
 # ========================== Main ==========================
@@ -383,23 +299,20 @@ if __name__ == '__main__':
     args = parse_arguments()
     print('Please Wait...\n')
 
-    osENV['PYTHONWARNINGS'] = 'ignore'
+    osENV.setdefault('IIB_ACCESS_CONTROL', 'disable')
+    osENV['UVICORN_LOG_LEVEL'] = 'error'
+    # osENV.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')    # (thx: github.com/zanllp/sd-webui-infinite-image-browsing/issues/880)
 
-    # Initialize tunnel manager and services
+    # Initialize tunnel manager
     tunnel_port = 8188 if UI == 'ComfyUI' else 7860
-    tunnel_mgr = TunnelManager(tunnel_port)
+    available_tunnels, total, success, unavailable = setup_tunnels(tunnel_port)
 
-    # Run async setup
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tunnels, total, success, errors = loop.run_until_complete(tunnel_mgr.setup_tunnels())
+    # Setup tunneling service
+    tunneling_service = Tunnel(tunnel_port, check_command_available=False)
+    tunneling_service.logger.setLevel(logging.DEBUG if args.log else logging.INFO)
 
-    # Set up tunneling service
-    tunnelingService = Tunnel(tunnel_port)
-    tunnelingService.logger.setLevel(logging.DEBUG)
-
-    for tunnel in tunnels:
-        tunnelingService.add_tunnel(**tunnel)
+    for name, config in available_tunnels:
+        tunneling_service.add_tunnel(name=name, **config)
 
     clear_output(wait=True)
 
@@ -411,7 +324,7 @@ if __name__ == '__main__':
     # Setup pinggy timer
     ipySys(f"echo -n {int(time.time())+(3600+20)} > {WEBUI}/static/timer-pinggy.txt")
 
-    with tunnelingService:
+    with tunneling_service:
         CD(WEBUI)
 
         if UI == 'ComfyUI':
@@ -426,22 +339,22 @@ if __name__ == '__main__':
                 js.save(COMFYUI_SETTINGS_PATH, 'install_req', True)
                 clear_output(wait=True)
 
-        print(f"{COL.B}>> Total Tunnels:{COL.X} {total} | {COL.G}Success:{COL.X} {success} | {COL.R}Errors:{COL.X} {errors}\n")
+        print(f"{COL.B}>> Total Tunnels:{COL.X} {total} | {COL.G}Available:{COL.X} {success} | {COL.R}Unavailable:{COL.X} {len(unavailable)}\n")
 
-        # Display error details if any
-        if args.log and errors > 0:
-            print(f"{COL.R}>> Failed Tunnels:{COL.X}")
-            for error in tunnel_mgr.error_reasons:
-                print(f"  - {error['name']}: {error['reason']}")
+        # Display unavailable tunnels if any
+        if args.log and unavailable:
+            print(f"{COL.R}>> Unavailable Tunnels:{COL.X}")
+            for name in unavailable:
+                print(f"  - {name}: Command not found in PATH")
             print()
 
-        # Display selected trigger if was used
+        # Display selected tagger if was used
         if UI != 'ComfyUI' and args.tagger:
-            selected_trigger = TAGGER_MAP.get(args.tagger, args.tagger)
-            tag_file = find_latest_tag_file(selected_trigger)
+            selected_tagger = TAGGER_MAP.get(args.tagger, args.tagger)
+            tag_file = find_latest_tag_file(selected_tagger)
 
             if tag_file:
-                print(f"{COL.B}>> 🏷️ Selected Tagger: {COL.lB}{selected_trigger}{COL.X} ({tag_file})\n")
+                print(f"{COL.B}>> 🏷️ Selected Tagger: {COL.lB}{selected_tagger}{COL.X} ({tag_file})\n")
 
         print(f"🔧 WebUI: {COL.B}{UI}{COL.X}")
 

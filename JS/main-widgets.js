@@ -12,53 +12,31 @@ function toggleContainer() {
     elements.empowerment.classList.toggle(SHOW_CLASS);
 }
 
-// Trigger file download of JSON content
-function downloadJson(data, filename='widget_settings.json') {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+// Show/Hide Notification
+function showNotification(message, type='info', duration=2500) {
+    const ICONS = { success:'✅', error:'❌', info:'💡', warning:'⚠️' };
+    const sideContainer = document.querySelector('.sideContainer');
+    if (!sideContainer) return;
 
-// Open file picker and send parsed JSON to Python callback
-function openFilePicker(callbackName='importSettingsFromJS') {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.style.display = 'none';
+    document.querySelectorAll('.notification-popup').forEach(p => p.remove());
 
-    input.onchange = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+    const popup = document.createElement('div');
+    popup.className = `notification-popup ${type}`;
+    popup.innerHTML = `
+        <div class="notification ${type}">
+            <span class="notification-icon">${ICONS[type] || ICONS.info}</span>
+            <span class="notification-text">${message}</span>
+        </div>
+    `;
 
-        try {
-            const text = await file.text();
-            const jsonData = JSON.parse(text);
-            google.colab.kernel.invokeFunction(callbackName, [jsonData], {});
-        } catch (err) {
-            // Notify Python of JSON parsing error using a registered callback
-            google.colab.kernel.invokeFunction('showNotificationFromJS',
-                ["Failed to parse JSON: " + err.message, "error"], {});
-        }
-    };
+    sideContainer.appendChild(popup);
 
-    document.body.appendChild(input);
-    input.click();
-    document.body.removeChild(input);
-}
+    // FadeIn
+    requestAnimationFrame(() => popup.classList.add('show'));
 
-// Hide Notification PopUp
-function hideNotification(delay = 2500) {
+    // Hide и remove
     setTimeout(() => {
-        const popup = document.querySelector('.notification-popup');
-        if (popup) {
-            setTimeout(() => {
-                popup.classList.add('hidden')
-                popup.classList.remove('visible')
-            }, 500);
-        };
-    }, delay);
+        popup.classList.remove('show'); // fadeOut
+        setTimeout(() => popup.remove(), 500);
+    }, duration);
 }
