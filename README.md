@@ -76,7 +76,7 @@ English • [Русский](README-ru-RU.md)
 
 </details>
 
-## 💙 Support me:
+## 💖 Support me:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">

@@ -76,7 +76,7 @@
 
 </details>
 
-## 💙 Поддержать меня:
+## 💖 Поддержать меня:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">
