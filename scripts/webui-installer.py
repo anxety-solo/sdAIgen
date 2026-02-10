@@ -85,7 +85,8 @@ async def get_extensions_list():
 
 # ================= CONFIGURATION HANDLING =================
 
-# For Forge/ReForge/SD-UX - default is used: A1111
+PYTHON_VERSION = {'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
+
 CONFIG_MAP = {
     'A1111': [
         f"{CONFIG_URL}/{UI}/config.json",
@@ -95,7 +96,7 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/card-no-preview.png, {WEBUI}/html",
         f"{CONFIG_URL}/notification.mp3",
         # Special Scripts
-        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.10/site-packages/gradio_tunneling, main.py",
+        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python{PYTHON_VERSION}/site-packages/gradio_tunneling, main.py",
         f"{CONFIG_URL}/tagcomplete-tags-parser.py"
     ],
     'ComfyUI': [
@@ -104,7 +105,7 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/{UI}/Comfy-Manager/config.ini, {WEBUI}/user/__manager",
         f"{CONFIG_URL}/{UI}/workflows/anxety-workflow.json, {WEBUI}/user/default/workflows",
         # Special Scripts
-        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.10/site-packages/gradio_tunneling, main.py"
+        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python{PYTHON_VERSION}/site-packages/gradio_tunneling, main.py"
     ],
     'Classic': [
         f"{CONFIG_URL}/{UI}/config.json",
@@ -114,7 +115,7 @@ CONFIG_MAP = {
         f"{CONFIG_URL}/card-no-preview.png, {WEBUI}/html, card-no-preview.jpg",
         f"{CONFIG_URL}/notification.mp3",
         # Special Scripts
-        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python3.11/site-packages/gradio_tunneling, main.py",
+        f"{CONFIG_URL}/gradio-tunneling.py, {VENV}/lib/python{PYTHON_VERSION}/site-packages/gradio_tunneling, main.py",
         f"{CONFIG_URL}/tagcomplete-tags-parser.py"
     ]
 }

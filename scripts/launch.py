@@ -38,7 +38,7 @@ EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
 BIN = str(VENV / 'bin')
-PYTHON_VERSION = '3.11' if UI in ['Classic', 'Neo'] else '3.10'
+PYTHON_VERSION = {'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
 PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
 
 osENV.update({

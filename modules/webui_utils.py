@@ -87,6 +87,13 @@ def _set_webui_paths(ui: str) -> None:
 
     js.update(SETTINGS_PATH, 'WEBUI', path_config)
 
+def _remove_path(path: Path):
+    """Remove file, directory or symlink"""
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.exists():
+        shutil.rmtree(path)
+
 def _update_webui_symlink(ui: str) -> None:
     """Create/Update webui_root symlink in home_work_path"""
     try:
@@ -97,12 +104,10 @@ def _update_webui_symlink(ui: str) -> None:
         webui_root = HOME / ui
         symlink_path = home_work / 'webui_root'
 
-        if symlink_path.exists():
-            symlink_path.unlink()
+        _remove_path(symlink_path)
         symlink_path.symlink_to(webui_root, target_is_directory=True)
     except:
         pass
-
 
 def handle_setup_timer(webui_path: str, timer_webui: float) -> float:
     """Manage timer persistence for WebUI instances"""
