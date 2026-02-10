@@ -48,7 +48,7 @@ English • [Русский](README-ru-RU.md)
 | [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter) | ✔️ | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | [SD-Couple](https://github.com/Haoming02/sd-forge-couple) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SD-Hub](https://github.com/gutris1/sd-hub) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| [sdAIgen-Misc](https://github.com/anxety-solo/sdaigen-misc) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
+| [sdAIgen-misc](https://github.com/anxety-solo/sdaigen-misc) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
 | [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
