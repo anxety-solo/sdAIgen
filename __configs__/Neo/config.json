@@ -7,6 +7,8 @@
     "sd_i2i_scheduler": "Karras",
     "xl_t2i_scheduler": "Karras",
     "xl_i2i_scheduler": "Karras",
+    "xl_t2i_step": "28",
+    "xl_t2i_cfg": "4",
     "sd_vae": "None",
     "CLIP_stop_at_last_layers": 2,
     "ad_max_models": 6,
