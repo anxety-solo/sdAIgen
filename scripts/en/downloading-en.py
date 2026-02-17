@@ -90,7 +90,7 @@ def setup_venv(url):
     Path(fn).unlink()
 
     BIN = str(VENV / 'bin')
-    PYTHON_VERSION = {'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
+    PYTHON_VERSION = {'ComfyUI': '3.13', 'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
     PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
 
     osENV.update({
@@ -151,7 +151,7 @@ if not SKIP_INSTALL_VENV and venv_needs_reinstall:
     venv_config = {
         'Neo':     (f"{HF_REPO_URL}/python31312-venv-torch2100-cu128-C-Neo.tar.lz4", 'Neo • 3.13.12'),
         'Classic': (f"{HF_REPO_URL}/python31113-venv-torch260-cu124-C-Classic.tar.lz4", 'Classic • 3.11.13'),
-        'ComfyUI': (f"{HF_REPO_URL}/python31018-venv-torch260-cu124-C-ComfyUI.tar.lz4", 'ComfyUI • 3.10.18'),
+        'ComfyUI': (f"{HF_REPO_URL}/python31312-venv-torch2100-cu128-ComfyUI.tar.lz4", 'ComfyUI • 3.13.12'),
         'default': (f"{HF_REPO_URL}/python31018-venv-torch260-cu124-C-fa.tar.lz4", 'Default • 3.10.18')
     }
     venv_url, venv_version = venv_config.get(current_ui, venv_config['default'])
