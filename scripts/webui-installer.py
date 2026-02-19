@@ -88,7 +88,7 @@ async def get_extensions_list():
 
 # ================= CONFIGURATION HANDLING =================
 
-PYTHON_VERSION = {'ComfyUI': '3.13', 'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
+PYTHON_VERSION = js.read(SETTINGS_PATH, 'WEBUI.python_version')
 
 CONFIG_MAP = {
     'A1111': [

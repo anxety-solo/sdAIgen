@@ -33,23 +33,31 @@ WEBUI_PATHS = {
 # 🔁 Alias
 WEBUI_PATHS['Neo'] = WEBUI_PATHS['Classic']
 
+PYTHON_VERSIONS = {
+    'ComfyUI': '3.13',
+    'Neo':     '3.13',
+    'Classic': '3.11',
+}
+DEFAULT_PYTHON_VERSION = '3.10'
+
 
 # ===================== WEBUI HANDLERS =====================
 
-def update_current_webui(current_value: str) -> None:
+def update_current_webui(current_ui: str):
     """Update the current WebUI value and save settings"""
     current_stored = js.read(SETTINGS_PATH, 'WEBUI.current')
-    latest_value = js.read(SETTINGS_PATH, 'WEBUI.latest', None)
+    latest_ui = js.read(SETTINGS_PATH, 'WEBUI.latest', None)
 
-    if latest_value is None or current_stored != current_value:
+    if latest_ui is None or current_stored != current_ui:
         js.save(SETTINGS_PATH, 'WEBUI.latest', current_stored)
-        js.save(SETTINGS_PATH, 'WEBUI.current', current_value)
+        js.save(SETTINGS_PATH, 'WEBUI.current', current_ui)
 
-    js.save(SETTINGS_PATH, 'WEBUI.webui_path', str(HOME / current_value))
-    _set_webui_paths(current_value)
-    _update_webui_symlink(current_value)
+    js.save(SETTINGS_PATH, 'WEBUI.python_version', PYTHON_VERSIONS.get(current_ui, DEFAULT_PYTHON_VERSION))
+    js.save(SETTINGS_PATH, 'WEBUI.webui_path', str(HOME / current_ui))
+    _set_webui_paths(current_ui)
+    _update_webui_symlink(current_ui)
 
-def _set_webui_paths(ui: str) -> None:
+def _set_webui_paths(ui: str):
     """Configure paths for specified UI, fallback to A1111 for unknown UIs"""
     selected_ui = ui if ui in WEBUI_PATHS else DEFAULT_UI
     webui_root = HOME / ui
@@ -94,7 +102,7 @@ def _remove_path(path: Path):
     elif path.exists():
         shutil.rmtree(path)
 
-def _update_webui_symlink(ui: str) -> None:
+def _update_webui_symlink(ui: str):
     """Create/Update webui_root symlink in home_work_path"""
     try:
         home_work = Path(os.environ.get('home_work_path', ''))

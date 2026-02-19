@@ -90,7 +90,7 @@ def setup_venv(url):
     Path(fn).unlink()
 
     BIN = str(VENV / 'bin')
-    PYTHON_VERSION = {'ComfyUI': '3.13', 'Neo': '3.13', 'Classic': '3.11'}.get(UI, '3.10')
+    PYTHON_VERSION = js.read(SETTINGS_PATH, 'WEBUI.python_version')
     PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
 
     osENV.update({
