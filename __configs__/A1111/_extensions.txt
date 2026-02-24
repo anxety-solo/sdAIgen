@@ -2,6 +2,7 @@
 https://github.com/anxety-solo/sd-civitai-browser-plus Civitai-Browser-Plus
 https://github.com/anxety-solo/sd-civitai-extension Civitai-Extension
 https://github.com/anxety-solo/sd-aspect-ratio-plus Aspect-Ratio-Plus
+https://github.com/anxety-solo/sd-wd14-tagger wd14-tagger
 https://github.com/anxety-solo/sdaigen-misc sdAIgen-misc
 https://github.com/anxety-solo/Umi-AI-Wildcards
 https://github.com/anxety-solo/anxety-theme
@@ -21,4 +22,3 @@ https://github.com/zanllp/sd-webui-infinite-image-browsing Infinite-Image-Browsi
 https://github.com/ilian6806/stable-diffusion-webui-state State
 https://github.com/hako-mikan/sd-webui-supermerger SuperMerger
 https://github.com/DominikDoom/a1111-sd-webui-tagcomplete TagComplete
-https://github.com/picobyte/stable-diffusion-webui-wd14-tagger wd14-tagger
