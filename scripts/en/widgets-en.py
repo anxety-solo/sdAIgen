@@ -108,7 +108,7 @@ WEBUI_PARAMS = {
     'ComfyUI': "--dont-print-server",
     'Forge':   "--xformers --cuda-stream",                       # Remove: --disable-xformers --opt-sdp-attention --pin-shared-memory
     'Classic': "--xformers --cuda-stream --persistent-patches",  # Remove: --pin-shared-memory
-    'Neo':     "--xformers --cuda-stream --skip-version-check",
+    'Neo':     "--xformers --cuda-malloc --cuda-stream --skip-version-check",
     'ReForge': "--xformers",                                     # Remove: --pin-shared-memory --cuda-stream
     'SD-UX':   "--xformers"
 }

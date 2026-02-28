@@ -11,6 +11,7 @@ import subprocess
 import requests
 import argparse
 import logging
+import shutil
 import shlex
 import time
 import json
@@ -341,6 +342,8 @@ if __name__ == '__main__':
         CD(WEBUI)
 
         if UI == 'ComfyUI':
+            osENV['MPLBACKEND'] = 'agg'
+
             COMFYUI_SETTINGS_PATH = SCR_PATH / 'ComfyUI.json'
             if check_custom_nodes_deps:
                 ipySys('python3 install-deps.py')
@@ -351,6 +354,13 @@ if __name__ == '__main__':
                 subprocess.run(['pip', 'install', '-r', 'requirements.txt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 js.save(COMFYUI_SETTINGS_PATH, 'install_req', True)
                 clear_output(wait=True)
+
+            was_cfg_path = EXTS / 'was-node-suite-comfyui/was_suite_config.json'
+            ffmpeg_path = shutil.which('ffmpeg')
+            if was_cfg_path.exists() and ffmpeg_path:
+                cfg = json.loads(was_cfg_path.read_text(encoding='utf-8'))
+                cfg['ffmpeg_bin_path'] = ffmpeg_path
+                was_cfg_path.write_text(json.dumps(cfg, indent=2), encoding='utf-8')
 
         print(f"{COL.B}>> Total Tunnels:{COL.X} {total} | {COL.G}Available:{COL.X} {success} | {COL.R}Unavailable:{COL.X} {len(unavailable)}\n")
 
