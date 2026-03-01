@@ -736,7 +736,8 @@ def format_output(url, dst_dir, file_name, image_url=None, image_name=None):
     print(f"{COL.Y}{'SAVE DIR:':<12}{COL.B}{dst_dir}")
     print(f"{COL.Y}{'FILE NAME:':<12}{COL.B}{file_name}{COL.X}")
     if 'civitai' in url and image_url:
-        print(f"{COL.G}{'[Preview]:':<12}{COL.X}{image_name} → {image_url}")
+        # print(f"{COL.G}{'[Preview]:':<12}{COL.X}{image_name} → {image_url}")
+        print(f"{COL.G}{'[Preview]:':<12}{COL.X}{image_url}")
     print()
 
 ''' Main Download Code '''

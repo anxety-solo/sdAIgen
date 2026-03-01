@@ -206,9 +206,32 @@ def _download_file(url, filename, log):
 
 def _aria2_download(url, filename, log):
     """Download using aria2c"""
-    user_agent = 'CivitaiLink:Automatic1111' if 'civitai.com' in url else 'Mozilla/5.0'
-    aria2_args = f'aria2c --header="User-Agent: {user_agent}" --allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5'
+    # Preflight: resolve CivitAI redirect to get the final B2 signed URL
+    if 'civitai.com/api/download/models/' in url:
+        try:
+            resp = requests.get(
+                url,
+                headers={
+                    'User-Agent': 'CivitaiLink:Automatic1111',
+                    'Authorization': f'Bearer {CAI_TOKEN}'
+                },
+                allow_redirects=True,
+                stream=True,
+                timeout=30
+            )
+            final_url = resp.url
+            resp.close()
+            if final_url and final_url != url:
+                url = final_url
+        except Exception:
+            pass  # Fallback orig url
 
+    user_agent = 'CivitaiLink:Automatic1111' if 'civitai.com' in url else 'Mozilla/5.0'
+    aria2_args = (
+        f'aria2c --header="User-Agent: {user_agent}"'
+        f' --allow-overwrite=true --console-log-level=error --stderr=true'
+        f' -c -x16 -s16 -k1M -j5'
+    )
     if HF_TOKEN and 'huggingface.co' in url:
         aria2_args += f' --header="Authorization: Bearer {HF_TOKEN}"'
 
