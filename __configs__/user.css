@@ -60,3 +60,15 @@ div.compact {
 #img2img_script_container > div {
   margin-bottom: 10px;
 }
+
+/* Fix img2img copy-to label layout */
+.gradio-row[id*="_copy_to_"] > div[id*="_label_copy_to_"] {
+  flex: 0 0 100%;
+  order: -1;
+}
+
+/* txt2img + img2img sampler spacing */
+[id$="2img_settings"] [id$="_sampling"],
+[id$="2img_settings"] [id$="_scheduler"] {
+  margin-bottom: 4px;
+}

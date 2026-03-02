@@ -213,7 +213,7 @@ def _aria2_download(url, filename, log):
                 url,
                 headers={
                     'User-Agent': 'CivitaiLink:Automatic1111',
-                    'Authorization': f'Bearer {CAI_TOKEN}'
+                    'Authorization': f"Bearer {CAI_TOKEN}"
                 },
                 allow_redirects=True,
                 stream=True,
