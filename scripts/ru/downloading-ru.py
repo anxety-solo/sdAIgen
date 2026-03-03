@@ -817,7 +817,7 @@ def manual_download(url, dst_dir, file_name=None):
     format_output(clean_url, dst_dir, file_name, image_url, image_name)
 
     # Downloading Files | With Logs and Auto Unpacking ZIP Archives
-    m_download(f"{url} {dst_dir} {file_name or ''}", log=True, unzip=True)
+    m_download(f"{url} {dst_dir} {file_name or ''}", verbose=True, unzip=True)
 
 ''' SubModels - Added URLs '''
 

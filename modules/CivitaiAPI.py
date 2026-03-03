@@ -1,4 +1,4 @@
-""" CivitAi API Module (V2) | by ANXETY """
+""" CivitAi API Module (V2.5) | by ANXETY """
 
 from typing import Optional, Union, Tuple, Dict, Any, List
 from urllib.parse import urlparse, parse_qs, urlencode
@@ -12,17 +12,43 @@ import re
 import io
 
 
-# === Logger Utility ===
-class APILogger:
-    """Colored logger for API events"""
-    def __init__(self, verbose: bool = True):
-        self.verbose = verbose
+# === Logging ===
 
-    def log(self, msg: str, level: str = 'info'):
-        if not self.verbose and level != 'error':
+COLORS = {
+    'red':    '\033[31m',
+    'green':  '\033[32m',
+    'yellow': '\033[33m',
+    'blue':   '\033[34m',
+    'reset':  '\033[0m',
+}
+
+def color(text: str, key: str) -> str:
+    return f"{COLORS[key]}{text}{COLORS['reset']}"
+
+
+class Logger:
+    """Colored console logger. Errors always shown; other levels require enabled=True"""
+
+    _LEVEL_COLORS = {
+        'info':    'blue',
+        'warning': 'yellow',
+        'error':   'red',
+        'success': 'green',
+    }
+
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled
+
+    def _write(self, message: str, level: str):
+        if not self.enabled and level != 'error':
             return
-        colors = {'error': 31, 'success': 32, 'warning': 33, 'info': 34}
-        print(f"\033[{colors[level]}m[API {level.title()}]:\033[0m {msg}")
+        prefix = color(f"[{level.upper()}]:", self._LEVEL_COLORS.get(level, 'reset'))
+        print(f">> {prefix} {message}")
+
+    def info(self, message: str):    self._write(message, 'info')
+    def warning(self, message: str): self._write(message, 'warning')
+    def error(self, message: str):   self._write(message, 'error')
+    def success(self, message: str): self._write(message, 'success')
 
 
 # === Model Data ===
@@ -59,9 +85,9 @@ class CivitAiAPI:
     SUPPORTED_TYPES = {'Checkpoint', 'TextualInversion', 'LORA'}    # For Save Preview
     IS_KAGGLE = 'KAGGLE_URL_BASE' in os.environ
 
-    def __init__(self, token: Optional[str] = None, log: bool = True):
+    def __init__(self, token: Optional[str] = None, verbose: bool = True):
         self.token = token or 'f49f7c1a1a4b60890e4bdcdb8b194c70'    # FAKE
-        self.logger = APILogger(verbose=log)
+        self.logger = Logger(enabled=verbose)
 
     # === Core Helpers ===
     def _build_url(self, endpoint: str) -> str:
@@ -76,13 +102,13 @@ class CivitAiAPI:
             res.raise_for_status()
             return res.json()
         except requests.RequestException as e:
-            self.logger.log(f"{url} failed: {e}", 'error')
+            self.logger.error(f"{url} failed: {e}")
             return None
 
     def _extract_version_id(self, url: str) -> Optional[str]:
         """Extract version ID from various CivitAI URL formats"""
         if not url.startswith(('http://', 'https://')):
-            self.logger.log('Invalid URL format', 'error')
+            self.logger.error('Invalid URL format')
             return None
 
         if 'modelVersionId=' in url:
@@ -97,7 +123,7 @@ class CivitAiAPI:
         if '/api/download/models/' in url:
             return url.split('/api/download/models/')[1].split('?')[0]
 
-        self.logger.log(f"Unsupported URL format: {url}", 'error')
+        self.logger.error(f"Unsupported URL format: {url}")
         return None
 
     def _process_url(self, download_url: str) -> Tuple[str, str]:
@@ -140,7 +166,7 @@ class CivitAiAPI:
         if ea:
             model_id = data.get('modelId')
             version_id = data.get('id')
-            self.logger.log(f"Requires Early Access: https://civitai.com/models/{model_id}?modelVersionId={version_id}", 'warning')
+            self.logger.warning(f"Requires Early Access: https://civitai.com/models/{model_id}?modelVersionId={version_id}")
         return ea
 
     def get_sha256(self, data: Optional[dict] = None, version_id: Optional[str] = None) -> Optional[str]:
@@ -194,12 +220,12 @@ class CivitAiAPI:
         """Fetch full model version metadata from CivitAI by URL"""
         version_id = self._extract_version_id(url)
         if not version_id:
-            self.logger.log(f"Cannot get model data — failed to extract version ID from URL: {url}", 'error')
+            self.logger.error(f"Cannot get model data — failed to extract version ID from URL: {url}")
             return None
 
         data = self._get(self._build_url(f"model-versions/{version_id}"))
         if not data:
-            self.logger.log(f"Failed to retrieve model version data for ID: {version_id}", 'error')
+            self.logger.error(f"Failed to retrieve model version data for ID: {version_id}")
 
         return data
 
@@ -222,11 +248,11 @@ class CivitAiAPI:
             resize: If True, resize image to 512px max (default: False)
         """
         if model_data is None:
-            self.logger.log('ModelData is None — skipping download_preview_image', 'warning')
+            self.logger.warning('ModelData is None — skipping download_preview_image')
             return
 
         if not model_data.image_url:
-            self.logger.log('No preview image URL available', 'warning')
+            self.logger.warning('No preview image URL available')
             return
 
         save_dir = Path(save_path) if save_path else Path.cwd()
@@ -241,9 +267,9 @@ class CivitAiAPI:
             res.raise_for_status()
             img_data = self._resize_image(res.content) if resize else io.BytesIO(res.content)
             file_path.write_bytes(img_data.read())
-            self.logger.log(f"Saved preview: {file_path}", 'success')
+            self.logger.success(f"Saved preview: {file_path}")
         except Exception as e:
-            self.logger.log(f"Failed to download preview: {e}", 'error')
+            self.logger.error(f"Failed to download preview: {e}")
 
     def _resize_image(self, raw: bytes, size: int = 512) -> io.BytesIO:
         """Resize image to target size while preserving aspect ratio"""
@@ -257,7 +283,7 @@ class CivitAiAPI:
             output.seek(0)
             return output
         except Exception as e:
-            self.logger.log(f"Resize failed: {e}", 'warning')
+            self.logger.warning(f"Resize failed: {e}")
             return io.BytesIO(raw)
 
     def save_model_info(self, model_data: ModelData, save_path: Optional[Union[str, Path]] = None):
@@ -269,7 +295,7 @@ class CivitAiAPI:
             save_path: Directory path (str or Path) to save metadata. Defaults to current directory.
         """
         if model_data is None:
-            self.logger.log('ModelData is None — skipping save_model_info', 'warning')
+            self.logger.warning('ModelData is None — skipping save_model_info')
             return
 
         save_dir = Path(save_path) if save_path else Path.cwd()
@@ -294,6 +320,6 @@ class CivitAiAPI:
 
         try:
             info_file.write_text(json.dumps(info, indent=4))
-            self.logger.log(f"Saved model info: {info_file}", 'success')
+            self.logger.success(f"Saved model info: {info_file}")
         except Exception as e:
-            self.logger.log(f"Failed to save info: {e}", 'error')
+            self.logger.error(f"Failed to save info: {e}")

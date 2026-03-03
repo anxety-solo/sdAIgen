@@ -1,4 +1,4 @@
-""" Manager Module (V2) | by ANXETY """
+""" Manager Module (V2.5) | by ANXETY """
 
 from CivitaiAPI import CivitAiAPI   # CivitAI API
 import json_utils as js             # JSON
@@ -32,26 +32,43 @@ COLORS = {
     'red':    '\033[31m',
     'green':  '\033[32m',
     'yellow': '\033[33m',
-    'gray':   '\033[34m',
+    'blue':   '\033[34m',
     'purple': '\033[35m',
     'cyan':   '\033[36m',
     'reset':  '\033[0m',
 }
+
 def color(text: str, key: str) -> str:
     return f"{COLORS[key]}{text}{COLORS['reset']}"
 
-def log_message(message, log=False, status='info'):
-    """Display colored log messages"""
-    if not log:
-        return
-    colors = {
-        'error': '\033[31m[ERROR]:\033[0m',
-        'warning': '\033[33m[WARNING]:\033[0m',
-        'success': '\033[32m[SUCCESS]:\033[0m',
-        'info': '\033[34m[INFO]:\033[0m'
+
+class Logger:
+    """Colored console logger. Toggle output via .enabled"""
+
+    _LEVEL_COLORS = {
+        'info':    'blue',
+        'warning': 'yellow',
+        'error':   'red',
+        'success': 'green',
     }
-    prefix = colors.get(status.lower(), '')
-    print(f">> {prefix} {message}" if prefix else message)
+
+    def __init__(self, enabled: bool = False):
+        self.enabled = enabled
+
+    def _write(self, message: str, level: str):
+        if not self.enabled:
+            return
+        prefix = color(f"[{level.upper()}]:", self._LEVEL_COLORS.get(level, 'reset'))
+        print(f">> {prefix} {message}")
+
+    def info(self, message: str):    self._write(message, 'info')
+    def warning(self, message: str): self._write(message, 'warning')
+    def error(self, message: str):   self._write(message, 'error')
+    def success(self, message: str): self._write(message, 'success')
+
+
+log = Logger()
+
 
 # Error handling decorator
 def handle_errors(func):
@@ -60,7 +77,7 @@ def handle_errors(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            log_message(str(e), True, 'error')
+            log.error(str(e))
             return None
     return wrapper
 
@@ -138,27 +155,29 @@ def is_github_url(url):
 # ======================== Download ========================
 
 @handle_errors
-def m_download(line=None, log=False, unzip=False):
+def m_download(line=None, verbose=False, unzip=False):
     """Download files from a comma-separated list of URLs or file paths"""
+    log.enabled = verbose
+
     if not line:
-        return log_message('Missing URL argument, nothing to download', log, 'error')
+        return log.error('Missing URL argument, nothing to download')
 
     links = [link.strip() for link in line.split(',') if link.strip()]
 
     if not links:
-        log_message('Missing URL, downloading nothing', log, 'info')
+        log.info('Missing URL, downloading nothing')
         return
 
     for link in links:
         if link.endswith('.txt') and Path(link).expanduser().is_file():
             with open(Path(link).expanduser(), 'r') as file:
                 for subline in file:
-                    _process_download(subline.strip(), log, unzip)
+                    _process_download(subline.strip(), unzip)
         else:
-            _process_download(link, log, unzip)
+            _process_download(link, unzip)
 
 @handle_errors
-def _process_download(line, log, unzip):
+def _process_download(line, unzip):
     """Process an individual download line"""
     parts = line.split()
     url = parts[0].replace('\\', '')
@@ -171,10 +190,10 @@ def _process_download(line, log, unzip):
     try:
         parsed = urlparse(url)
         if not all([parsed.scheme, parsed.netloc]):
-            log_message(f"Invalid URL format: {url}", log, 'warning')
+            log.warning(f"Invalid URL format: {url}")
             return
     except Exception as e:
-        log_message(f"URL validation failed for {url}: {str(e)}", log, 'warning')
+        log.warning(f"URL validation failed for {url}: {str(e)}")
         return
 
     path, filename = handle_path_and_filename(parts, url)
@@ -185,27 +204,27 @@ def _process_download(line, log, unzip):
             path.mkdir(parents=True, exist_ok=True)
             CD(path)
 
-        success = _download_file(url, filename, log)
+        success = _download_file(url, filename)
 
         if success and unzip and filename and filename.lower().endswith('.zip'):
-            _unzip_file(filename, log)
+            _unzip_file(filename)
     finally:
         CD(current_dir)
 
-def _download_file(url, filename, log):
+def _download_file(url, filename):
     """Dispatch download method by domain"""
     if any(domain in url for domain in ['civitai.com', 'huggingface.co', 'github.com']):
-        return _aria2_download(url, filename, log)
+        return _aria2_download(url, filename)
     elif 'drive.google.com' in url:
-        return _gdrive_download(url, filename, log)
+        return _gdrive_download(url, filename)
     else:
         """Download using curl"""
         cmd = f"curl -#JL '{url}'"
         if filename:
             cmd += f" -o '{filename}'"
-        return _run_command(cmd, log)
+        return _run_command(cmd)
 
-def _aria2_download(url, filename, log):
+def _aria2_download(url, filename):
     """Download using aria2c"""
     # Preflight: resolve CivitAI redirect to get the final B2 signed URL
     if 'civitai.com/api/download/models/' in url:
@@ -243,24 +262,24 @@ def _aria2_download(url, filename, log):
     if filename:
         cmd += f' -o "{filename}"'
 
-    return _aria2_monitor(cmd, log)
+    return _aria2_monitor(cmd)
 
-def _gdrive_download(url, filename, log):
+def _gdrive_download(url, filename):
     """Download using gdown"""
     cmd = f"gdown --fuzzy {url}"
     if filename:
         cmd += f' -O "{filename}"'
     if 'drive/folders' in url:
         cmd += ' --folder'
-    return _run_command(cmd, log)
+    return _run_command(cmd)
 
-def _unzip_file(file, log):
+def _unzip_file(file):
     """Extract the ZIP file to a directory named after archive"""
     path = Path(file)
     with zipfile.ZipFile(path, 'r') as zip_ref:
         zip_ref.extractall(path.parent / path.stem)
     path.unlink()
-    log_message(f"Unpacked {file} to {path.parent / path.stem}", log)
+    log.success(f"Unpacked {file} to {path.parent / path.stem}")
 
 ARIA_PROGRESS_RE = re.compile(
     r"\[#([0-9a-f]+)\s+"
@@ -270,7 +289,7 @@ ARIA_PROGRESS_RE = re.compile(
     r"ETA:([\w\d]+)\]"
 )
 
-def _aria2_monitor(command, log=True):
+def _aria2_monitor(command):
     """Monitor aria2c download progress"""
     cmd = command if isinstance(command, list) else shlex.split(command)
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -299,7 +318,7 @@ def _aria2_monitor(command, log=True):
 
             # Parse progress
             match = ARIA_PROGRESS_RE.search(line)
-            if not match or not log:
+            if not match or not log.enabled:
                 continue
 
             gid, done, total, percent, cn, speed, eta = match.groups()
@@ -317,7 +336,7 @@ def _aria2_monitor(command, log=True):
                 f"{percent}% "
                 f"{color(done, 'cyan')}/{color(total, 'cyan')} "
                 f"{color(speed + '/s', 'green')} "
-                f"{color('CN:', 'gray')}{cn} "
+                f"{color('CN:', 'blue')}{cn} "
                 f"{color('ETA:', 'yellow')}{eta}"
             )
             print(f"\r{' ' * 180}\r{output}", end='', flush=True)
@@ -326,7 +345,7 @@ def _aria2_monitor(command, log=True):
         success = process.returncode == 0 and not errors
 
         # Clear progress line and show result
-        if log:
+        if log.enabled:
             print(f"\r{' ' * 180}\r", end='', flush=True)
             if errors:
                 print()
@@ -336,7 +355,7 @@ def _aria2_monitor(command, log=True):
             if success:
                 if last_stats:
                     total, speed = last_stats
-                    file_info = color(filename, 'gray') if filename else ''
+                    file_info = color(filename, 'blue') if filename else ''
                     stats_info = color(f"({total} @ {speed}/s)", 'cyan')
                     if file_info:
                         print(f"{color('✔ Done', 'green')} | {file_info} {stats_info}")
@@ -346,19 +365,18 @@ def _aria2_monitor(command, log=True):
                     print(f"{color('✔ Download Complete', 'green')}")
             else:
                 if not errors:
-                    # No explicit error lines but exit code != 0
-                    log_message(f"Download failed (exit code {process.returncode})", log, 'error')
+                    log.error(f"Download failed (exit code {process.returncode})")
 
         return success
     except KeyboardInterrupt:
         print()
-        log_message('Download interrupted', log)
+        log.info('Download interrupted')
         return False
 
-def _run_command(command, log):
+def _run_command(command):
     """Execute a shell command. Returns True on success, False on failure"""
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if log:
+    if log.enabled:
         for line in process.stderr:
             print(line, end='')
     process.wait()
@@ -368,34 +386,36 @@ def _run_command(command, log):
 # ======================== Git Clone =======================
 
 @handle_errors
-def m_clone(input_source=None, recursive=True, depth=1, log=False):
+def m_clone(input_source=None, recursive=True, depth=1, verbose=False):
     """Main function to clone repositories"""
+    log.enabled = verbose
+
     if not input_source:
-        return log_message('Missing repository source', log, 'error')
+        return log.error('Missing repository source')
 
     sources = [link.strip() for link in input_source.split(',') if link.strip()]
 
     if not sources:
-        log_message('No valid repositories to clone', log, 'info')
+        log.info('No valid repositories to clone')
         return
 
     for source in sources:
         if source.endswith('.txt') and Path(source).expanduser().is_file():
             with open(Path(source).expanduser()) as file:
                 for line in file:
-                    _process_clone(line.strip(), recursive, depth, log)
+                    _process_clone(line.strip(), recursive, depth)
         else:
-            _process_clone(source, recursive, depth, log)
+            _process_clone(source, recursive, depth)
 
 @handle_errors
-def _process_clone(line, recursive, depth, log):
+def _process_clone(line, recursive, depth):
     parts = shlex.split(line)
     if not parts:
-        return log_message('Empty clone entry', log, 'error')
+        return log.error('Empty clone entry')
 
     url = parts[0].replace('\\', '')
     if not is_github_url(url):
-        return log_message(f"Not a GitHub URL: {url}", log, 'warning')
+        return log.warning(f"Not a GitHub URL: {url}")
 
     path, name = handle_path_and_filename(parts, url, is_git=True)
     current_dir = Path.cwd()
@@ -406,7 +426,7 @@ def _process_clone(line, recursive, depth, log):
             CD(path)
 
         cmd = _build_git_cmd(url, name, recursive, depth)
-        _run_git(cmd, log)
+        _run_git(cmd)
     finally:
         CD(current_dir)
 
@@ -421,7 +441,7 @@ def _build_git_cmd(url, name, recursive, depth):
         cmd.append(name)
     return ' '.join(cmd)
 
-def _run_git(command, log):
+def _run_git(command):
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
     while True:
@@ -436,8 +456,8 @@ def _run_git(command, log):
         if 'Cloning into' in output:
             repo = re.search(r"'(.+?)'", output)
             if repo:
-                log_message(f"Cloning: \033[32m{repo.group(1)}\033[0m -> {command}", log)
+                log.info(f"Cloning: \033[32m{repo.group(1)}\033[0m -> {command}")
 
         # Handle error messages
         if 'fatal' in output.lower():
-            log_message(output, log, 'error')
+            log.error(output)
