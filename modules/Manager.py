@@ -185,9 +185,9 @@ def _process_download(line, log, unzip):
             path.mkdir(parents=True, exist_ok=True)
             CD(path)
 
-        _download_file(url, filename, log)
+        success = _download_file(url, filename, log)
 
-        if unzip and filename and filename.lower().endswith('.zip'):
+        if success and unzip and filename and filename.lower().endswith('.zip'):
             _unzip_file(filename, log)
     finally:
         CD(current_dir)
@@ -195,15 +195,15 @@ def _process_download(line, log, unzip):
 def _download_file(url, filename, log):
     """Dispatch download method by domain"""
     if any(domain in url for domain in ['civitai.com', 'huggingface.co', 'github.com']):
-        _aria2_download(url, filename, log)
+        return _aria2_download(url, filename, log)
     elif 'drive.google.com' in url:
-        _gdrive_download(url, filename, log)
+        return _gdrive_download(url, filename, log)
     else:
         """Download using curl"""
         cmd = f"curl -#JL '{url}'"
         if filename:
             cmd += f" -o '{filename}'"
-        _run_command(cmd, log)
+        return _run_command(cmd, log)
 
 def _aria2_download(url, filename, log):
     """Download using aria2c"""
@@ -243,7 +243,7 @@ def _aria2_download(url, filename, log):
     if filename:
         cmd += f' -o "{filename}"'
 
-    _aria2_monitor(cmd, log)
+    return _aria2_monitor(cmd, log)
 
 def _gdrive_download(url, filename, log):
     """Download using gdown"""
@@ -252,7 +252,7 @@ def _gdrive_download(url, filename, log):
         cmd += f' -O "{filename}"'
     if 'drive/folders' in url:
         cmd += ' --folder'
-    _run_command(cmd, log)
+    return _run_command(cmd, log)
 
 def _unzip_file(file, log):
     """Extract the ZIP file to a directory named after archive"""
@@ -323,6 +323,7 @@ def _aria2_monitor(command, log=True):
             print(f"\r{' ' * 180}\r{output}", end='', flush=True)
 
         process.wait()
+        success = process.returncode == 0 and not errors
 
         # Clear progress line and show result
         if log:
@@ -332,27 +333,36 @@ def _aria2_monitor(command, log=True):
                 for err in errors:
                     print(err)
 
-            if last_stats:
-                total, speed = last_stats
-                file_info = color(filename, 'gray') if filename else ''
-                stats_info = color(f"({total} @ {speed}/s)", 'cyan')
-                if file_info:
-                    print(f"{color('✔ Done', 'green')} | {file_info} {stats_info}")
+            if success:
+                if last_stats:
+                    total, speed = last_stats
+                    file_info = color(filename, 'gray') if filename else ''
+                    stats_info = color(f"({total} @ {speed}/s)", 'cyan')
+                    if file_info:
+                        print(f"{color('✔ Done', 'green')} | {file_info} {stats_info}")
+                    else:
+                        print(f"{color('✔ Done', 'green')} {stats_info}")
                 else:
-                    print(f"{color('✔ Done', 'green')} {stats_info}")
+                    print(f"{color('✔ Download Complete', 'green')}")
             else:
-                print(f"{color('✔ Download Complete', 'green')}")
+                if not errors:
+                    # No explicit error lines but exit code != 0
+                    log_message(f"Download failed (exit code {process.returncode})", log, 'error')
+
+        return success
     except KeyboardInterrupt:
         print()
         log_message('Download interrupted', log)
+        return False
 
 def _run_command(command, log):
-    """Execute a shell command"""
+    """Execute a shell command. Returns True on success, False on failure"""
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if log:
         for line in process.stderr:
             print(line, end='')
     process.wait()
+    return process.returncode == 0
 
 
 # ======================== Git Clone =======================
