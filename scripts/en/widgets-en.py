@@ -11,7 +11,6 @@ import ipywidgets as widgets
 from pathlib import Path
 import requests
 import base64
-import time
 import json
 import os
 
@@ -248,6 +247,18 @@ save_button = factory.create_button('Save', class_names=['button', 'button_save'
 
 # ===================== Side Container =====================
 
+# --- GDrive Symlinks Panel ---
+"""GDrive sync options panel (appears when GDrive is active)"""
+gdrive_header = factory.create_header('GDrive Symlinks')
+gdrive_files_widget = factory.create_checkbox('Files', True)
+gdrive_outputs_widget = factory.create_checkbox('Outputs', False)
+gdrive_configs_widget = factory.create_checkbox('UI Configs', False)
+
+gdrive_settings_box = factory.create_vbox(
+    [gdrive_header, HR, gdrive_files_widget, gdrive_outputs_widget, gdrive_configs_widget],
+    class_names=['container', 'container_gdrive'],
+)
+
 # --- GDrive Toggle Button ---
 """Create Google Drive toggle button for Colab only"""
 BTN_STYLE = {'width': '48px', 'height': '48px'}
@@ -263,12 +274,17 @@ if ENV_NAME != 'Google Colab':
 else:
     if GD_status:
         GDrive_button.add_class('active')
+        gdrive_settings_box.add_class('gdrive-visible')
 
     def handle_toggle(btn):
-        """Toggle Google Drive button state"""
         btn.toggle = not btn.toggle
         btn.tooltip = TOOLTIPS[not btn.toggle]
-        btn.toggle and btn.add_class('active') or btn.remove_class('active')
+        if btn.toggle:
+            btn.add_class('active')
+            gdrive_settings_box.add_class('gdrive-visible')
+        else:
+            btn.remove_class('active')
+            gdrive_settings_box.remove_class('gdrive-visible')
 
     GDrive_button.on_click(handle_toggle)
 
@@ -281,10 +297,10 @@ import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, cla
 import_button.tooltip = 'Import settings from JSON'
 
 export_output = widgets.Output(layout={'display': 'none'})
-# export_output.add_class('export-output-widget')
 
 # --- PopUp Notification (Alias) ---
-_out_notify = widgets.Output()
+# PopUp Notification — hidden output widget, JS renders notifications into #aw-notif-root in body
+_out_notify = widgets.Output(layout={'height': '0', 'overflow': 'hidden', 'margin': '0', 'padding': '0'})
 display(_out_notify)
 
 def show_notification(message, message_type='info', duration=2500):
@@ -295,18 +311,17 @@ def show_notification(message, message_type='info', duration=2500):
         display(Javascript(js_code))
 
 # EXPORT
-def export_settings(filter_empty=False):
+def export_settings():
     try:
         widgets_data = {}
         for key in SETTINGS_KEYS:
             value = globals()[f"{key}_widget"].value
-            # if not filter_empty or (value not in [None, '', False]):
-            #     widgets_data[key] = value
             widgets_data[key] = value
 
+        gdrive_values = {key: globals()[f"{key}_widget"].value for key in GDRIVE_KEYS}
         settings_data = {
             'widgets': widgets_data,
-            'mountGDrive': GDrive_button.toggle
+            'GDrive': {'mount': GDrive_button.toggle, **gdrive_values}
         }
 
         json_str = json.dumps(settings_data, indent=2, ensure_ascii=False)
@@ -321,10 +336,10 @@ def export_settings(filter_empty=False):
             display(HTML(f'''
                 <a download="{filename}"
                    href="data:application/json;base64,{b64}"
-                   id="download-link"
+                   id="aw-download-link"
                    style="display:none;"></a>
                 <script>
-                    document.getElementById('download-link').click();
+                    document.getElementById('aw-download-link').click();
                 </script>
             '''))
         show_notification('Settings exported successfully!', 'success')
@@ -334,25 +349,38 @@ def export_settings(filter_empty=False):
 # APPLY SETTINGS
 def apply_imported_settings(data):
     try:
-        success_count = 0
-        total_count = 0
+        success_count = total_count = 0
 
         if 'widgets' in data:
             for key, value in data['widgets'].items():
                 total_count += 1
-                if key in SETTINGS_KEYS and f"{key}_widget" in globals():
+                if key in SETTINGS_KEYS:
                     try:
                         globals()[f"{key}_widget"].value = value
                         success_count += 1
                     except:
                         pass
 
-        if 'mountGDrive' in data:
-            GDrive_button.toggle = data['mountGDrive']
-            if GDrive_button.toggle:
-                GDrive_button.add_class('active')
-            else:
-                GDrive_button.remove_class('active')
+        if 'GDrive' in data:
+            gd = data['GDrive']
+            try:
+                GDrive_button.toggle = gd.get('mount', False)
+                if GDrive_button.toggle:
+                    GDrive_button.add_class('active')
+                    gdrive_settings_box.add_class('gdrive-visible')
+                else:
+                    GDrive_button.remove_class('active')
+                    gdrive_settings_box.remove_class('gdrive-visible')
+
+                for key in GDRIVE_KEYS:
+                    total_count += 1
+                    try:
+                        globals()[f"{key}_widget"].value = gd.get(key, False)
+                        success_count += 1
+                    except:
+                        pass
+            except:
+                pass
 
         if success_count == total_count:
             show_notification('Settings imported successfully!', 'success')
@@ -421,7 +449,6 @@ CONTAINERS_WIDTH = '1080px'
 model_vae_box = factory.create_hbox(
     [model_box, vae_box],
     class_names=['widgetContainer', 'model-vae'],
-    # layout={'width': '100%'}
 )
 
 widgetContainer = factory.create_vbox(
@@ -429,9 +456,18 @@ widgetContainer = factory.create_vbox(
     class_names=['widgetContainer'],
     layout={'min_width': CONTAINERS_WIDTH, 'max_width': CONTAINERS_WIDTH}
 )
-sideContainer = factory.create_vbox(
+_buttons_col = factory.create_vbox(
     [GDrive_button, export_button, import_button, export_output],
-    class_names=['sideContainer']
+    class_names=['sideContainer-buttons']
+)
+_side_inner = factory.create_hbox(
+    [_buttons_col, gdrive_settings_box],
+    class_names=['sideContainer-inner'],
+    layout={'align_items': 'flex-start'}
+)
+sideContainer = factory.create_vbox(
+    [_side_inner],
+    class_names=['sideContainer'],
 )
 mainContainer = factory.create_hbox(
     [widgetContainer, sideContainer],
@@ -446,6 +482,7 @@ factory.display(mainContainer)
 
 # Initialize visibility | hidden
 check_custom_nodes_deps_widget.layout.display = 'none'
+gdrive_settings_box.layout.display = 'none'
 empowerment_output_widget.add_class('empowerment-output')
 empowerment_output_widget.add_class('hidden')
 
@@ -560,11 +597,16 @@ SETTINGS_KEYS = [
       'custom_file_urls'
 ]
 
+GDRIVE_KEYS = ['gdrive_files', 'gdrive_outputs', 'gdrive_configs']
+
 def save_settings():
     """Save widget values to settings"""
     widgets_values = {key: globals()[f"{key}_widget"].value for key in SETTINGS_KEYS}
     js.save(SETTINGS_PATH, 'WIDGETS', widgets_values)
-    js.save(SETTINGS_PATH, 'mountGDrive', True if GDrive_button.toggle else False)  # Save Status GDrive-btn
+
+    # Save GDrive settings under 'GDrive' key
+    gdrive_values = {key: globals()[f"{key}_widget"].value for key in GDRIVE_KEYS}
+    js.save(SETTINGS_PATH, 'GDrive', {'mount': GDrive_button.toggle, **gdrive_values})
 
     update_current_webui(change_webui_widget.value)  # Update Selected WebUI in settings.json
 
@@ -576,20 +618,26 @@ def load_settings():
             if key in widget_data:
                 globals()[f"{key}_widget"].value = widget_data.get(key, '')
 
-    # Load Status GDrive-btn
-    GD_status = js.read(SETTINGS_PATH, 'mountGDrive', False)
-    GDrive_button.toggle = (GD_status == True)
-    if GDrive_button.toggle:
+    # Load GDrive settings
+    gd = js.read(SETTINGS_PATH, 'GDrive', {})
+    GD_status = gd.get('mount', False)
+    GDrive_button.toggle = GD_status
+    if GD_status:
         GDrive_button.add_class('active')
+        gdrive_settings_box.add_class('gdrive-visible')
     else:
         GDrive_button.remove_class('active')
+        gdrive_settings_box.remove_class('gdrive-visible')
+
+    for key in GDRIVE_KEYS:
+        globals()[f"{key}_widget"].value = gd.get(key, False)
 
 def save_data(button):
     """Handle save button click"""
     save_settings()
     all_widgets = [
-        model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
-        GDrive_button, export_button, import_button, export_output              # sideContainer
+        model_box, vae_box, additional_box, custom_download_box, save_button,             # mainContainer
+        GDrive_button, export_button, import_button, export_output, gdrive_settings_box   # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 

@@ -40,3 +40,52 @@ function showNotification(message, type='info', duration=2500) {
         setTimeout(() => popup.remove(), 500);
     }, duration);
 }
+
+// GDrive Symlinks Panel — show/hide with showedWidgets/hideWidgets animation (faster speed)
+(function initGDrivePanel() {
+    const SHOW_DUR = '0.45s';
+    const HIDE_DUR = '0.3s';
+
+    const poll = setInterval(() => {
+        const panel = document.querySelector('.container_gdrive');
+        if (!panel) return;
+        clearInterval(poll);
+
+        // Initial state — no animation on page load
+        const visible = panel.classList.contains('gdrive-visible');
+        panel.style.display = visible ? '' : 'none';
+        panel.style.pointerEvents = visible ? 'auto' : 'none';
+        if (visible) panel.style.animation = `showedWidgets ${SHOW_DUR} forwards ease`;
+
+        // Watch for class changes (gdrive button toggle or Save .hide)
+        new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.attributeName !== 'class') continue;
+
+                // .hide added by Save button — CSS handles hideWidgets, just block pointer-events
+                if (panel.classList.contains('hide')) {
+                    panel.style.pointerEvents = 'none';
+                    continue;
+                }
+
+                const nowVisible = panel.classList.contains('gdrive-visible');
+                if (nowVisible) {
+                    panel.style.display = '';
+                    panel.style.pointerEvents = 'auto';
+                    void panel.offsetWidth; // force reflow → animation replays
+                    panel.style.animation = `showedWidgets ${SHOW_DUR} forwards ease`;
+                } else {
+                    panel.style.animation = `hideWidgets ${HIDE_DUR} forwards ease`;
+                    panel.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                        if (!panel.classList.contains('gdrive-visible')) {
+                            panel.style.display = 'none';
+                            panel.style.animation = '';
+                        }
+                    }, 320);
+                }
+            }
+        }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+    }, 100);
+})();

@@ -209,10 +209,23 @@ a {
 .widgetContainer,
 .sideContainer {
     gap: var(--aw-conteiner-gap);
+    position: relative;
+    overflow: visible;
 }
 .widgetContainer > .model-vae {
     gap: var(--aw-conteiner-gap);
     align-items: stretch;
+}
+
+/* Buttons column | GDrive panel side-by-side */
+.sideContainer-inner {
+    gap: calc(var(--aw-conteiner-gap) + 5px);
+    align-items: flex-start;
+}
+.sideContainer-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aw-conteiner-gap);
 }
 
 .container {
@@ -245,6 +258,19 @@ a {
 .container_cdl.expanded {
     height: 305px;
 }
+
+.container_gdrive {
+    flex: none;
+    width: max-content;
+    min-width: 150px;
+}
+.container_gdrive::after { content: ''; }
+.container_gdrive .header {
+    font-size: 16px;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
 
 /* === SideContainer Buttons === */
 .sideContainer-btn {
@@ -289,19 +315,17 @@ a {
     background-image: url(data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj4KDTwhLS0gVXBsb2FkZWQgdG86IFNWRyBSZXBvLCB3d3cuc3ZncmVwby5jb20sIFRyYW5zZm9ybWVkIGJ5OiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4KPHN2ZyBmaWxsPSIjZmZmZmZmIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KDTxnIGlkPSJTVkdSZXBvX2JnQ2FycmllciIgc3Ryb2tlLXdpZHRoPSIwIi8+Cg08ZyBpZD0iU1ZHUmVwb190cmFjZXJDYXJyaWVyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KDTxnIGlkPSJTVkdSZXBvX2ljb25DYXJyaWVyIj4KDTxwYXRoIGQ9Ik04LjcxLDcuNzEsMTEsNS40MVYxNWExLDEsMCwwLDAsMiwwVjUuNDFsMi4yOSwyLjNhMSwxLDAsMCwwLDEuNDIsMCwxLDEsMCwwLDAsMC0xLjQybC00LTRhMSwxLDAsMCwwLS4zMy0uMjEsMSwxLDAsMCwwLS43NiwwLDEsMSwwLDAsMC0uMzMuMjFsLTQsNEExLDEsMCwxLDAsOC43MSw3LjcxWk0yMSwxNGExLDEsMCwwLDAtMSwxdjRhMSwxLDAsMCwxLTEsMUg1YTEsMSwwLDAsMS0xLTFWMTVhMSwxLDAsMCwwLTIsMHY0YTMsMywwLDAsMCwzLDNIMTlhMywzLDAsMCwwLDMtM1YxNUExLDEsMCwwLDAsMjEsMTRaIi8+Cg08L2c+Cg08L3N2Zz4=);
 }
 
-/* Notification PopUp */
+/* Notification PopUp — appended to .sideContainer, overflows freely */
 .notification-popup {
-    margin: 0;
-    cursor: default;
-    user-select: none;
     pointer-events: none;
     opacity: 0;
-    transform: translateY(15px);
+    transform: translateY(16px);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
 }
 .notification-popup.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(4px);
 }
 
 .notification {
@@ -663,13 +687,18 @@ a {
 .sideContainer-btn {
     animation: showedWidgets 0.8s forwards ease;
 }
+/* GDrive panel: no auto-show animation (JS handles it) */
+.container_gdrive {
+    animation: none;
+}
 
 .container.hide,
 .button_save.hide,
 .sideContainer-btn.hide,
-.notification-popup.hide {
+.container_gdrive.hide {
     animation: hideWidgets 0.5s forwards ease;
 }
+
 
 @keyframes showedWidgets {
     0% {

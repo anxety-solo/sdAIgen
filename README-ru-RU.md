@@ -25,7 +25,7 @@
   - Предустановленные пользовательские: *Настройки* + *Стили* + [*UI Тема*](https://github.com/anxety-solo/anxety-theme)
   - Скачивание превью для *моделей, LoRa и embedding* (CivitAi)
   - Выбор WebUI между *A1111*, *ComfyUI*, *Forge*, *Classic/Neo (Forge)*, *ReForge*, *SD-UX.*
-  - _Эксклюзив для **Google Colab**_: Подключение к GDrive.
+  - _Эксклюзив для **Google Colab**_: Подключение к GDrive: Файлы, Генерации, Настройки UI.
 
 <details>
 <summary>📚 Установленные Расширения</summary>
