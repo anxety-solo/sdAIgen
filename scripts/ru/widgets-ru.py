@@ -362,9 +362,9 @@ def apply_imported_settings(data):
                         pass
 
         if 'GDrive' in data:
-            gd = data['GDrive']
+            gd_data = data['GDrive']
             try:
-                GDrive_button.toggle = gd.get('mount', False)
+                GDrive_button.toggle = gd_data.get('mount', False)
                 if GDrive_button.toggle:
                     GDrive_button.add_class('active')
                     gdrive_settings_box.add_class('gdrive-visible')
@@ -375,7 +375,7 @@ def apply_imported_settings(data):
                 for key in GDRIVE_KEYS:
                     total_count += 1
                     try:
-                        globals()[f"{key}_widget"].value = gd.get(key, False)
+                        globals()[f"{key}_widget"].value = gd_data.get(key, False)
                         success_count += 1
                     except:
                         pass
@@ -619,18 +619,20 @@ def load_settings():
                 globals()[f"{key}_widget"].value = widget_data.get(key, '')
 
     # Load GDrive settings
-    gd = js.read(SETTINGS_PATH, 'GDrive', {})
-    GD_status = gd.get('mount', False)
-    GDrive_button.toggle = GD_status
-    if GD_status:
-        GDrive_button.add_class('active')
-        gdrive_settings_box.add_class('gdrive-visible')
-    else:
-        GDrive_button.remove_class('active')
-        gdrive_settings_box.remove_class('gdrive-visible')
+    if js.key_exists(SETTINGS_PATH, 'GDrive'):
+        gd_data = js.read(SETTINGS_PATH, 'GDrive')
+        GD_status = gd_data.get('mount', False)
+        GDrive_button.toggle = GD_status
+        if GD_status:
+            GDrive_button.add_class('active')
+            gdrive_settings_box.add_class('gdrive-visible')
+        else:
+            GDrive_button.remove_class('active')
+            gdrive_settings_box.remove_class('gdrive-visible')
 
-    for key in GDRIVE_KEYS:
-        globals()[f"{key}_widget"].value = gd.get(key, False)
+        for key in GDRIVE_KEYS:
+            if key in gd_data:
+                globals()[f"{key}_widget"].value = gd_data[key]
 
 def save_data(button):
     """Handle save button click"""

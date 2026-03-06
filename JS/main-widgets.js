@@ -62,9 +62,12 @@ function showNotification(message, type='info', duration=2500) {
             for (const m of mutations) {
                 if (m.attributeName !== 'class') continue;
 
-                // .hide added by Save button — CSS handles hideWidgets, just block pointer-events
+                // .hide added by Save button — trigger hideWidgets animation if panel is visible
                 if (panel.classList.contains('hide')) {
                     panel.style.pointerEvents = 'none';
+                    if (panel.classList.contains('gdrive-visible')) {
+                        panel.style.animation = `hideWidgets ${HIDE_DUR} forwards ease`;
+                    }
                     continue;
                 }
 
