@@ -30,11 +30,10 @@ English • [Русский](README-ru-RU.md)
 <details>
 <summary>📚 Installed Extensions</summary>
 
-| ✔️ — Installed | ❌ — Not Installed | 🔄 — Integrated Version | <sup>`†`</sup> — Only in *Kaggle* |
-|--------------- |------------------- |------------------------- |---------------------------------- |
+> ✔️ Installed · ❌ Not Installed · 🔄 Integrated · <sup>`†`</sup> — *Kaggle* only
 
 | Extension | A1111 | Forge | Classic | Neo | ReForge | SD-UX |
-|-----------|-------|-------|---------|-----|---------|-------|
+|-----------|:-----:|:-----:|:-------:|:---:|:-------:|:-----:|
 | [adetailer](https://github.com/Bing-su/adetailer) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [anxety-theme](https://github.com/anxety-solo/anxety-theme) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Aspect-Ratio-Plus](https://github.com/anxety-solo/sd-aspect-ratio-plus) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
