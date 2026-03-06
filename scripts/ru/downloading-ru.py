@@ -604,7 +604,11 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
 
     try:
         # Create base directories
-        _ensure_dirs(GD_BASE, GD_FILES, GD_OUTPUTS, GD_CONFIGS)
+        dirs_to_create = [GD_BASE]
+        if sync_files:   dirs_to_create.append(GD_FILES)
+        if sync_outputs: dirs_to_create.append(GD_OUTPUTS)
+        if sync_configs: dirs_to_create.append(GD_CONFIGS)
+        _ensure_dirs(*dirs_to_create)
 
         config = build_symlink_config(ui)
 
