@@ -311,7 +311,7 @@ def show_notification(message, message_type='info', duration=2500):
         display(Javascript(js_code))
 
 # EXPORT
-def export_settings():
+def export_settings(button=None):
     try:
         widgets_data = {}
         for key in SETTINGS_KEYS:
