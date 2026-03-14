@@ -588,7 +588,7 @@ factory.connect_widgets([(empowerment_widget, 'value')], update_empowerment)
 SETTINGS_KEYS = [
       'XL_models', 'model', 'model_num', 'inpainting_model', 'vae', 'vae_num',
       # Additional
-      'latest_webui', 'latest_extensions', 'check_custom_nodes_deps', 'change_webui', 'detailed_download',
+      'change_webui', 'latest_webui', 'latest_extensions', 'check_custom_nodes_deps', 'detailed_download',
       'controlnet', 'controlnet_num', 'commit_hash', 'branch',
       'civitai_token', 'huggingface_token', 'zrok_token', 'ngrok_token', 'commandline_arguments', 'theme_accent',
       # CustomDL
