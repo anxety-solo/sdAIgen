@@ -581,7 +581,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
     # Mount logic
     if not drive_mounted:
         try:
-            print(f"\n{COL.Y}⏳ Mounting Google Drive...{COL.X}", end='')
+            print(f"{COL.Y}⏳ Mounting Google Drive...{COL.X}", end='')
             with capture.capture_output():
                 drive.mount('/content/drive')
             print(f"\r{COL.G}💿 Google Drive mounted successfully!{COL.X}")
@@ -589,7 +589,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
             print(f"\r{COL.R}❌ Mounting failed:{COL.X} {str(e)}")
             return
     else:
-        print(f"\n{COL.G}🎉 Google Drive is connected~{COL.X}")
+        print(f"{COL.G}🎉 Google Drive is connected~{COL.X}")
 
     active   = [n for f, n in [(sync_files, 'Files'), (sync_outputs, 'Outputs'), (sync_configs, 'Configs')] if f]
     inactive = [n for f, n in [(sync_files, 'Files'), (sync_outputs, 'Outputs'), (sync_configs, 'Configs')] if not f]
@@ -654,7 +654,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
                     log=log
                 )
 
-        print(f"{COL.G}✅ Sync complete!\n{COL.X}")
+        print(f"{COL.G}✅ Sync complete!{COL.X}")
     except Exception as e:
         print(f"{COL.R}❌ Setup error:{COL.X} {str(e)}")
 

@@ -13,6 +13,9 @@
     "CLIP_stop_at_last_layers": 2,
     "ad_max_models": 6,
     "control_net_unit_count": 6,
+    "quicksettings_list": [
+        "CLIP_stop_at_last_layers"
+    ],
     "ui_tab_order": [
         "txt2img",
         "img2img",
