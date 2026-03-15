@@ -9,8 +9,11 @@ from pathlib import Path
 import subprocess
 import asyncio
 import aiohttp
+import sys
 import os
 
+# === Parse CLI arguments ===
+SKIP_UNPACK_WEBUI = '-s' in sys.argv or '--skip-unpack-webui' in sys.argv
 
 osENV = os.environ
 CD = os.chdir
@@ -198,7 +201,9 @@ def run_tagcomplete_tag_parser():
 
 async def main():
     # Main Func
-    unpack_webui()
+    if not SKIP_UNPACK_WEBUI:
+        unpack_webui()
+
     await asyncio.gather(
         download_configuration(),
         install_extensions(),
