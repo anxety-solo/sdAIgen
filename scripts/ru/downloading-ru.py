@@ -136,10 +136,11 @@ latest_ui = js.read(SETTINGS_PATH, 'WEBUI.latest')
 # Determine whether to reinstall venv
 venv_needs_reinstall = (
     not VENV.exists()  # venv is missing
-    # Check UIs change (Classic/Neo <-> other, ComfyUI <-> other)
+    # Check UIs change (ComfyUI <-> other, Classic/Neo <-> other, ReForge <-> other)
+    or (latest_ui == 'ComfyUI') != (current_ui == 'ComfyUI')
     or (latest_ui == 'Neo') != (current_ui == 'Neo')
     or (latest_ui == 'Classic') != (current_ui == 'Classic')
-    or (latest_ui == 'ComfyUI') != (current_ui == 'ComfyUI')
+    or (latest_ui == 'ReForge') != (current_ui == 'ReForge')
 )
 
 if not SKIP_INSTALL_VENV and venv_needs_reinstall:
@@ -149,12 +150,16 @@ if not SKIP_INSTALL_VENV and venv_needs_reinstall:
         clear_output()
 
     venv_config = {
-        'Neo':     (f"{HF_REPO_URL}/python31312-venv-torch2100-cu130-Neo.tar.lz4", 'Neo • 3.13.12'),
-        'Classic': (f"{HF_REPO_URL}/python31113-venv-torch280-cu126-Classic.tar.lz4", 'Classic • 3.11.13'),
-        'ComfyUI': (f"{HF_REPO_URL}/python31312-venv-torch2100-cu130-ComfyUI.tar.lz4", 'ComfyUI • 3.13.12'),
-        'default': (f"{HF_REPO_URL}/python31018-venv-torch260-cu124-fa.tar.lz4", 'Default • 3.10.18')
+        'ComfyUI': f"{HF_REPO_URL}/python31312-venv-torch2100-cu130-ComfyUI.tar.lz4",
+        'Neo':     f"{HF_REPO_URL}/python31312-venv-torch2100-cu130-Neo.tar.lz4",
+        'ReForge': f"{HF_REPO_URL}/python31213-venv-torch2100-cu130-ReForge.tar.lz4",
+        'Classic': f"{HF_REPO_URL}/python31113-venv-torch280-cu126-Classic.tar.lz4",
+        'default': f"{HF_REPO_URL}/python31018-venv-torch260-cu124-fa.tar.lz4",
     }
-    venv_url, venv_version = venv_config.get(current_ui, venv_config['default'])
+    venv_url = venv_config.get(current_ui, venv_config['default'])
+    ui_name  = current_ui if current_ui in venv_config else "Default"
+    _m = re.search(r'python(\d{1})(\d{2})(\d{2})', venv_url)
+    venv_version = f"{ui_name} • {int(_m[1])}.{int(_m[2])}.{int(_m[3])}" if _m else ui_name
 
     print(f"♻️ Установка VENV: {COL.B}{venv_version}{COL.X}, это может занять некоторое время...")
     setup_venv(venv_url)

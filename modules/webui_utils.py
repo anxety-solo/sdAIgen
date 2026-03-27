@@ -36,6 +36,7 @@ WEBUI_PATHS['Neo'] = WEBUI_PATHS['Classic']
 PYTHON_VERSIONS = {
     'ComfyUI': '3.13',
     'Neo':     '3.13',
+    'ReForge': '3.12',
     'Classic': '3.11',
 }
 DEFAULT_PYTHON_VERSION = '3.10'
