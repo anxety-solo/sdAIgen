@@ -157,7 +157,7 @@ if not SKIP_INSTALL_VENV and venv_needs_reinstall:
         'default': f"{HF_REPO_URL}/python31018-venv-torch260-cu124-fa.tar.lz4",
     }
     venv_url = venv_config.get(current_ui, venv_config['default'])
-    ui_name  = current_ui if current_ui in venv_config else "Default"
+    ui_name  = current_ui if current_ui in venv_config else 'Default'
     _m = re.search(r'python(\d{1})(\d{2})(\d{2})', venv_url)
     venv_version = f"{ui_name} • {int(_m[1])}.{int(_m[2])}.{int(_m[3])}" if _m else ui_name
 

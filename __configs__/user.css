@@ -72,3 +72,24 @@ div.compact {
 [id$="2img_settings"] [id$="_scheduler"] {
   margin-bottom: 4px;
 }
+
+/* Awesome CN btn-style~ */
+#controlnet .gradio-row {
+  display: flex;
+  align-items: center;
+}
+#controlnet .gradio-row:has(.cnet-toolbutton + .cnet-toolbutton) {
+  gap: 8px;
+}
+
+#controlnet .gradio-button {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5em;
+  margin-bottom: 0.7em;
+  background-color: var(--button-secondary-background-fill) !important;
+}
+#controlnet .cnet-image-row .gradio-button,
+#controlnet .controlnet_image_controls .gradio-button {
+  margin-bottom: 0 !important;
+}
