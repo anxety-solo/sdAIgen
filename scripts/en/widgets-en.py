@@ -120,7 +120,7 @@ HR = widgets.HTML('<hr>')
 """Create model selection widgets"""
 model_header = factory.create_header('Model Selection')
 model_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'model')
-model_widget = factory.create_dropdown(model_options, 'Model:', '2. BluMix [Anime | V7] + INP')
+model_widget = factory.create_dropdown(model_options, 'Model:', 'BluMix')
 model_num_widget = factory.create_text('Model Number:', '', 'Enter model numbers for download.')
 inpainting_model_widget = factory.create_checkbox('Inpainting Models', False, class_names=['inpaint'], layout={'width': '250px'})
 XL_models_widget = factory.create_checkbox('SDXL', False, class_names=['sdxl'])
@@ -131,7 +131,7 @@ switch_model_widget = factory.create_hbox([inpainting_model_widget, XL_models_wi
 """Create VAE selection widgets"""
 vae_header = factory.create_header('VAE Selection')
 vae_options = read_model_data(f"{SCRIPTS}/_models-data.py", 'vae')
-vae_widget = factory.create_dropdown(vae_options, 'Vae:', '3. Blessed2.vae')
+vae_widget = factory.create_dropdown(vae_options, 'Vae:', 'Blessed2.vae')
 vae_num_widget = factory.create_text('Vae Number:', '', 'Enter vae numbers for download.')
 
 # --- ADDITIONAL ---

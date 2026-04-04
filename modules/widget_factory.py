@@ -130,9 +130,27 @@ class WidgetFactory:
         )
 
     def create_dropdown(self, options, description, value=None, placeholder='', class_names=None, **kwargs):
-        """Create a dropdown widget"""
-        if value is None and options:
-            value = options[0]
+        """Create a dropdown with simple 'in' matching"""
+        def pick(val, opts):
+            if not val:
+                return opts[0]
+            val_l = str(val).lower()
+
+            # exact match
+            for opt in opts:
+                if val_l == str(opt).lower():
+                    return opt
+
+            # simple 'in'
+            for opt in opts:
+                if val_l in str(opt).lower():
+                    return opt
+
+            # fallback
+            return opts[0]
+
+        if options:
+            value = pick(value, options)
 
         return self._create_widget(
             widgets.Dropdown,
