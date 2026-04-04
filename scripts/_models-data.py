@@ -5,29 +5,29 @@ model_list = {
         {'url': "https://huggingface.co/XpucT/Anime/resolve/main/Anime_v2.safetensors", 'name': "Anime_V2.safetensors"},
         {'url': "https://huggingface.co/XpucT/Anime/resolve/main/Anime_v2-inpainting.safetensors", 'name': "Anime_V2-inpainting.safetensors"}
     ],
-    "BluMix [Anime] [V7] + INP": [
+    "BluMix [Anime | V7] + INP": [
         {'url': "https://civitai.com/api/download/models/361779", 'name': "BluMix_V7.safetensors"},
         {'url': "https://civitai.com/api/download/models/363850", 'name': "BluMix_V7-inpainting.safetensors"}
     ],
-    "Cetus-Mix [Anime] [V4] + INP": [
+    "Cetus-Mix [Anime | V4] + INP": [
         {'url': "https://huggingface.co/fp16-guy/Cetus-Mix_v4_fp16_cleaned/resolve/main/cetusMix_v4_fp16.safetensors", 'name': "CetusMix_V4.safetensors"},
         {'url': "https://huggingface.co/fp16-guy/Cetus-Mix_v4_fp16_cleaned/resolve/main/cetusMix_v4_inp_fp16.safetensors", 'name': "CetusMix_V4-inpainting.safetensors"}
     ],
-    "Counterfeit [Anime] [V3] + INP": [
+    "Counterfeit [Anime | V3] + INP": [
         {'url': "https://huggingface.co/fp16-guy/Counterfeit-V3.0_fp16_cleaned/resolve/main/CounterfeitV30_v30_fp16.safetensors", 'name': "Counterfeit_V3.safetensors"},
         {'url': "https://huggingface.co/fp16-guy/Counterfeit-V3.0_fp16_cleaned/resolve/main/CounterfeitV30_v30_inp_fp16.safetensors", 'name': "Counterfeit_V3-inpainting.safetensors"}
     ],
-    "CuteColor [Anime] [V3]": [
+    "CuteColor [Anime | V3]": [
         {'url': "https://civitai.com/api/download/models/138754", 'name': "CuteColor_V3.safetensors"}
     ],
     "Dark-Sushi-Mix [Anime]": [
         {'url': "https://civitai.com/api/download/models/141866", 'name': "DarkSushiMix_2_5D.safetensors"},
         {'url': "https://civitai.com/api/download/models/56071", 'name': "DarkSushiMix_colorful.safetensors"}
     ],
-    "Meina-Mix [Anime] [V12] + INP": [
+    "Meina-Mix [Anime | V12] + INP": [
         {'url': "https://civitai.com/api/download/models/948574", 'name': "MeinaMix_V12.safetensors"}
     ],
-    "Mix-Pro [Anime] [V4] + INP": [
+    "Mix-Pro [Anime | V4] + INP": [
         {'url': "https://huggingface.co/fp16-guy/MIX-Pro-V4_fp16_cleaned/resolve/main/mixProV4_v4_fp16.safetensors", 'name': "MixPro_V4.safetensors"},
         {'url': "https://huggingface.co/fp16-guy/MIX-Pro-V4_fp16_cleaned/resolve/main/mixProV4_v4_inp_fp16.safetensors", 'name': "MixPro_V4-inpainting.safetensors"},
         {'url': "https://huggingface.co/fp16-guy/MIX-Pro-V4.5_fp16_cleaned/resolve/main/mixProV45Colorbox_v45_fp16.safetensors", 'name': "MixPro_V4_5.safetensors"},
