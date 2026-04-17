@@ -86,7 +86,7 @@ div.compact {
   display: flex;
   align-items: center;
   margin-top: 0.5em;
-  margin-bottom: 0.7em;
+  margin-bottom: 0.5em;
   background-color: var(--button-secondary-background-fill) !important;
 }
 #controlnet .cnet-image-row .gradio-button,
