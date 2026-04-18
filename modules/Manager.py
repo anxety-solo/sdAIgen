@@ -1,7 +1,7 @@
 """ Manager Module (V2.5) | by ANXETY """
 
-from CivitaiAPI import CivitAiAPI   # CivitAI API
-import json_utils as js             # JSON
+from CivitaiAPI import CivitAiAPI, CIVITAI_DOMAINS   # CivitAI API
+import json_utils as js                              # JSON
 
 from urllib.parse import urlparse
 from pathlib import Path
@@ -86,7 +86,7 @@ def handle_errors(func):
 
 def _get_file_name(url, is_git=False):
     """Get the file name based on the URL"""
-    if any(domain in url for domain in ['civitai.com', 'drive.google.com']):
+    if any(domain in url for domain in [*CIVITAI_DOMAINS, 'drive.google.com']):
         return None
 
     filename = Path(urlparse(url).path).name or None
@@ -134,7 +134,7 @@ def handle_path_and_filename(parts, url, is_git=False):
 @handle_errors
 def strip_url(url):
     """Normalize special URLs (civitai, huggingface, github)"""
-    if 'civitai.com/models/' in url:
+    if any(f"{d}/models/" in url for d in CIVITAI_DOMAINS):
         api = CivitAiAPI(CAI_TOKEN)
         data = api.validate_download(url)
         return data.download_url if data else None
@@ -213,7 +213,7 @@ def _process_download(line, unzip):
 
 def _download_file(url, filename):
     """Dispatch download method by domain"""
-    if any(domain in url for domain in ['civitai.com', 'huggingface.co', 'github.com']):
+    if any(domain in url for domain in [*CIVITAI_DOMAINS, 'huggingface.co', 'github.com']):
         return _aria2_download(url, filename)
     elif 'drive.google.com' in url:
         return _gdrive_download(url, filename)
@@ -227,7 +227,7 @@ def _download_file(url, filename):
 def _aria2_download(url, filename):
     """Download using aria2c"""
     # Preflight: resolve CivitAI redirect to get the final B2 signed URL
-    if 'civitai.com/api/download/models/' in url:
+    if any(f"{d}/api/download/models/" in url for d in CIVITAI_DOMAINS):
         try:
             resp = requests.get(
                 url,
@@ -246,7 +246,7 @@ def _aria2_download(url, filename):
         except Exception:
             pass  # Fallback orig url
 
-    user_agent = 'CivitaiLink:Automatic1111' if 'civitai.com' in url else 'Mozilla/5.0'
+    user_agent = 'CivitaiLink:Automatic1111' if any(d in url for d in CIVITAI_DOMAINS) else 'Mozilla/5.0'
     aria2_args = (
         f'aria2c --header="User-Agent: {user_agent}"'
         f' --allow-overwrite=true --console-log-level=error --stderr=true'

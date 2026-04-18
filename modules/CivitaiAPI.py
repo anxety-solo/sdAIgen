@@ -12,6 +12,9 @@ import re
 import io
 
 
+CIVITAI_DOMAINS = ('civitai.com', 'civitai.red', 'civitai.green')
+
+
 # === Logging ===
 
 COLORS = {
@@ -114,7 +117,7 @@ class CivitAiAPI:
         if 'modelVersionId=' in url:
             return url.split('modelVersionId=')[1].split('&')[0]
 
-        if 'civitai.com/models/' in url:
+        if any(f"{d}/models/" in url for d in CIVITAI_DOMAINS):
             model_id = url.split('/models/')[1].split('/')[0].split('?')[0]
             if model_id.isdigit():
                 model_data = self._get(self._build_url(f"models/{model_id}"))

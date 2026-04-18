@@ -751,9 +751,11 @@ def _clean_url(url):
     return url
 
 def _extract_filename(url):
+    CIVITAI_DOMAINS = ('civitai.com', 'civitai.red', 'civitai.green')
+
     if match := re.search(r'\[(.*?)\]', url):
         return match.group(1)
-    if any(d in urlparse(url).netloc for d in ['civitai.com', 'drive.google.com']):
+    if any(d in urlparse(url).netloc for d in [*CIVITAI_DOMAINS, 'drive.google.com']):
         return None
     return Path(urlparse(url).path).name
 
