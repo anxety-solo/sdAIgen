@@ -261,10 +261,11 @@ def _aria2_download(url: str, filename: Optional[str]) -> bool:
 
     # CivitAI Auth & Resolve Redirect
     if _is_civitai(url) and not _is_signed_storage(url):
-        token = _cai_token()
-        if token and len(token) == 32:
-            aria2_args += f' --header="Authorization: Bearer {token}"'
         url = _resolve_civitai_redirect(url)
+
+        token = _cai_token()
+        if token and len(token) == 32 and '/api/download/models/' in url:
+            aria2_args += f' --header="Authorization: Bearer {token}"'
 
     # HuggingFace Auth
     if 'huggingface.co' in url:

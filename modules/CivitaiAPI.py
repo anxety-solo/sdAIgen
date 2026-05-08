@@ -196,7 +196,7 @@ class CivitAiAPI:
                         continue
                     full_ver = self._get(self._endpoint(f"model-versions/{ver['id']}"))
                     if full_ver:
-                        self.logger.info(f"Used version {ver['id']} from model {model_id}")
+                        self.logger.debug(f"Used version {ver['id']} from model {model_id}")
                         return full_ver
 
                 self.logger.error(f"No downloadable version found for model {model_id}")
