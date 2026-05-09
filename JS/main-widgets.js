@@ -1,3 +1,19 @@
+// Check CivitAI Token Input
+function checkCivitaiKey() {
+    const input = document.querySelector('.cai-token-input input[type="text"]');
+    if (!input) return;
+
+    const len = input.value.trim().length;
+    input.style.animation = 'none';
+    void input.offsetWidth;
+
+    if (len === 32) return;
+
+    input.style.animation = len === 0
+        ? 'pulseBlue 1s ease 3'
+        : 'pulseYellow 0.75s ease 5';
+}
+
 // Toggle container visibility and extension (Custom Downloads)
 function toggleContainer() {
     const SHOW_CLASS = 'showed';

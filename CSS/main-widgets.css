@@ -725,3 +725,14 @@ a {
         opacity: 0;
     }
 }
+
+/* CivitAI Token Input */
+@keyframes pulseBlue {
+    0%, 100% { border-color: transparent; box-shadow: none; }
+    50%      { border-color: #4a90e2;   box-shadow: 0 0 4px #4a90e2; }
+}
+
+@keyframes pulseYellow {
+    0%, 100% { border-color: transparent; box-shadow: none; }
+    50%      { border-color: #f0c040;   box-shadow: 0 0 4px #f0c040; }
+}
