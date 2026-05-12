@@ -24,10 +24,10 @@ HOME, SCR_PATH, SETTINGS_PATH = (
 
 
 def _cai_token() -> str:
-    return js.read(SETTINGS_PATH, 'WIDGETS.civitai_token') or 'd13740311c9f4ca5b250dfb26cf43a26'    # FAKE
+    return js.read(SETTINGS_PATH, 'WIDGETS.civitai_token', 'd13740311c9f4ca5b250dfb26cf43a26')  # FAKE
 
 def _hf_token() -> str:
-    return js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
+    return js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token', None) or ''
 
 
 # ========================= Logging ========================
@@ -262,16 +262,15 @@ def _aria2_download(url: str, filename: Optional[str]) -> bool:
     # CivitAI Auth & Resolve Redirect
     if _is_civitai(url) and not _is_signed_storage(url):
         url = _resolve_civitai_redirect(url)
-
         token = _cai_token()
         if token and len(token) == 32 and '/api/download/models/' in url:
             aria2_args += f' --header="Authorization: Bearer {token}"'
 
     # HuggingFace Auth
     if 'huggingface.co' in url:
-        hf_tok = _hf_token()
-        if hf_tok:
-            aria2_args += f' --header="Authorization: Bearer {hf_tok}"'
+        token = _hf_token()
+        if token:
+            aria2_args += f' --header="Authorization: Bearer {token}"'
 
     if not filename:
         filename = _get_filename_from_url(url)

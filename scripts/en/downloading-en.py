@@ -1,9 +1,9 @@
 # ~ download.py | by ANXETY ~
 
-from Manager import m_download, m_clone   # Every Download | Clone
-from CivitaiAPI import CivitAiAPI         # CivitAI API
-from webui_utils import *                 # WEBUI
-import json_utils as js                   # JSON
+from Manager import m_download, m_clone             # Every Download | Clone
+from CivitaiAPI import CivitAiAPI, CIVITAI_DOMAINS  # CivitAI API
+from webui_utils import *                           # WEBUI
+import json_utils as js                             # JSON
 
 from IPython.display import clear_output
 from IPython.utils import capture
@@ -751,8 +751,6 @@ def _clean_url(url):
     return url
 
 def _extract_filename(url):
-    CIVITAI_DOMAINS = ('civitai.com', 'civitai.red', 'civitai.green')
-
     if match := re.search(r'\[(.*?)\]', url):
         return match.group(1)
     if any(d in urlparse(url).netloc for d in [*CIVITAI_DOMAINS, 'drive.google.com']):
