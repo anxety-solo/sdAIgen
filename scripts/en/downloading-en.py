@@ -751,9 +751,11 @@ def _clean_url(url):
     return url
 
 def _extract_filename(url):
+    CIVITAI_DOMAINS = ('civitai.com', 'civitai.red', 'civitai.green')
+
     if match := re.search(r'\[(.*?)\]', url):
         return match.group(1)
-    if any(d in urlparse(url).netloc for d in ['civitai.com', 'drive.google.com']):
+    if any(d in urlparse(url).netloc for d in [*CIVITAI_DOMAINS, 'drive.google.com']):
         return None
     return Path(urlparse(url).path).name
 
@@ -790,7 +792,6 @@ def download(line):
 
 @handle_errors
 def manual_download(url, dst_dir, file_name=None):
-    clean_url = url
     image_url, image_name = None, None
 
     if 'civitai' in url:
@@ -798,8 +799,8 @@ def manual_download(url, dst_dir, file_name=None):
         if not (data := api.validate_download(url, file_name)):
             return
 
+        url = data.download_url                                     # Download_URL
         model_type, file_name = data.model_type, data.model_name    # Model_Type, Model_Name
-        clean_url, url = data.clean_url, data.download_url          # Clean_URL, Download_URL
         image_url, image_name = data.image_url, data.image_name     # Image_URL, Image_Name
 
         ## Preview will be downloaded automatically via [CivitAI-Extension]
@@ -809,13 +810,13 @@ def manual_download(url, dst_dir, file_name=None):
 
     elif any(s in url for s in ('github', 'huggingface.co')):
         if file_name and '.' not in file_name:
-            file_name += f".{clean_url.split('.')[-1]}"
+            file_name += f".{url.split('.')[-1]}"
 
     # Formatted info output
-    format_output(clean_url, dst_dir, file_name, image_url, image_name)
+    format_output(url.split('?')[0], dst_dir, file_name, image_url, image_name)
 
     # Downloading Files | With Logs and Auto Unpacking ZIP Archives
-    m_download(f"{url} {dst_dir} {file_name or ''}", verbose=True, unzip=True)
+    m_download(f"{url} {dst_dir} {file_name or ''}", verbose=True, debug=False, unzip=True)
 
 ''' SubModels - Added URLs '''
 

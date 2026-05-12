@@ -162,7 +162,7 @@ branches_options = fetch_github_branches(REPO_MAP['A1111'])
 branch_widget = factory.create_dropdown(branches_options, 'Branch:', 'none', layout={'width': '400px', 'margin': '0 0 0 8px'})    # margin-left
 checkout_options_box = factory.create_hbox([commit_hash_widget, branch_widget])
 
-civitai_token_widget = factory.create_text('CivitAI Token:', '', 'Введите свой API-токен CivitAi.')
+civitai_token_widget = factory.create_text('CivitAI Token:', '', 'Введите свой API-токен CivitAi.', class_names=['cai-token-input'])    # for check API-Key
 civitai_button = create_expandable_button('Получить CivitAI Токен', 'https://civitai.com/user/account')
 civitai_box = factory.create_hbox([civitai_token_widget, civitai_button])
 
@@ -476,6 +476,8 @@ mainContainer = factory.create_hbox(
 )
 
 factory.display(mainContainer)
+# Post Run Scripts
+display(Javascript('setTimeout(checkCivitaiKey, 2500)'))
 
 
 # ==================== CALLBACK FUNCTION ===================

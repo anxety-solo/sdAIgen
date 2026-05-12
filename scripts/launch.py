@@ -241,7 +241,7 @@ def setup_tunnels(tunnel_port):
         }),
         ('Pinggy', {
             'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{tunnel_port} a.pinggy.io",
-            'pattern': r'[\w-]+\.a\.free\.pinggy\.link'
+            'pattern': r'[\w-]+\.run\.pinggy-free\.link'
         }),
         ('Cloudflared', {
             'command': f"cl tunnel --url localhost:{tunnel_port}",

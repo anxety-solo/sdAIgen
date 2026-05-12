@@ -1,8 +1,9 @@
-""" Manager Module (V2.5) | by ANXETY """
+""" Manager Module (V2.7) | by ANXETY """
 
-from CivitaiAPI import CivitAiAPI   # CivitAI API
-import json_utils as js             # JSON
+from CivitaiAPI import CivitAiAPI, CIVITAI_DOMAINS   # CivitAI API
+import json_utils as js                              # JSON
 
+from typing import Optional, Tuple
 from urllib.parse import urlparse
 from pathlib import Path
 import subprocess
@@ -16,14 +17,17 @@ import os
 osENV = os.environ
 CD = os.chdir
 
-# Auto-convert *_path env vars to Path
 PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
 HOME, SCR_PATH, SETTINGS_PATH = (
     PATHS['home_path'], PATHS['scr_path'], PATHS['settings_path']
 )
 
-CAI_TOKEN = js.read(SETTINGS_PATH, 'WIDGETS.civitai_token') or 'f49f7c1a1a4b60890e4bdcdb8b194c70'
-HF_TOKEN  = js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
+
+def _cai_token() -> str:
+    return js.read(SETTINGS_PATH, 'WIDGETS.civitai_token') or 'd13740311c9f4ca5b250dfb26cf43a26'    # FAKE
+
+def _hf_token() -> str:
+    return js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or ''
 
 
 # ========================= Logging ========================
@@ -38,41 +42,46 @@ COLORS = {
     'reset':  '\033[0m',
 }
 
-def color(text: str, key: str) -> str:
+def _color(text: str, key: str) -> str:
+    """Wrap text in ANSI color escape codes"""
     return f"{COLORS[key]}{text}{COLORS['reset']}"
 
 
 class Logger:
-    """Colored console logger. Toggle output via .enabled"""
-
+    """Colored console logger"""
     _LEVEL_COLORS = {
         'info':    'blue',
         'warning': 'yellow',
         'error':   'red',
         'success': 'green',
+        'debug':   'purple',
     }
 
-    def __init__(self, enabled: bool = False):
+    def __init__(self, enabled: bool = False, debug: bool = False):
         self.enabled = enabled
+        self.debug_enabled = debug
 
     def _write(self, message: str, level: str):
-        if not self.enabled:
+        if level == 'debug':
+            if not self.debug_enabled:
+                return
+        elif not self.enabled:
             return
-        prefix = color(f"[{level.upper()}]:", self._LEVEL_COLORS.get(level, 'reset'))
+        prefix = _color(f"[{level.upper()}]:", self._LEVEL_COLORS.get(level, 'reset'))
         print(f">> {prefix} {message}")
 
-    def info(self, message: str):    self._write(message, 'info')
-    def warning(self, message: str): self._write(message, 'warning')
-    def error(self, message: str):   self._write(message, 'error')
-    def success(self, message: str): self._write(message, 'success')
+    def debug(self, msg: str):   self._write(msg, 'debug')
+    def info(self, msg: str):    self._write(msg, 'info')
+    def warning(self, msg: str): self._write(msg, 'warning')
+    def error(self, msg: str):   self._write(msg, 'error')
+    def success(self, msg: str): self._write(msg, 'success')
 
 
 log = Logger()
 
 
-# Error handling decorator
 def handle_errors(func):
-    """Catch and log exceptions"""
+    """Decorator: catch and log exceptions, return None on failure"""
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -84,179 +93,188 @@ def handle_errors(func):
 
 # ===================== Core Utilities =====================
 
-def _get_file_name(url, is_git=False):
-    """Get the file name based on the URL"""
-    if any(domain in url for domain in ['civitai.com', 'drive.google.com']):
+def _is_civitai(url: str) -> bool:
+    """Return True if the URL belongs to a CivitAI domain"""
+    host = urlparse(url).netloc.lower()
+    return any(host == dom or host.endswith(f".{dom}") for dom in CIVITAI_DOMAINS)
+
+def _is_signed_storage(url: str) -> bool:
+    """Return True for Backblaze/CDN signed URLs that must NOT receive token params"""
+    host = urlparse(url).netloc.lower()
+    return host.startswith('b2.') or 'Authorization=' in url
+
+def _get_filename_from_url(url: str, is_git: bool = False) -> Optional[str]:
+    """Derive a local filename from a URL"""
+    if any(domain in url for domain in [*CIVITAI_DOMAINS, 'drive.google.com']):
         return None
+    name = Path(urlparse(url).path).name or None
+    if not is_git and name and not Path(name).suffix:
+        ext = Path(urlparse(url).path).suffix
+        name = (name + ext) if ext else None
+    return name
 
-    filename = Path(urlparse(url).path).name or None
-
-    if not is_git and filename and not Path(filename).suffix:
-        suffix = Path(urlparse(url).path).suffix
-        if suffix:
-            filename += suffix
-        else:
-            filename = None
-
-    return filename
-
-def handle_path_and_filename(parts, url, is_git=False):
-    """Extract path and filename from parts"""
-    path, filename = None, None
+def _parse_line_parts(parts: list, url: str, is_git: bool = False) -> Tuple[Optional[Path], Optional[str]]:
+    """Extract (save_path, filename) from a tokenised download/clone line"""
+    save_path, filename = None, None
 
     if len(parts) >= 3:
-        path = Path(parts[1]).expanduser()
-        filename = parts[2]
+        save_path = Path(parts[1]).expanduser()
+        filename  = parts[2]
     elif len(parts) == 2:
         arg = parts[1]
         if '/' in arg or arg.startswith('~'):
-            path = Path(arg).expanduser()
+            save_path = Path(arg).expanduser()
         else:
             filename = arg
 
     if not filename:
-        url_path = urlparse(url).path
-        if url_path:
-            url_filename = Path(url_path).name
-            if url_filename:
-                filename = url_filename
+        url_name = Path(urlparse(url).path).name
+        if url_name:
+            filename = url_name
 
     if not is_git and 'drive.google.com' not in url:
         if filename and not Path(filename).suffix:
-            url_ext = Path(urlparse(url).path).suffix
-            if url_ext:
-                filename += url_ext
-            else:
-                filename = None
+            ext = Path(urlparse(url).path).suffix
+            filename = (filename + ext) if ext else None
 
-    return path, filename
+    return save_path, filename
 
-@handle_errors
-def strip_url(url):
-    """Normalize special URLs (civitai, huggingface, github)"""
-    if 'civitai.com/models/' in url:
-        api = CivitAiAPI(CAI_TOKEN)
-        data = api.validate_download(url)
-        return data.download_url if data else None
-
+def _normalize_url(url: str) -> str:
+    """Normalize HuggingFace and GitHub blob URLs to direct download URLs"""
     if 'huggingface.co' in url:
-        url = url.replace('/blob/', '/resolve/').split('?')[0]
-
+        return url.replace('/blob/', '/resolve/').split('?')[0]
     if 'github.com' in url:
-        url = url.replace('/blob/', '/raw/')
-
+        return url.replace('/blob/', '/raw/')
     return url
 
-def is_github_url(url):
-    """Check if the URL is a valid GitHub URL"""
-    return urlparse(url).netloc in ('github.com', 'www.github.com')
+def _resolve_civitai_url(url: str) -> Tuple[Optional[str], Optional[object]]:
+    """Resolve a CivitAI model/version page URL to a direct download URL via API"""
+    api = CivitAiAPI(_cai_token())
+    model_data = api.validate_download(url)
+    if not model_data:
+        return None
+    return model_data.download_url
+
+def _resolve_civitai_redirect(url: str) -> str:
+    """Preflight GET to follow CivitAI to Backblaze signed redirect"""
+    headers = {
+        'User-Agent':    'CivitaiLink:Automatic1111',
+        'Authorization': f"Bearer {_cai_token()}",
+    }
+    try:
+        resp = requests.get(url, headers=headers, allow_redirects=True, stream=True, timeout=30)
+        final = resp.url
+        resp.close()
+        if final and final != url:
+            log.debug(f"Redirect resolved: {final}")
+            return final
+    except Exception as e:
+        log.warning(f"Preflight redirect failed: {e}")
+    return url
 
 
 # ======================== Download ========================
 
 @handle_errors
-def m_download(line=None, verbose=False, unzip=False):
-    """Download files from a comma-separated list of URLs or file paths"""
+def m_download(line=None, verbose=False, debug=False, unzip=False):
+    """Download files (comma-separated or from .txt file)"""
     log.enabled = verbose
+    log.debug_enabled = debug
 
     if not line:
         return log.error('Missing URL argument, nothing to download')
 
-    links = [link.strip() for link in line.split(',') if link.strip()]
-
+    links = [lnk.strip() for lnk in line.split(',') if lnk.strip()]
     if not links:
-        log.info('Missing URL, downloading nothing')
-        return
+        return log.info('No links provided, downloading nothing')
 
     for link in links:
-        if link.endswith('.txt') and Path(link).expanduser().is_file():
-            with open(Path(link).expanduser(), 'r') as file:
-                for subline in file:
-                    _process_download(subline.strip(), unzip)
+        path = Path(link).expanduser()
+        if link.endswith('.txt') and path.is_file():
+            for subline in path.read_text().splitlines():
+                _process_download(subline.strip(), unzip)
         else:
             _process_download(link, unzip)
 
 @handle_errors
-def _process_download(line, unzip):
-    """Process an individual download line"""
-    parts = line.split()
-    url = parts[0].replace('\\', '')
-    url = strip_url(url)
+def _process_download(line: str, unzip: bool):
+    """Process a single download line: URL with optional save path and filename"""
+    if not line:
+        return
+
+    parts   = line.split()
+    raw_url = parts[0].replace('\\', '')
+
+    # Resolve/Normalize Download URL
+    if _is_civitai(raw_url) and '/api/download/models/' not in raw_url:
+        url = _resolve_civitai_url(raw_url)
+    else:
+        url = _normalize_url(raw_url)
 
     if not url:
         return
 
-    # Validate URL format
-    try:
-        parsed = urlparse(url)
-        if not all([parsed.scheme, parsed.netloc]):
-            log.warning(f"Invalid URL format: {url}")
-            return
-    except Exception as e:
-        log.warning(f"URL validation failed for {url}: {str(e)}")
+    parsed = urlparse(url)
+    if not all([parsed.scheme, parsed.netloc]):
+        log.warning(f"Invalid URL: {url}")
         return
 
-    path, filename = handle_path_and_filename(parts, url)
-    current_dir = Path.cwd()
+    save_path, filename = _parse_line_parts(parts, url)
+    prev_dir = Path.cwd()
 
     try:
-        if path:
-            path.mkdir(parents=True, exist_ok=True)
-            CD(path)
-
+        if save_path:
+            save_path.mkdir(parents=True, exist_ok=True)
+            CD(save_path)
         success = _download_file(url, filename)
-
         if success and unzip and filename and filename.lower().endswith('.zip'):
             _unzip_file(filename)
     finally:
-        CD(current_dir)
+        CD(prev_dir)
 
-def _download_file(url, filename):
+def _download_file(url: str, filename: Optional[str]) -> bool:
     """Dispatch download method by domain"""
-    if any(domain in url for domain in ['civitai.com', 'huggingface.co', 'github.com']):
+    if any(domain in url for domain in [*CIVITAI_DOMAINS, 'huggingface.co', 'github.com']):
         return _aria2_download(url, filename)
-    elif 'drive.google.com' in url:
+    if 'drive.google.com' in url:
         return _gdrive_download(url, filename)
-    else:
-        """Download using curl"""
-        cmd = f"curl -#JL '{url}'"
-        if filename:
-            cmd += f" -o '{filename}'"
-        return _run_command(cmd)
+    # Download using curl
+    cmd = f'curl -#JL "{url}"' + (f' -o "{filename}"' if filename else '')
+    return _run_command(cmd)
 
-def _aria2_download(url, filename):
-    """Download using aria2c"""
-    # Preflight: resolve CivitAI redirect to get the final B2 signed URL
-    if 'civitai.com/api/download/models/' in url:
-        try:
-            resp = requests.get(
-                url,
-                headers={
-                    'User-Agent': 'CivitaiLink:Automatic1111',
-                    'Authorization': f"Bearer {CAI_TOKEN}"
-                },
-                allow_redirects=True,
-                stream=True,
-                timeout=30
-            )
-            final_url = resp.url
-            resp.close()
-            if final_url and final_url != url:
-                url = final_url
-        except Exception:
-            pass  # Fallback orig url
+def _aria2_download(url: str, filename: Optional[str]) -> bool:
+    """Download via aria2c with domain-appropriate auth headers and token injection"""
+    ua = 'CivitaiLink:Automatic1111' if _is_civitai(url) else 'Mozilla/5.0'
 
-    user_agent = 'CivitaiLink:Automatic1111' if 'civitai.com' in url else 'Mozilla/5.0'
     aria2_args = (
-        f'aria2c --header="User-Agent: {user_agent}"'
-        f' --allow-overwrite=true --console-log-level=error --stderr=true'
-        f' -c -x16 -s16 -k1M -j5'
+        'aria2c'
+        ' --allow-overwrite=true'
+        ' --auto-file-renaming=false'
+        ' --console-log-level=error'
+        ' --stderr=true'
+        ' --max-tries=10'
+        ' --retry-wait=5'
+        ' --check-certificate=false'
+        ' -c -x16 -s16 -k1M -j5'
+        f' --header="User-Agent: {ua}"'
     )
-    if HF_TOKEN and 'huggingface.co' in url:
-        aria2_args += f' --header="Authorization: Bearer {HF_TOKEN}"'
+
+    # CivitAI Auth & Resolve Redirect
+    if _is_civitai(url) and not _is_signed_storage(url):
+        url = _resolve_civitai_redirect(url)
+
+        token = _cai_token()
+        if token and len(token) == 32 and '/api/download/models/' in url:
+            aria2_args += f' --header="Authorization: Bearer {token}"'
+
+    # HuggingFace Auth
+    if 'huggingface.co' in url:
+        hf_tok = _hf_token()
+        if hf_tok:
+            aria2_args += f' --header="Authorization: Bearer {hf_tok}"'
 
     if not filename:
-        filename = _get_file_name(url)
+        filename = _get_filename_from_url(url)
 
     cmd = f'{aria2_args} "{url}"'
     if filename:
@@ -264,8 +282,8 @@ def _aria2_download(url, filename):
 
     return _aria2_monitor(cmd)
 
-def _gdrive_download(url, filename):
-    """Download using gdown"""
+def _gdrive_download(url: str, filename: Optional[str]) -> bool:
+    """Download from Google Drive using gdown"""
     cmd = f"gdown --fuzzy {url}"
     if filename:
         cmd += f' -O "{filename}"'
@@ -273,13 +291,15 @@ def _gdrive_download(url, filename):
         cmd += ' --folder'
     return _run_command(cmd)
 
-def _unzip_file(file):
-    """Extract the ZIP file to a directory named after archive"""
+def _unzip_file(file: str):
+    """Extract a ZIP archive into a subdirectory and remove the archive"""
     path = Path(file)
-    with zipfile.ZipFile(path, 'r') as zip_ref:
-        zip_ref.extractall(path.parent / path.stem)
+    with zipfile.ZipFile(path, 'r') as zf:
+        zf.extractall(path.parent / path.stem)
     path.unlink()
-    log.success(f"Unpacked {file} to {path.parent / path.stem}")
+    log.success(f"Unpacked {file} to '{path.parent / path.stem}'")
+
+# aria2c progress monitor
 
 ARIA_PROGRESS_RE = re.compile(
     r"\[#([0-9a-f]+)\s+"
@@ -289,22 +309,15 @@ ARIA_PROGRESS_RE = re.compile(
     r"ETA:([\w\d]+)\]"
 )
 
-def _aria2_monitor(command):
-    """Monitor aria2c download progress"""
-    cmd = command if isinstance(command, list) else shlex.split(command)
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+def _aria2_monitor(cmd: str) -> bool:
+    """Run aria2c command and print live progress bar, return True on success"""
+    process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    errors = []
-    last_stats = None
-    filename = None
+    # Extract filename from -o arg for success message
+    parts    = shlex.split(cmd)
+    filename = parts[parts.index('-o') + 1] if '-o' in parts else None
 
-    if '-o' in cmd:
-        try:
-            idx = cmd.index('-o')
-            if idx + 1 < len(cmd):
-                filename = cmd[idx + 1]
-        except Exception:
-            pass
+    errors, last_stats = [], None
 
     try:
         while True:
@@ -312,70 +325,57 @@ def _aria2_monitor(command):
             if not line and process.poll() is not None:
                 break
 
-            # Collect errors
             if 'errorCode' in line or 'Exception' in line or ('|' in line and 'ERR' in line):
-                errors.append(line.replace('ERR', color('ERR', 'red')))
+                errors.append(line.replace('ERR', _color('ERR', 'red')))
 
-            # Parse progress
             match = ARIA_PROGRESS_RE.search(line)
             if not match or not log.enabled:
                 continue
 
-            gid, done, total, percent, cn, speed, eta = match.groups()
-            percent = int(percent)
+            gid, done, total, pct, conns, speed, eta = match.groups()
+            pct        = int(pct)
             last_stats = (total, speed)
 
-            # Progress bar
-            bar_width = 25
-            filled = bar_width * percent // 100
-            bar = '■' * filled + ' ' * (bar_width - filled)
-
-            output = (
-                f"{color('[', 'purple')}{color(f'#{gid}', 'green')}{color(']', 'purple')} "
-                f"[{bar}] "
-                f"{percent}% "
-                f"{color(done, 'cyan')}/{color(total, 'cyan')} "
-                f"{color(speed + '/s', 'green')} "
-                f"{color('CN:', 'blue')}{cn} "
-                f"{color('ETA:', 'yellow')}{eta}"
+            bar_width = 30
+            filled    = bar_width * pct // 100
+            bar       = '■' * filled + ' ' * (bar_width - filled)
+            out = (
+                f"{_color('[', 'purple')}{_color(f'#{gid}', 'green')}{_color(']', 'purple')} "
+                f"[{bar}] {pct}% "
+                f"{_color(done, 'cyan')}/{_color(total, 'cyan')} "
+                f"{_color(speed + '/s', 'green')} "
+                f"{_color('CN:', 'blue')}{conns} "
+                f"{_color('ETA:', 'yellow')}{eta}"
             )
-            print(f"\r{' ' * 180}\r{output}", end='', flush=True)
+            print(f"\r{' ' * 180}\r{out}", end='', flush=True)
 
         process.wait()
         success = process.returncode == 0 and not errors
 
-        # Clear progress line and show result
         if log.enabled:
             print(f"\r{' ' * 180}\r", end='', flush=True)
-            if errors:
-                print()
-                for err in errors:
-                    print(err)
-
-            if success:
-                if last_stats:
-                    total, speed = last_stats
-                    file_info = color(filename, 'blue') if filename else ''
-                    stats_info = color(f"({total} @ {speed}/s)", 'cyan')
-                    if file_info:
-                        print(f"{color('✔ Done', 'green')} | {file_info} {stats_info}")
-                    else:
-                        print(f"{color('✔ Done', 'green')} {stats_info}")
-                else:
-                    print(f"{color('✔ Download Complete', 'green')}")
-            else:
-                if not errors:
-                    log.error(f"Download failed (exit code {process.returncode})")
+            for err in errors:
+                print(err)
+            if success and last_stats:
+                total, speed = last_stats
+                file_part  = _color(filename, 'blue') + ' ' if filename else ''
+                stats_part = _color(f"({total} @ {speed}/s)", 'cyan')
+                print(f"{_color('✔ Done', 'green')} | {file_part}{stats_part}")
+            elif success:
+                print(f"{_color('✔ Download Complete', 'green')}")
+            elif not errors:
+                log.error(f"Download failed (exit code {process.returncode})")
 
         return success
+
     except KeyboardInterrupt:
         print()
         log.info('Download interrupted')
         return False
 
-def _run_command(command):
-    """Execute a shell command. Returns True on success, False on failure"""
-    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+def _run_command(cmd: str) -> bool:
+    """Execute a shell command string, return True on success"""
+    process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if log.enabled:
         for line in process.stderr:
             print(line, end='')
@@ -386,78 +386,70 @@ def _run_command(command):
 # ======================== Git Clone =======================
 
 @handle_errors
-def m_clone(input_source=None, recursive=True, depth=1, verbose=False):
-    """Main function to clone repositories"""
+def m_clone(input_source=None, recursive=True, depth=1, verbose=False, debug=False):
+    """Clone one or more GitHub repositories (comma-separated or from .txt file)"""
     log.enabled = verbose
+    log.debug_enabled = debug
 
     if not input_source:
         return log.error('Missing repository source')
 
-    sources = [link.strip() for link in input_source.split(',') if link.strip()]
-
+    sources = [src.strip() for src in input_source.split(',') if src.strip()]
     if not sources:
-        log.info('No valid repositories to clone')
-        return
+        return log.info('No valid repositories to clone')
 
     for source in sources:
-        if source.endswith('.txt') and Path(source).expanduser().is_file():
-            with open(Path(source).expanduser()) as file:
-                for line in file:
-                    _process_clone(line.strip(), recursive, depth)
+        path = Path(source).expanduser()
+        if source.endswith('.txt') and path.is_file():
+            for line in path.read_text().splitlines():
+                _process_clone(line.strip(), recursive, depth)
         else:
             _process_clone(source, recursive, depth)
 
 @handle_errors
-def _process_clone(line, recursive, depth):
-    parts = shlex.split(line)
-    if not parts:
-        return log.error('Empty clone entry')
+def _process_clone(line: str, recursive: bool, depth: int):
+    """Process a single clone line: URL with optional save path and repo name"""
+    if not line:
+        return
 
-    url = parts[0].replace('\\', '')
-    if not is_github_url(url):
+    parts = shlex.split(line)
+    url   = parts[0].replace('\\', '')
+
+    if urlparse(url).netloc not in ('github.com', 'www.github.com'):
         return log.warning(f"Not a GitHub URL: {url}")
 
-    path, name = handle_path_and_filename(parts, url, is_git=True)
-    current_dir = Path.cwd()
+    save_path, repo_name = _parse_line_parts(parts, url, is_git=True)
+    prev_dir = Path.cwd()
 
     try:
-        if path:
-            path.mkdir(parents=True, exist_ok=True)
-            CD(path)
+        if save_path:
+            save_path.mkdir(parents=True, exist_ok=True)
+            CD(save_path)
 
-        cmd = _build_git_cmd(url, name, recursive, depth)
-        _run_git(cmd)
+        cmd_parts = ['git', 'clone']
+        if depth > 0:
+            cmd_parts += ['--depth', str(depth)]
+        if recursive:
+            cmd_parts.append('--recursive')
+        cmd_parts.append(url)
+        if repo_name:
+            cmd_parts.append(repo_name)
+
+        _run_git(' '.join(cmd_parts))
     finally:
-        CD(current_dir)
+        CD(prev_dir)
 
-def _build_git_cmd(url, name, recursive, depth):
-    cmd = ['git', 'clone']
-    if depth > 0:
-        cmd += ['--depth', str(depth)]
-    if recursive:
-        cmd.append('--recursive')
-    cmd.append(url)
-    if name:
-        cmd.append(name)
-    return ' '.join(cmd)
-
-def _run_git(command):
-    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-
-    while True:
-        output = process.stdout.readline()
-        if not output and process.poll() is not None:
-            break
+def _run_git(cmd: str):
+    """Run a git command string and log clone progress and errors"""
+    process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    for output in iter(process.stdout.readline, ''):
         output = output.strip()
         if not output:
             continue
-
-        # Parse cloning progress
         if 'Cloning into' in output:
             repo = re.search(r"'(.+?)'", output)
             if repo:
-                log.info(f"Cloning: \033[32m{repo.group(1)}\033[0m -> {command}")
-
-        # Handle error messages
+                log.info(f"Cloning: {_color(repo.group(1), 'green')}")
         if 'fatal' in output.lower():
             log.error(output)
+    process.wait()

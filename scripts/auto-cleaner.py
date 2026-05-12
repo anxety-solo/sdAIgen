@@ -152,7 +152,7 @@ HR = widgets.HTML('<hr>')
 
 # Check GDrive toggle
 ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-mount_gdrive = js.read(SETTINGS_PATH, 'mountGDrive', False)
+mount_gdrive = js.read(SETTINGS_PATH, 'GDrive.mount', False)
 show_gdrive_toggle = (ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE))
 
 # Directory mapping - returns tuple (local_path, gdrive_path)

@@ -100,7 +100,7 @@
     "tac_maxResults": 12.0,
     "tac_showWikiLinks": true,
     "model_desc_to_json": false,
-    "custom_api_key": "f49f7c1a1a4b60890e4bdcdb8b194c70",
+    "custom_api_key": "d13740311c9f4ca5b250dfb26cf43a26",
     "aria2_flags": "--header=\"User-Agent: Mozilla/5.0\" --allow-overwrite=true --console-log-level=error --stderr=true -c -x16 -s16 -k1M -j5",
     "unpack_zip": true,
     "video_playback": false,
