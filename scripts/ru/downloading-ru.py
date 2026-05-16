@@ -798,7 +798,7 @@ def manual_download(url, dst_dir, file_name=None):
             return
 
         url = data.download_url                                     # Download_URL
-        model_type, file_name = data.model_type, data.model_name    # Model_Type, Model_Name
+        model_type, file_name = data.model_type, data.file_name     # Model_Type, File_Name
         image_url, image_name = data.image_url, data.image_name     # Image_URL, Image_Name
 
         ## Preview will be downloaded automatically via [CivitAI-Extension]

@@ -1,4 +1,4 @@
-""" Manager Module (V2.7) | by ANXETY """
+""" Manager Module (V2.7B) | by ANXETY """
 
 from CivitaiAPI import CivitAiAPI, CIVITAI_DOMAINS   # CivitAI API
 import json_utils as js                              # JSON
@@ -361,7 +361,8 @@ def _aria2_monitor(cmd: str) -> bool:
                 stats_part = _color(f"({total} @ {speed}/s)", 'cyan')
                 print(f"{_color('✔ Done', 'green')} | {file_part}{stats_part}")
             elif success:
-                print(f"{_color('✔ Download Complete', 'green')}")
+                file_part = f" — {_color(filename, 'blue')}" if filename else ''
+                print(f"{_color('✔ Download Complete', 'green')}{file_part}")
             elif not errors:
                 log.error(f"Download failed (exit code {process.returncode})")
 
