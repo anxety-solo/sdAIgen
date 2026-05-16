@@ -96,17 +96,16 @@ class CivitAiAPI:
         self.logger = Logger(enabled=verbose, debug=debug)
 
     # === Core Helpers ===
-    def _endpoint(self, path: str) -> str:
-        """Build full API URL from endpoint path"""
-        return f"{self.BASE_URL}/{path}"
-
-    def _get(self, url: str) -> Optional[Dict]:
-        """Perform authorized GET request and return parsed JSON or None"""
+    def _get_data(self, path: str) -> Optional[Dict]:
+        """GET request to API endpoint and return parsed JSON or None"""
         headers = {'Authorization': f"Bearer {self.token}"} if self.token else {}
+        url = f"{self.BASE_URL}/{path}"
+
         try:
-            resp = requests.get(url, headers=headers, timeout=15)
+            resp = requests.get(url, headers=headers, timeout=30)
             resp.raise_for_status()
             return resp.json()
+
         except requests.RequestException as exc:
             self.logger.error(f"GET {url} — {exc}")
             return None
@@ -186,7 +185,7 @@ class CivitAiAPI:
         Requested modelVersionId is tried first when present in URL.
         """
         def resolve_version(ver_id: str) -> Optional[Dict]:
-            ver = self._get(self._endpoint(f"model-versions/{ver_id}"))
+            ver = self._get_data(f"model-versions/{ver_id}")
 
             if not ver or self._check_early_access(ver):
                 return None
@@ -209,7 +208,7 @@ class CivitAiAPI:
                     if 'modelVersionId=' in url else None
                 )
 
-                model = self._get(self._endpoint(f"models/{model_id}"))
+                model = self._get_data(f"models/{model_id}")
                 if not model:
                     self.logger.error(f"Cannot fetch model {model_id}")
                     return None
@@ -247,8 +246,6 @@ class CivitAiAPI:
         model_id  = str(ver.get('modelId'))
         ver_id    = str(ver.get('id'))
 
-        early_access = self._check_early_access(ver)
-
         image_url, image_name = None, None
         if model_type in self.SUPPORTED_TYPES:
             image_url, image_name = self._pick_preview(ver.get('images', []), stem)
@@ -262,7 +259,7 @@ class CivitAiAPI:
             model_type    = model_type,
             base_model    = ver.get('baseModel'),
             file_name     = file_name,
-            early_access  = early_access,
+            early_access  = False,
             image_url     = image_url,
             image_name    = image_name,
             trained_words = ver.get('trainedWords'),
@@ -296,18 +293,18 @@ class CivitAiAPI:
 
     def get_model_versions(self, model_id: str) -> Optional[List[Dict]]:
         """Return all version dicts for a model by ID"""
-        data = self._get(self._endpoint(f"models/{model_id}"))
+        data = self._get_data(f"models/{model_id}")
         return data.get('modelVersions') if data else None
 
     def get_sha256(self, ver: Optional[Dict] = None, version_id: Optional[str] = None) -> Optional[str]:
         """Extract SHA256 from version data dict, or fetch by version_id if dict not provided"""
         if ver is None and version_id:
-            ver = self._get(self._endpoint(f"model-versions/{version_id}"))
+            ver = self._get_data(f"model-versions/{version_id}")
         return ver.get('files', [{}])[0].get('hashes', {}).get('SHA256') if ver else None
 
     def find_by_sha256(self, sha256: str) -> Optional[Dict]:
         """Find version data by file SHA256 hash, returns None silently on miss"""
-        return self._get(self._endpoint(f"model-versions/by-hash/{sha256}"))
+        return self._get_data(f"model-versions/by-hash/{sha256}")
 
     def preview_by_sha256(self, sha256: str, save_path: Union[str, Path], stem: str):
         """

@@ -33,12 +33,12 @@ def _hf_token() -> str:
 # ========================= Logging ========================
 
 COLORS = {
-    'red':    '\033[31m',
-    'green':  '\033[32m',
-    'yellow': '\033[33m',
-    'blue':   '\033[34m',
-    'purple': '\033[35m',
     'cyan':   '\033[36m',
+    'purple': '\033[35m',
+    'blue':   '\033[34m',
+    'yellow': '\033[33m',
+    'green':  '\033[32m',
+    'red':    '\033[31m',
     'reset':  '\033[0m',
 }
 
@@ -50,11 +50,11 @@ def _color(text: str, key: str) -> str:
 class Logger:
     """Colored console logger"""
     _LEVEL_COLORS = {
+        'debug':   'purple',
         'info':    'blue',
         'warning': 'yellow',
         'error':   'red',
         'success': 'green',
-        'debug':   'purple',
     }
 
     def __init__(self, enabled: bool = False, debug: bool = False):
@@ -85,8 +85,8 @@ def handle_errors(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as e:
-            log.error(str(e))
+        except Exception as exc:
+            log.error(str(exc))
             return None
     return wrapper
 
@@ -152,8 +152,8 @@ def _resolve_civitai_url(url: str) -> Tuple[Optional[str], Optional[object]]:
     api = CivitAiAPI(_cai_token())
     model_data = api.validate_download(url)
     if not model_data:
-        return None
-    return model_data.download_url
+        return None, None
+    return model_data.download_url, model_data.file_name
 
 def _resolve_civitai_redirect(url: str) -> str:
     """Preflight GET to follow CivitAI to Backblaze signed redirect"""
@@ -168,8 +168,8 @@ def _resolve_civitai_redirect(url: str) -> str:
         if final and final != url:
             log.debug(f"Redirect resolved: {final}")
             return final
-    except Exception as e:
-        log.warning(f"Preflight redirect failed: {e}")
+    except Exception as exc:
+        log.warning(f"Preflight redirect failed: {exc}")
     return url
 
 
@@ -206,8 +206,9 @@ def _process_download(line: str, unzip: bool):
     raw_url = parts[0].replace('\\', '')
 
     # Resolve/Normalize Download URL
+    civitai_filename = None
     if _is_civitai(raw_url) and '/api/download/models/' not in raw_url:
-        url = _resolve_civitai_url(raw_url)
+        url, civitai_filename = _resolve_civitai_url(raw_url)
     else:
         url = _normalize_url(raw_url)
 
@@ -219,8 +220,10 @@ def _process_download(line: str, unzip: bool):
         log.warning(f"Invalid URL: {url}")
         return
 
-    save_path, filename = _parse_line_parts(parts, url)
     prev_dir = Path.cwd()
+    save_path, filename = _parse_line_parts(parts, url)
+    if not filename and civitai_filename:
+        filename = civitai_filename
 
     try:
         if save_path:

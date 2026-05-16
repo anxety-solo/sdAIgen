@@ -759,7 +759,6 @@ def _extract_filename(url):
 
 # Download Core
 
-@handle_errors
 def _process_download_link(link):
     """Processes a download link, splitting prefix, URL, and filename"""
     link = _clean_url(link)
@@ -797,18 +796,13 @@ def manual_download(url, dst_dir, file_name=None):
         if not (data := api.validate_download(url, file_name)):
             return
 
-        url = data.download_url                                     # Download_URL
-        model_type, file_name = data.model_type, data.file_name     # Model_Type, File_Name
+        url, file_name = data.download_url, data.file_name          # Download_URL, File_Name
         image_url, image_name = data.image_url, data.image_name     # Image_URL, Image_Name
 
         ## Preview will be downloaded automatically via [CivitAI-Extension]
-        # Download preview images (Only  for ComfyUI)
+        # Download preview images (only for ComfyUI)
         if UI == 'ComfyUI' and image_url and image_name:
             m_download(f"{image_url} {dst_dir} {image_name}")
-
-    elif any(s in url for s in ('github', 'huggingface.co')):
-        if file_name and '.' not in file_name:
-            file_name += f".{url.split('.')[-1]}"
 
     # Formatted info output
     format_output(url.split('?')[0], dst_dir, file_name, image_url, image_name)
