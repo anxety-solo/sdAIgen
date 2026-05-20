@@ -21,10 +21,10 @@
     "customscript/xyz_grid.py/txt2img/Include Sub Images/value": true,
     "customscript/prompt_matrix.py/txt2img/Grid margins (px)/value": 8,
     "customscript/xyz_grid.py/txt2img/Grid margins (px)/value": 8,
-    "civitai_interface/NSFW content/value": true,
-    "civitai_interface/Tile size:/value": 12,
-    "civitai_interface/Tile count:/value": 36,
-    "civitai_interface/Time period:/value": "Month",
-    "civitai_interface/Sort by:/value": "Highest Rated",
+    "civitai_browser_ui/NSFW content/value": true,
+    "civitai_browser_ui/Tile size:/value": 12,
+    "civitai_browser_ui/Tile count:/value": 36,
+    "civitai_browser_ui/Time period:/value": "Month",
+    "civitai_browser_ui/Sort by:/value": "Highest Rated",
     "customscript/wildcard_recursive.py/txt2img/Enable UmiAI/value": false
 }
