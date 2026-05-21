@@ -24,11 +24,14 @@ HOME, SCR_PATH, SETTINGS_PATH = (
 
 
 def _cai_token() -> str:
-    return js.read(SETTINGS_PATH, 'WIDGETS.civitai_token', 'd13740311c9f4ca5b250dfb26cf43a26')  # FAKE
+    token = js.read(SETTINGS_PATH, 'WIDGETS.civitai_token')
+    token = token.strip() if token else ''
+    return token or 'd13740311c9f4ca5b250dfb26cf43a26'    # FAKE
 
 def _hf_token() -> str:
-    return js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token', None) or ''
-
+    token = js.read(SETTINGS_PATH, 'WIDGETS.huggingface_token')
+    token = token.strip() if token else ''
+    return token or ''
 
 # ========================= Logging ========================
 
