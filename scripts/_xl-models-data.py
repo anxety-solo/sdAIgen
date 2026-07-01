@@ -1,8 +1,8 @@
 ## MODEL
 
 model_list = {
-    "Flanime-IL [Anime | V3.0 | IL]": [
-        {'url': "https://civitai.com/api/download/models/2710976", 'name': "FlanimeXL-illustrious_V3.safetensors"}
+    "Flanime-IL [Anime | 4.0 | IL]": [
+        {'url': "https://civitai.com/api/download/models/2944197", 'name': "FlanimeXL-illustrious_V4.safetensors"}
     ],
     "Hassaku-XL [Anime | V3.4 | IL]": [
         {'url': "https://civitai.com/api/download/models/2615702", 'name': "HassakuXL-illustrious_V3.4.safetensors"}
