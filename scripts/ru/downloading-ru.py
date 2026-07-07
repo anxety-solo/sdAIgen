@@ -314,7 +314,7 @@ if commit_hash or branch != 'none':
     print(f"\r✅ Переключение завершено! Текущий коммит/ветка: {COL.B}{commit_hash}{COL.X}")
 
 
-# === Google Drive Mounting | EXCLUSIVE for Colab ===
+# === Google Drive Mounting V2 | EXCLUSIVE for Colab ===
 from google.colab import drive
 
 # Read GDrive settings
@@ -330,33 +330,35 @@ GD_FILES = f"{GD_BASE}/files"
 GD_OUTPUTS = f"{GD_BASE}/outputs"
 GD_CONFIGS = f"{GD_BASE}/configs"
 
-# Helper Functions
-def fs_remove(path: Path):
+# --- Helpers ---
+def _remove_path(path: Path):
+    """Delete a file, symlink, or directory"""
     if path.is_symlink() or path.is_file():
         path.unlink()
     elif path.exists():
         shutil.rmtree(path)
 
-def merge_dirs(src, dst, label=''):
+def _merge_dirs(src: Path, dst: Path, label=''):
+    """Move contents of *src* into *dst*, then delete *src*"""
     dst.mkdir(parents=True, exist_ok=True)
     for item in src.iterdir():
         if item.name == '.ipynb_checkpoints':
             continue
-        fs_remove(dst / item.name)
+        _remove_path(dst / item.name)
         shutil.move(str(item), str(dst))
     shutil.rmtree(src)
-    if GDRIVE_LOG:
+    if GDRIVE_LOG and label:
         print(f"{COL.Y}📦 {label}: {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
 
-def cleanup_ipynb_checkpoints(base_path):
+def _cleanup_ipynb_checkpoints(base_path):
+    """Recursively remove all .ipynb_checkpoints directories under *base_path*"""
     for root, dirs, _ in os.walk(base_path):
         if '.ipynb_checkpoints' in dirs:
-            chk = Path(root) / '.ipynb_checkpoints'
-            shutil.rmtree(chk, ignore_errors=True)
+            shutil.rmtree(Path(root) / '.ipynb_checkpoints', ignore_errors=True)
 
-# Main Logic
-def build_symlink_config(ui: str) -> dict:
-    """Build symlink configuration based on UI type"""
+# --- Сonfiguration ---
+def _build_sync_config(ui: str) -> dict:
+    """Build configuration dict with file, output, and config symlink items for given UI"""
     is_comfy = ui == 'ComfyUI'
 
     # Files structure | Local <-> GDrive
@@ -368,7 +370,6 @@ def build_symlink_config(ui: str) -> dict:
         (embed_dir,     'Embeddings',  False),
         (control_dir,   'ControlNet',  False),
         (upscale_dir,   'Upscale',     False),
-        # Others
         (adetailer_dir, 'Adetailer',   False),
         (clip_dir,      'Clip',        False),
         (unet_dir,      'Unet',        False),
@@ -376,251 +377,208 @@ def build_symlink_config(ui: str) -> dict:
         (encoder_dir,   'Encoder',     False),
         (diffusion_dir, 'Diffusion',   False),
     ]
-    _files = [
-        {'local': local, 'gdrive': f"{GD_FILES}/{gdir}", 'flat_link': flat}
+    files = [
+        {'local': local, 'gdrive': f"{GD_FILES}/{gdir}", 'flat': flat}
         for local, gdir, flat in files_base
     ]
-    _files.append({
+    files.append({
         'local': extension_dir,
         'gdrive': f"{GD_FILES}/{'Custom-Nodes' if is_comfy else 'Extensions'}"
     })
 
     # Output structure
-    outputs_base = f"{GD_OUTPUTS}/{ui}"
-    _outputs = [{
+    outputs = [{
         'local': output_dir,
-        'gdrive': outputs_base,
-        'direct_link': True
+        'gdrive': f"{GD_OUTPUTS}/{ui}",
+        'direct': True
     }]
 
     # Config structure
-    config_base = f"{GD_CONFIGS}/{ui}"
+    configs_base = f"{GD_CONFIGS}/{ui}"
     if is_comfy:
-        # ComfyUI specific config structure
         user_default = f"{WEBUI}/user/default"
         user_manager = f"{WEBUI}/user/__manager"
-        _configs = [
-            {'local': f"{user_default}/comfy.settings.json", 'gdrive': f"{config_base}/comfy.settings.json",
+        configs = [
+            {'local': f"{user_default}/comfy.settings.json", 'gdrive': f"{configs_base}/comfy.settings.json",
                 'type': 'file', 'name': 'ComfyUI Settings'},
-            {'local': f"{user_manager}/config.ini", 'gdrive': f"{config_base}/comfy-manager-config.ini",
+            {'local': f"{user_manager}/config.ini", 'gdrive': f"{configs_base}/comfy-manager-config.ini",
                 'type': 'file', 'name': 'Comfy Manager Config'},
-            {'local': f"{user_default}/workflows", 'gdrive': f"{config_base}/workflows",
-                'type': 'dir', 'name': 'Workflows'}
+            {'local': f"{user_default}/workflows", 'gdrive': f"{configs_base}/workflows",
+                'type': 'dir', 'name': 'Workflows'},
         ]
     else:
-        # A1111/Forge config structure
-        _configs = [
-            {'local': f"{WEBUI}/config.json", 'gdrive': f"{config_base}/config.json",
+        configs = [
+            {'local': f"{WEBUI}/config.json", 'gdrive': f"{configs_base}/config.json",
                 'type': 'file', 'name': 'WebUI Config'},
-            {'local': f"{WEBUI}/ui-config.json", 'gdrive': f"{config_base}/ui-config.json",
-                'type': 'file', 'name': 'UI Config'}
+            {'local': f"{WEBUI}/ui-config.json", 'gdrive': f"{configs_base}/ui-config.json",
+                'type': 'file', 'name': 'UI Config'},
         ]
 
-    return {'files': _files, 'outputs': _outputs, 'configs': _configs}
+    return {'files': files, 'outputs': outputs, 'configs': configs}
 
-def create_symlink(src, dst, symlink_name='GDrive', direct_link=False):
-    """Create symlink with optional migration of existing content"""
-    try:
-        src = Path(src)
-        dst = Path(dst)
-        dst.mkdir(parents=True, exist_ok=True)
+# --- Remove symlinks function ---
+def _remove_symlink(item, restore=False, category='files'):
+    """Remove symlink(s) defined by item, optionally restore from GDrive; return count removed"""
+    local = Path(item['local'])
+    gdrive = Path(item['gdrive'])
+    count = 0
 
-        if direct_link:
-            # Direct link mode: replace entire directory with symlink
-            if src.exists() and src.is_dir() and not src.is_symlink():
-                merge_dirs(src, dst, label='Migrated')
-
-            if src.is_symlink():
-                src.unlink()
-            src.parent.mkdir(parents=True, exist_ok=True)
-
-            # Create direct symlink
-            if not src.exists():
-                src.symlink_to(dst, target_is_directory=True)
-                if GDRIVE_LOG:
-                    print(f"{COL.G}🔗 Direct symlink: {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
+    # Special file handling (flat and GDrive subfolder)
+    if category == 'files':
+        if item.get('flat', False):
+            if local.exists():
+                gdrive_resolved = str(gdrive.resolve())
+                for file in local.iterdir():
+                    if file.is_symlink() and str(file.resolve()).startswith(gdrive_resolved):
+                        file.unlink()
+                        count += 1
+                        if GDRIVE_LOG:
+                            print(f"{COL.R}🗑️ Unlinked: {COL.lB}{file}{COL.X}")
         else:
-            # Subfolder mode: create GDrive folder inside src
-            symlink_path = src / symlink_name
-
-            # Migrate contents if GDrive subfolder exists and is real dir
-            if symlink_path.exists() and not symlink_path.is_symlink():
-                merge_dirs(symlink_path, dst, label='Migrated')
-            fs_remove(symlink_path)
-            src.mkdir(parents=True, exist_ok=True)
-
-            # Create subfolder symlink
-            if not symlink_path.exists():
-                symlink_path.symlink_to(dst, target_is_directory=True)
+            symlink_path = local / 'GDrive'
+            if symlink_path.is_symlink():
+                symlink_path.unlink()
+                count += 1
                 if GDRIVE_LOG:
-                    print(f"{COL.G}🔗 Symlink: {COL.lB}{symlink_path}{COL.X} → {COL.G}{dst}{COL.X}")
-    except Exception as e:
-        print(f"{COL.R}❌ Error creating symlink:{COL.X} {src} - {str(e)}")
+                    print(f"{COL.R}🗑️ Removed symlink: {COL.lB}{symlink_path}{COL.X}")
 
-def sync_flat_symlinks(local_dir, gdrive_dir):
-    """Symlink each file from gdrive_dir directly into local_dir (no subfolder)"""
-    local_path = Path(local_dir)
-    gdrive_path = Path(gdrive_dir)
-    gdrive_path.parent.mkdir(parents=True, exist_ok=True)
-    local_path.parent.mkdir(parents=True, exist_ok=True)
+        return count
 
-    for item in gdrive_path.iterdir():
-        if item.name == '.ipynb_checkpoints':
-            continue
+    # General logic for outputs and configs
+    if not local.is_symlink():
+        return count
 
-        target = local_path / item.name
+    is_dir = (category == 'outputs') or (item.get('type') == 'dir')
+    name = item.get('name', category.capitalize())
 
-        if target.is_symlink():
-            target.unlink()
-        elif target.exists():
-            continue
-        target.symlink_to(item)
+    local.unlink()
+    count += 1
+
+    # Restore from GDrive if necessary and if the file/folder exists
+    if restore and gdrive.exists():
+        if is_dir:
+            shutil.copytree(gdrive, local, dirs_exist_ok=True)
+        else:
+            shutil.copy2(gdrive, local)
         if GDRIVE_LOG:
-            print(f"{COL.G}🔗 Linked: {COL.lB}{target.resolve() if target.exists() else target}{COL.X} → {COL.G}{item}{COL.X}")
+            icon = '📁' if is_dir else '📄'
+            print(f"{COL.Y}{icon} Restored [{name}]: {COL.lB}{local.name}{COL.X} ← {COL.B}GDrive{COL.X}")
+    else:
+        if GDRIVE_LOG:
+            type_label = 'output' if category == 'outputs' else 'config'
+            print(f"{COL.R}🗑️ Removed {type_label} symlink: {COL.lB}{local}{COL.X}")
 
-def clear_flat_symlinks(local_dir, gdrive_dir):
-    """Remove only symlinks pointing into gdrive_dir, keep real local files"""
-    local_path = Path(local_dir)
-    gdrive_path = Path(gdrive_dir)
-    if not local_path.exists():
-        return 0
+    return count
 
-    gdrive_resolved = str(gdrive_path.resolve())
+# --- Сreate symlinks functions ---
+def _create_files_symlink(item):
+    """Create flat or GDrive-subfolder symlinks for model files/extensions"""
+    local = Path(item['local'])
+    gdrive = Path(item['gdrive'])
+    local.mkdir(parents=True, exist_ok=True)
+    gdrive.mkdir(parents=True, exist_ok=True)
 
-    removed = 0
-    for item in local_path.iterdir():
-        if item.is_symlink() and str(item.resolve()).startswith(gdrive_resolved):
-            item.unlink()
-            removed += 1
+    if item.get('flat', False):
+        for file in gdrive.iterdir():
+            if file.name == '.ipynb_checkpoints':
+                continue
+            target = local / file.name
+            if target.is_symlink():
+                target.unlink()
+            elif target.exists():
+                continue
+            target.symlink_to(file)
             if GDRIVE_LOG:
-                print(f"{COL.R}🗑️ Unlinked: {COL.lB}{item}{COL.X}")
-    return removed
+                print(f"{COL.G}🔗 Linked: {COL.lB}{target}{COL.X} → {COL.G}{file}{COL.X}")
+    else:
+        symlink_path = local / 'GDrive'
+        if symlink_path.exists() and not symlink_path.is_symlink():
+            _merge_dirs(symlink_path, gdrive, label='Migrated')
+        _remove_path(symlink_path)
+        local.mkdir(parents=True, exist_ok=True)
+        if not symlink_path.exists():
+            symlink_path.symlink_to(gdrive, target_is_directory=True)
+            if GDRIVE_LOG:
+                print(f"{COL.G}🔗 Symlink: {COL.lB}{symlink_path}{COL.X} → {COL.G}{gdrive}{COL.X}")
 
-def create_config_symlink(local_dir, gdrive_dir, config_type='file', config_name='Config'):
-    """Create symlink for config files or directories"""
-    try:
-        local_path = Path(local_dir)
-        gdrive_path = Path(gdrive_dir)
-        gdrive_path.parent.mkdir(parents=True, exist_ok=True)
-        local_path.parent.mkdir(parents=True, exist_ok=True)
+def _create_outputs_symlink(item):
+    """Create a direct symlink from output_dir to GDrive outputs folder, migrating existing content"""
+    local = Path(item['local'])
+    gdrive = Path(item['gdrive'])
+    local.parent.mkdir(parents=True, exist_ok=True)
+    gdrive.parent.mkdir(parents=True, exist_ok=True)
 
-        if config_type == 'file':
-            # For files: backup local to gdrive if gdrive doesn't exist
-            if local_path.exists() and local_path.is_file() and not gdrive_path.exists():
-                shutil.copy2(local_path, gdrive_path)
-                if GDRIVE_LOG:
-                    print(f"{COL.Y}📄 Backed up [{config_name}]: {COL.lB}{local_path.name}{COL.X} → {COL.G}GDrive{COL.X}")
+    if local.exists() and not local.is_symlink():
+        _merge_dirs(local, gdrive, label='Migrated')
+    _remove_path(local)
+    if not local.exists():
+        local.symlink_to(gdrive, target_is_directory=True)
+        if GDRIVE_LOG:
+            print(f"{COL.G}🔗 Direct symlink: {COL.lB}{local}{COL.X} → {COL.G}{gdrive}{COL.X}")
 
-            if local_path.exists():
-                local_path.unlink()
+def _create_config_symlink(item):
+    """Create a symlink for a config file or folder, backing up local file if GDrive missing"""
+    local = Path(item['local'])
+    gdrive = Path(item['gdrive'])
+    local.parent.mkdir(parents=True, exist_ok=True)
+    gdrive.parent.mkdir(parents=True, exist_ok=True)
+
+    ctype = item.get('type', 'file')
+    name = item.get('name', 'Config')
+
+    if ctype == 'file':
+        if local.exists() and local.is_file() and not gdrive.exists():
+            shutil.copy2(local, gdrive)
+            if GDRIVE_LOG:
+                print(f"{COL.Y}📄 Backed up [{name}]: {COL.lB}{local.name}{COL.X} → {COL.G}GDrive{COL.X}")
+        _remove_path(local)
+    else:
+        if local.exists() and not local.is_symlink():
+            _merge_dirs(local, gdrive, label=f"Merged [{name}]")
         else:
-            # For directories: merge content to gdrive
-            if local_path.exists() and local_path.is_dir() and not local_path.is_symlink():
-                merge_dirs(
-                    local_path, gdrive_path,
-                    label=f"Merged [{config_name}]"
-                )
-            elif local_path.exists() and not local_path.is_symlink():
-                fs_remove(local_path)
+            _remove_path(local)
+    if not local.exists():
+        local.symlink_to(gdrive, target_is_directory=(ctype == 'dir'))
+        if GDRIVE_LOG:
+            icon = '📁' if ctype == 'dir' else '📄'
+            print(f"{COL.G}{icon} Config symlink [{name}]: {COL.lB}{local.name}{COL.X} → {COL.G}GDrive{COL.X}")
 
-        if local_path.is_symlink():
-            local_path.unlink()
-
-        # Create new symlink
-        if not local_path.exists():
-            is_dir = (config_type == 'dir')
-            local_path.symlink_to(gdrive_path, target_is_directory=is_dir)
-            if GDRIVE_LOG:
-                icon = '📁' if is_dir else '📄'
-                print(f"{COL.G}{icon} Config symlink [{config_name}]: {COL.lB}{local_path.name}{COL.X} → {COL.G}GDrive{COL.X}")
-    except Exception as e:
-        print(f"{COL.R}❌ Error [{config_name}]:{COL.X} {local_path.name} - {str(e)}")
-
-def restore_from_symlink(local_dir, gdrive_dir, config_type='file', config_name='Config'):
-    """Restore local files/directories from Google Drive before unmounting"""
-    try:
-        local_path = Path(local_dir)
-        gdrive_path = Path(gdrive_dir)
-
-        # Only restore if local is symlink and gdrive exists
-        if not local_path.is_symlink() or not gdrive_path.exists():
-            return
-        local_path.unlink()
-
-        is_dir = (config_type == 'dir')
-        if (gdrive_path.is_dir() if is_dir else gdrive_path.is_file()):
-            (shutil.copytree if is_dir else shutil.copy2)(gdrive_path, local_path)
-            if GDRIVE_LOG:
-                icon = '📁' if is_dir else '📄'
-                print(f"{COL.Y}{icon} Restored [{config_name}]: {COL.lB}{local_path.name}{COL.X} ← {COL.B}GDrive{COL.X}")
-    except Exception as e:
-        print(f"{COL.R}❌ Error restoring [{config_name}]:{COL.X} {str(e)}")
-
-def _clear_category_symlinks(config_list, category, restore=False):
-    """Remove symlinks for a single category, optionally restoring files first"""
-    removed = 0
-    for cfg in config_list:
-        if category == 'files' and cfg.get('flat_link'):
-            removed += clear_flat_symlinks(cfg['local'], cfg['gdrive'])
-        elif category == 'files':
-            p = Path(cfg['local']) / 'GDrive'
-            if p.is_symlink():
-                p.unlink()
-                removed += 1
-                if GDRIVE_LOG:
-                    print(f"{COL.R}🗑️ Removed [Files]: {COL.lB}{p}{COL.X}")
-        else:
-            local = Path(cfg['local'])
-            gdrive = Path(cfg['gdrive'])
-            if local.is_symlink():
-                if restore:
-                    ctype = cfg.get('type', 'dir' if category == 'outputs' else 'file')
-                    name = cfg.get('name', category.capitalize())
-                    restore_from_symlink(local, gdrive, config_type=ctype, config_name=name)
-                else:
-                    local.unlink()
-                removed += 1
-    return removed
-
-def remove_all_symlinks(ui):
-    """Remove ALL symlinks (every category)"""
-    config = build_symlink_config(ui)
-    removed  = _clear_category_symlinks(config['files'],   'files',   restore=False)
-    removed += _clear_category_symlinks(config['outputs'], 'outputs', restore=True)
-    removed += _clear_category_symlinks(config['configs'], 'configs', restore=True)
-    return removed
+# --- Main entry ---
+def _sync_category(items, selected, create_func, remove_func, restore_on_remove=True, category='files'):
+    """Apply create_func if selected, else remove_func with restore flag; return count of removals"""
+    count = 0
+    if selected:
+        for item in items:
+            create_func(item)
+    else:
+        for item in items:
+            count += remove_func(item, restore=restore_on_remove, category=category)
+    return count
 
 def handle_gdrive(mount_flag, ui='A1111', *, sync_files=False, sync_outputs=False, sync_configs=False):
-    """Mount/unmount GDrive and sync symlinks for selected categories.
-
-    On mount (or re-run with drive already mounted):
-      1. Restore + remove symlinks for DESELECTED categories.
-      2. Create / refresh symlinks for SELECTED categories.
-    On unmount: restore+remove ALL categories, then unmount.
-    """
-    def _ensure_dirs(*paths):
-        for p in paths:
-            os.makedirs(p, exist_ok=True)
-
-    cleanup_ipynb_checkpoints(GD_BASE)   # Remove Jupyter shits
+    """Mount/unmount GDrive and manage symlinks for selected categories"""
+    _cleanup_ipynb_checkpoints(GD_BASE)
     drive_mounted = os.path.exists('/content/drive/MyDrive')
+
+    config = _build_sync_config(ui)
 
     # Unmount logic
     if not mount_flag:
         if drive_mounted:
             try:
                 print(f"{COL.Y}⏳ Отключение Google Drive...{COL.X}", end='')
-                if GDRIVE_LOG: print()
-
-                removed = remove_all_symlinks(ui)
-
+                if GDRIVE_LOG:
+                    print()
+                removed_files   = _sync_category(config['files'],   False, None, _remove_symlink, restore_on_remove=False, category='files')
+                removed_outputs = _sync_category(config['outputs'], False, None, _remove_symlink, restore_on_remove=True,  category='outputs')
+                removed_configs = _sync_category(config['configs'], False, None, _remove_symlink, restore_on_remove=True,  category='configs')
+                total_removed = removed_files + removed_outputs + removed_configs
                 with capture.capture_output():
                     drive.flush_and_unmount()
                     os.system('rm -rf /content/drive')
-
-                print(f"\r{COL.G}✅ Google Drive успешно отключён!{COL.X}")
-                if removed:
-                    print(f"{COL.B}💾 Конфигурации восстановлены, удалено симлинков: {removed}{COL.X}")
+                print(f"\r{COL.G}✅ Google Drive успешно отключен!{COL.X}")
+                if total_removed:
+                    print(f"{COL.B}💾 Конфигурации восстановлены, удалено {total_removed} симлинков{COL.X}")
             except Exception as e:
                 print(f"\r{COL.R}❌ Unmount error:{COL.X} {str(e)}")
         return
@@ -631,23 +589,12 @@ def handle_gdrive(mount_flag, ui='A1111', *, sync_files=False, sync_outputs=Fals
             print(f"{COL.Y}⏳ Подключение Google Drive...{COL.X}", end='')
             with capture.capture_output():
                 drive.mount('/content/drive')
-            print(f"\r{COL.G}💿 Google Drive успешно подключён!{COL.X}")
+            print(f"\r{COL.G}💿 Google Drive успешно подключен!{COL.X}")
         except Exception as e:
             print(f"\r{COL.R}❌ Mounting failed:{COL.X} {str(e)}")
             return
     else:
-        print(f"{COL.G}🎉 Google Drive подключён~{COL.X}")
-
-    active   = [n for f, n in [(sync_files, 'Файлы'), (sync_outputs, 'Генерации'), (sync_configs, 'Настройки UI')] if f]
-    inactive = [n for f, n in [(sync_files, 'Файлы'), (sync_outputs, 'Генерации'), (sync_configs, 'Настройки UI')] if not f]
-
-    if not active:
-        print(f"{COL.Y}⚠️ GDrive подключён, но категории не выбраны — ничего не будет симлинчиться.{COL.X}")
-        return
-
-    active_str   = ', '.join(f"{COL.G}{n}{COL.X}" for n in active)
-    inactive_str = ', '.join(f"{COL.Y}{n}{COL.X}" for n in inactive)
-    print(f"{COL.B}📋 GDrive синхронизация — активно: {active_str}" + (f" | неактивно: {inactive_str}" if inactive else '') + COL.X)
+        print(f"{COL.G}🎉 Google Drive подключен~{COL.X}")
 
     try:
         # Create base directories
@@ -655,53 +602,28 @@ def handle_gdrive(mount_flag, ui='A1111', *, sync_files=False, sync_outputs=Fals
         if sync_files:   dirs_to_create.append(GD_FILES)
         if sync_outputs: dirs_to_create.append(GD_OUTPUTS)
         if sync_configs: dirs_to_create.append(GD_CONFIGS)
-        _ensure_dirs(*dirs_to_create)
+        for dir in dirs_to_create:
+            Path(dir).mkdir(parents=True, exist_ok=True)
 
-        config = build_symlink_config(ui)
+        # Active/Inactive summary
+        active   = [n for flag, n in [(sync_files, 'Files'), (sync_outputs, 'Outputs'), (sync_configs, 'Configs')] if flag]
+        inactive = [n for flag, n in [(sync_files, 'Files'), (sync_outputs, 'Outputs'), (sync_configs, 'Configs')] if not flag]
+        if active:
+            active_str   = ', '.join(f"{COL.G}{n}{COL.X}" for n in active)
+            inactive_str = ', '.join(f"{COL.Y}{n}{COL.X}" for n in inactive) if inactive else ''
+            print(f"{COL.B}📋 GDrive Синхронизация — активно: {active_str}" + (f" | неактивно: {inactive_str}" if inactive else '') + COL.X)
+        else:
+            print(f"{COL.Y}⚠️ GDrive подключен, но категории не выбраны — ничего не будет связано.{COL.X}")
+            return
 
-        # Step 1: restore + remove DESELECTED categories
-        if not sync_files:
-            _clear_category_symlinks(config['files'], 'files', restore=False)
-        if not sync_outputs:
-            _clear_category_symlinks(config['outputs'], 'outputs', restore=True)
-        if not sync_configs:
-            _clear_category_symlinks(config['configs'], 'configs', restore=True)
-
-        # Step 2: create / refresh SELECTED categories
-        # Create files symlinks
-        if sync_files:
-            if GDRIVE_LOG:
-                print(f"\n{COL.B}━━━ Files Symlinks ━━━{COL.X}")
-            for cfg in config['files']:
-                if cfg.get('flat_link'):
-                    sync_flat_symlinks(cfg['local'], cfg['gdrive'])
-                else:
-                    create_symlink(cfg['local'], cfg['gdrive'])
-
-        # Create output symlinks
-        if sync_outputs:
-            if GDRIVE_LOG:
-                print(f"\n{COL.B}━━━ Output Symlinks ━━━{COL.X}")
-            for cfg in config['outputs']:
-                create_symlink(
-                    cfg['local'], cfg['gdrive'],
-                    direct_link=cfg.get('direct_link', True)
-                )
-
-        # Create config symlinks
-        if sync_configs:
-            if GDRIVE_LOG:
-                print(f"\n{COL.B}━━━ Config Symlinks ━━━{COL.X}")
-            for cfg in config['configs']:
-                create_config_symlink(
-                    cfg['local'], cfg['gdrive'],
-                    cfg.get('type', 'file'),
-                    cfg.get('name', 'Config'),
-                )
+        # Sync each category
+        _sync_category(config['files'],   sync_files,   _create_files_symlink,   _remove_symlink, restore_on_remove=False, category='files')
+        _sync_category(config['outputs'], sync_outputs, _create_outputs_symlink, _remove_symlink, restore_on_remove=True,  category='outputs')
+        _sync_category(config['configs'], sync_configs, _create_config_symlink,  _remove_symlink, restore_on_remove=True,  category='configs')
 
         print(f"{COL.G}✅ Синхронизация завершена!{COL.X}")
     except Exception as e:
-        print(f"{COL.R}❌ Setup error:{COL.X} {str(e)}")
+        print(f"{COL.R}❌ Sync error:{COL.X} {e}")
 
 handle_gdrive(
     mountGDrive, UI,
