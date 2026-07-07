@@ -255,12 +255,12 @@ def _aria2_download(url: str, filename: Optional[str]) -> bool:
     aria2_args = (
         'aria2c'
         ' --allow-overwrite=true'
-        ' --auto-file-renaming=false'
         ' --console-log-level=error'
         ' --stderr=true'
-        ' --max-tries=10'
-        ' --retry-wait=5'
-        ' --check-certificate=false'
+        # ' --auto-file-renaming=false'
+        # ' --max-tries=10'
+        # ' --retry-wait=5'
+        # ' --check-certificate=false'
         ' -c -x16 -s16 -k1M -j5'
         f' --header="User-Agent: {ua}"'
     )
