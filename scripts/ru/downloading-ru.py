@@ -120,7 +120,7 @@ if not js.key_exists(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True):
         ## Tunnels
         'localtunnel': "npm install -g localtunnel",
         'cloudflared': "wget -qO /usr/bin/cl https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64; chmod +x /usr/bin/cl",
-        'zrok': "wget -qO zrok_1.1.10_linux_amd64.tar.gz https://github.com/openziti/zrok/releases/download/v1.1.10/zrok_1.1.10_linux_amd64.tar.gz; tar -xzf zrok_1.1.10_linux_amd64.tar.gz -C /usr/bin; rm -f zrok_1.1.10_linux_amd64.tar.gz",
+        'zrok2': "wget -qO zrok_2.0.4_linux_amd64.tar.gz https://github.com/openziti/zrok/releases/download/v2.0.4/zrok_2.0.4_linux_amd64.tar.gz; tar -xzf zrok_2.0.4_linux_amd64.tar.gz -C /usr/bin; mv -f /usr/bin/zrok /usr/bin/zrok2 2>/dev/null; rm -f zrok_2.0.4_linux_amd64.tar.gz",
         'ngrok': "wget -qO ngrok-v3-stable-linux-amd64.tgz https://bin.ngrok.com/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz; tar -xzf ngrok-v3-stable-linux-amd64.tgz -C /usr/bin; rm -f ngrok-v3-stable-linux-amd64.tgz"
     }
 
@@ -370,6 +370,7 @@ def _build_sync_config(ui: str) -> dict:
         (embed_dir,     'Embeddings',  False),
         (control_dir,   'ControlNet',  False),
         (upscale_dir,   'Upscale',     False),
+        # Others
         (adetailer_dir, 'Adetailer',   False),
         (clip_dir,      'Clip',        False),
         (unet_dir,      'Unet',        False),
@@ -382,13 +383,13 @@ def _build_sync_config(ui: str) -> dict:
         for local, gdir, flat in files_base
     ]
     files.append({
-        'local': extension_dir,
+        'local':  extension_dir,
         'gdrive': f"{GD_FILES}/{'Custom-Nodes' if is_comfy else 'Extensions'}"
     })
 
     # Output structure
     outputs = [{
-        'local': output_dir,
+        'local':  output_dir,
         'gdrive': f"{GD_OUTPUTS}/{ui}",
         'direct': True
     }]
@@ -419,9 +420,9 @@ def _build_sync_config(ui: str) -> dict:
 # --- Remove symlinks function ---
 def _remove_symlink(item, restore=False, category='files'):
     """Remove symlink(s) defined by item, optionally restore from GDrive; return count removed"""
-    local = Path(item['local'])
+    local  = Path(item['local'])
     gdrive = Path(item['gdrive'])
-    count = 0
+    count  = 0
 
     # Special file handling (flat and GDrive subfolder)
     if category == 'files':
@@ -449,7 +450,7 @@ def _remove_symlink(item, restore=False, category='files'):
         return count
 
     is_dir = (category == 'outputs') or (item.get('type') == 'dir')
-    name = item.get('name', category.capitalize())
+    name   = item.get('name', category.capitalize())
 
     local.unlink()
     count += 1
@@ -473,7 +474,7 @@ def _remove_symlink(item, restore=False, category='files'):
 # --- Сreate symlinks functions ---
 def _create_files_symlink(item):
     """Create flat or GDrive-subfolder symlinks for model files/extensions"""
-    local = Path(item['local'])
+    local  = Path(item['local'])
     gdrive = Path(item['gdrive'])
     local.mkdir(parents=True, exist_ok=True)
     gdrive.mkdir(parents=True, exist_ok=True)
@@ -503,7 +504,7 @@ def _create_files_symlink(item):
 
 def _create_outputs_symlink(item):
     """Create a direct symlink from output_dir to GDrive outputs folder, migrating existing content"""
-    local = Path(item['local'])
+    local  = Path(item['local'])
     gdrive = Path(item['gdrive'])
     local.parent.mkdir(parents=True, exist_ok=True)
     gdrive.parent.mkdir(parents=True, exist_ok=True)
@@ -518,13 +519,13 @@ def _create_outputs_symlink(item):
 
 def _create_config_symlink(item):
     """Create a symlink for a config file or folder, backing up local file if GDrive missing"""
-    local = Path(item['local'])
+    local  = Path(item['local'])
     gdrive = Path(item['gdrive'])
     local.parent.mkdir(parents=True, exist_ok=True)
     gdrive.parent.mkdir(parents=True, exist_ok=True)
 
     ctype = item.get('type', 'file')
-    name = item.get('name', 'Config')
+    name  = item.get('name', 'Config')
 
     if ctype == 'file':
         if local.exists() and local.is_file() and not gdrive.exists():

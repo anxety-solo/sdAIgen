@@ -254,9 +254,9 @@ def setup_tunnels(tunnel_port):
         })
     ]
 
-    # Zrok setup
+    # Zrok2 setup
     if zrok_token:
-        env_path = HOME / '.zrok/environment.json'
+        env_path = HOME / '.zrok2/environment.json'
         current_token = None
 
         if env_path.exists():
@@ -264,12 +264,12 @@ def setup_tunnels(tunnel_port):
                 current_token = json.load(f).get('zrok_token')
 
         if current_token != zrok_token:
-            ipySys('zrok disable &> /dev/null')
-            ipySys(f"zrok enable {zrok_token} &> /dev/null")
+            ipySys('zrok2 disable &> /dev/null')
+            ipySys(f"zrok2 enable {zrok_token} &> /dev/null")
 
-        services.append(('Zrok', {
-            'command': f"zrok share public http://localhost:{tunnel_port}/ --headless",
-            'pattern': r'[\w-]+\.share\.zrok\.io'
+        services.append(('Zrok2', {
+            'command': f"zrok2 share public localhost:{tunnel_port} --headless",
+            'pattern': r'[\w-]+\.shares\.zrok\.io'
         }))
 
     # Ngrok setup
@@ -388,8 +388,8 @@ if __name__ == '__main__':
 
     # Post-execution cleanup
     if zrok_token:
-        ipySys('zrok disable &> /dev/null')
-        print('\n🔐 Zrok tunnel disabled :3')
+        ipySys('zrok2 disable &> /dev/null')
+        print('\n🔐 Zrok2 tunnel disabled :3')
 
     # Display session duration
     try:

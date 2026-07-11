@@ -174,8 +174,8 @@ ngrok_token_widget = factory.create_text('Ngrok Token:')
 ngrok_button = create_expandable_button('Get Ngrok Token', 'https://dashboard.ngrok.com/get-started/your-authtoken')
 ngrok_box = factory.create_hbox([ngrok_token_widget, ngrok_button])
 
-zrok_token_widget = factory.create_text('Zrok Token:')
-zrok_button = create_expandable_button('Register Zrok Token', 'https://colab.research.google.com/drive/1d2sjWDJi_GYBUavrHSuQyHTDuLy36WpU')
+zrok_token_widget = factory.create_text('Zrok2 Token:')
+zrok_button = create_expandable_button('Register Zrok2 Token', 'https://colab.research.google.com/drive/1d2sjWDJi_GYBUavrHSuQyHTDuLy36WpU')
 zrok_box = factory.create_hbox([zrok_token_widget, zrok_button])
 
 commandline_arguments_widget = factory.create_text('Arguments:', WEBUI_PARAMS['A1111'])

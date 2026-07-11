@@ -355,12 +355,14 @@ def _aria2_monitor(cmd: str) -> bool:
             print(f"\r{' ' * 180}\r{out}", end='', flush=True)
 
         process.wait()
-        success = process.returncode == 0 and not errors
+        success = process.returncode == 0
 
         if log.enabled:
             print(f"\r{' ' * 180}\r", end='', flush=True)
-            for err in errors:
-                print(err)
+            if not success:
+                for err in errors:
+                    print(err)
+
             if success and last_stats:
                 total, speed = last_stats
                 file_part  = _color(filename, 'blue') + ' ' if filename else ''
