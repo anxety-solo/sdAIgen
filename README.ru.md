@@ -1,35 +1,35 @@
 <div align="center">
 <h1>~ SDAIGEN | Stable Diffusion / ComfyUI | NoteBook V3 ~</h1>
 
-English • [Русский](README.ru.md)
+[English](README.md) • Русский
 
 </div>
 
 <div align="center">
     <a href="https://discord.gg/eemJdDusvH">
-        <img src=".github/assets/svg/en/discord-en.svg" width="800" height="130" alt="discord">
+        <img src=".github/assets/svg/ru/discord-ru.svg" width="800" height="130" alt="discord">
     </a>
-    <a href="https://colab.research.google.com/github/anxety-solo/sdAIgen/blob/main/notebook/ANXETY_sdAIgen_EN.ipynb">
-        <img src=".github/assets/svg/en/colab-en.svg" width="800" height="160" alt="colab">
+    <a href="https://colab.research.google.com/github/anxety-solo/sdAIgen/blob/main/notebook/ANXETY_sdAIgen_RU.ipynb">
+        <img src=".github/assets/svg/ru/colab-ru.svg" width="800" height="160" alt="colab">
     </a>
-    <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-en-ipynb">
-        <img src=".github/assets/svg/en/kaggle-en.svg" width="800" height="160" alt="kaggle">
+    <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-ru-ipynb">
+        <img src=".github/assets/svg/ru/kaggle-ru.svg" width="800" height="160" alt="kaggle">
     </a>
-    <h6>Project Wiki — <a href="https://github.com/anxety-solo/sdAIgen/wiki">WiKi</a>.</h6>
+    <h6>Вики проекта — <a href="https://github.com/anxety-solo/sdAIgen/wiki">WiKi</a>.</h6>
 </div>
 
-## 🌟 Features:
-  - Multiplatform notebook: *Google Colab, Kaggle.*
-  - *Widgets* for easy interaction.
-  - Preset custom: *Settings* + *Styles* + [*UI Theme*](https://github.com/anxety-solo/anxety-theme)
-  - Download previews for *models, LoRa and embedding* (CivitAi)
-  - Choosing WebUI between *A1111, ComfyUI, Forge, Classic/Neo (Forge), ReForge, SD-UX.*
-  - _Exclusive to **Google Colab**_: Connection to GDrive: *Files, Outputs, UI Configs.*
+## 🌟 Особенности:
+  - Мультиплатформенный блокнот: **Google Colab, Kaggle.**
+  - *Виджеты* для простого взаимодействия.
+  - Предустановленные пользовательские: *Настройки* + *Стили* + [*UI Тема*](https://github.com/anxety-solo/anxety-theme)
+  - Скачивание превью для *моделей, LoRa и embedding* (CivitAi)
+  - Выбор WebUI между *A1111, ComfyUI, Forge, Classic/Neo (Forge), ReForge, SD-UX.*
+  - _Эксклюзив для **Google Colab**_: Подключение к GDrive: *Файлы, Генерации, Настройки UI.*
 
 <details>
-<summary>📚 Installed Extensions</summary>
+<summary>📚 Установленные Расширения</summary>
 
-> ✔️ Installed · ❌ Not Installed · 🔄 Integrated · <sup>`†`</sup> — *Kaggle* only
+> ✔️ Установленно · ❌ Не установлено · 🔄 Интегрированная версия · <sup>`†`</sup> — Только в *Kaggle*
 
 | Extension | A1111 | Forge | Classic | Neo | ReForge | SD-UX |
 |-----------|:-----:|:-----:|:-------:|:---:|:-------:|:-----:|
@@ -57,7 +57,7 @@ English • [Русский](README.ru.md)
 </details>
 
 <details>
-<summary>🧩 Installed Custom-Nodes | ComfyUI</summary>
+<summary>🧩 Установленные Кастомные-Ноды | ComfyUI</summary>
 
 - [Advanced-ControlNet](https://github.com/Kosinkadink/ComfyUI-Advanced-ControlNet)
 - [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
@@ -74,7 +74,7 @@ English • [Русский](README.ru.md)
 
 </details>
 
-## 💖 Support me:
+## 💖 Поддержать меня:
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">
@@ -87,8 +87,8 @@ English • [Русский](README.ru.md)
 
 ---
 
-## 😄 Credits:
+## 😄 Благодарности:
 
-[gutris1](https://github.com/gutris1) - Thanks to him for his work, scripts, extensions and for calling me gay 💀</br>
-[NoCrypt](https://github.com/NoCrypt) - NoteBook was originally built on a version of it :3</br>
-[DEX-1101](https://github.com/DEX-1101) - At one time gave us the Kaggle version~
+[gutris1](https://github.com/gutris1) - Спасибо ему за работу, скрипты, расширения и за то, что назвал меня геем 💀</br>
+[NoCrypt](https://github.com/NoCrypt) - Блокнот изначально был построен на его версии :3</br>
+[DEX-1101](https://github.com/DEX-1101) - В своё время предоставил нам Kaggle-версию~

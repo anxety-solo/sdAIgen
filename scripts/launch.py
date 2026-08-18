@@ -1,7 +1,9 @@
-# ~ launch.py | by ANXETY ~
+""" WebUI Launcher | by ANXETY """
 
-from TunnelHub import Tunnel    # Tunneling
-import json_utils as js         # JSON
+from sdai.constants import HOME_PATH, SCRIPTS_PATH, SETTINGS_PATH, VENV_PATH, COL
+from sdai.services.tunnel_hub import Tunnel
+from sdai.translations import tr
+from sdai.utils.json import read, save, update, key_exists
 
 from IPython.display import clear_output
 from IPython import get_ipython
@@ -26,38 +28,21 @@ ipySys = get_ipython().system
 
 osENV['PYTHONWARNINGS'] = 'ignore'
 
-# Auto-convert *_path env vars to Path
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, SCR_PATH, VENV, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
-)
-
-ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-UI = js.read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI = js.read(SETTINGS_PATH, 'WEBUI.webui_path')
-EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+ENV_NAME = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+UI = read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI = read(SETTINGS_PATH, 'WEBUI.webui_path')
+EXTS = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
-BIN = str(VENV / 'bin')
-PYTHON_VERSION = js.read(SETTINGS_PATH, 'WEBUI.python_version')
-PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
+BIN = str(VENV_PATH / 'bin')
+PYTHON_VERSION = read(SETTINGS_PATH, 'WEBUI.python_version')
+PKG = str(VENV_PATH / f"lib/python{PYTHON_VERSION}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
     'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH']
 })
 
-
-# Text Colors (\033)
-class COLORS:
-    R  = '\033[31m'    # Red
-    G  = '\033[32m'    # Green
-    Y  = '\033[33m'    # Yellow
-    B  = '\033[34m'    # Blue
-    lB = '\033[36m'    # Light Blue
-    X  = '\033[0m'     # Reset
-
-COL = COLORS
 
 # Tag-CSV Mapping
 TAGGER_MAP = {
@@ -67,26 +52,27 @@ TAGGER_MAP = {
 }
 
 
-# =================== loading settings V5 ==================
+# ~~ Load Settings ~~
 
 def load_settings(path):
     """Load settings from a JSON file"""
     try:
         return {
-            **js.read(path, 'ENVIRONMENT'),
-            **js.read(path, 'WIDGETS'),
-            **js.read(path, 'WEBUI')
+            **read(path, 'ENVIRONMENT'),
+            **read(path, 'WIDGETS'),
+            **read(path, 'WEBUI')
         }
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Error loading settings: {e}")
+    except (json.JSONDecodeError, IOError) as exc:
+        print(tr('settings_load_error', error=exc))
         return {}
+
 
 # Load settings
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
 
-# ==================== Helper Functions ====================
+# ~~ Helper Functions ~~
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -98,13 +84,15 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+
 def _trashing():
     dirs = ['A1111', 'ComfyUI', 'Forge', 'Classic', 'Neo', 'ReForge', 'SD-UX']
-    paths = [Path(HOME) / name for name in dirs]
+    paths = [Path(HOME_PATH) / name for name in dirs]
 
     for path in paths:
         cmd = f"find {path} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"
         subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 def find_latest_tag_file(target='danbooru'):
     """Find the latest tag file for specified target in TagComplete extension"""
@@ -155,6 +143,7 @@ def find_latest_tag_file(target='danbooru'):
 
     return latest_file
 
+
 def _update_config_paths(tagger=None):
     """Update configuration paths in WebUI config file"""
     target_tagger = TAGGER_MAP.get(tagger, 'danbooru')
@@ -168,10 +157,10 @@ def _update_config_paths(tagger=None):
 
     config_file = f"{WEBUI}/config.json"
     for key, value in config_mapping.items():
-        if js.key_exists(config_file, key):
-            js.update(config_file, key, str(value))
+        if key_exists(config_file, key):
+            update(config_file, key, str(value))
         else:
-            js.save(config_file, key, str(value))
+            save(config_file, key, str(value))
 
     # Auto-sync VERSION_UID | Fix for NEO
     if UI == 'Neo':
@@ -181,10 +170,11 @@ def _update_config_paths(tagger=None):
             match = re.search(r'VERSION_UID:\s*Final\[str\]\s*=\s*["\'](.+?)["\']', content)
             if match:
                 version_uid = match.group(1)
-                if js.key_exists(config_file, 'VERSION_UID'):
-                    js.update(config_file, 'VERSION_UID', version_uid)
+                if key_exists(config_file, 'VERSION_UID'):
+                    update(config_file, 'VERSION_UID', version_uid)
                 else:
-                    js.save(config_file, 'VERSION_UID', version_uid)
+                    save(config_file, 'VERSION_UID', version_uid)
+
 
 def get_launch_command():
     """Construct launch command based on configuration"""
@@ -205,7 +195,7 @@ def get_launch_command():
         return f"python3 launch.py {base_args}{common_args}"
 
 
-# ======================== Tunneling =======================
+# ~~ Tunneling ~~
 
 def is_command_available(command: str) -> bool:
     """Check if command is available in PATH"""
@@ -215,20 +205,22 @@ def is_command_available(command: str) -> bool:
         for path in os.environ.get('PATH', '').split(os.pathsep)
     )
 
+
 def get_public_ip() -> str:
     """Retrieve and cache public IPv4 address"""
-    cached_ip = js.read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
+    cached_ip = read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
     if cached_ip:
         return cached_ip
 
     try:
         response = requests.get('https://api64.ipify.org?format=json&ipv4=true', timeout=5)
         public_ip = response.json().get('ip', 'N/A')
-        js.update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
+        update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
         return public_ip
-    except Exception as e:
-        print(f"Error getting public IP: {e}")
+    except Exception as exc:
+        print(tr('ip_error', error=exc))
         return 'N/A'
+
 
 def setup_tunnels(tunnel_port):
     """Setup tunnel configurations with command availability check"""
@@ -256,11 +248,11 @@ def setup_tunnels(tunnel_port):
 
     # Zrok setup
     if zrok_token:
-        env_path = HOME / '.zrok/environment.json'
+        env_path = HOME_PATH / '.zrok/environment.json'
         current_token = None
 
         if env_path.exists():
-            with open(env_path, 'r') as f:
+            with open(env_path, 'r', encoding='utf-8') as f:
                 current_token = json.load(f).get('zrok_token')
 
         if current_token != zrok_token:
@@ -274,11 +266,11 @@ def setup_tunnels(tunnel_port):
 
     # Ngrok setup
     if ngrok_token:
-        config_path = HOME / '.config/ngrok/ngrok.yml'
+        config_path = HOME_PATH / '.config/ngrok/ngrok.yml'
         current_token = None
 
         if config_path.exists():
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 current_token = yaml.safe_load(f).get('agent', {}).get('authtoken')
 
         if current_token != ngrok_token:
@@ -293,9 +285,9 @@ def setup_tunnels(tunnel_port):
     available_tunnels = []
     unavailable_tunnels = []
 
-    print(f"{COL.Y}>> Checking Tunnels:{COL.X}")
+    print(f"{COL.Y}{tr('checking_tunnels')}{COL.X}")
     for name, config in services:
-        print(f"- 🕒 Checking {COL.lB}{name}{COL.X}...", end=' ')
+        print(f"- 🕒 {tr('checking_tunnel', name=f'{COL.lB}{name}{COL.X}')}...", end=' ')
         if is_command_available(config['command']):
             available_tunnels.append((name, config))
             print(f"{COL.G}✓{COL.X}")
@@ -306,12 +298,12 @@ def setup_tunnels(tunnel_port):
     return available_tunnels, len(services), len(available_tunnels), unavailable_tunnels
 
 
-# ========================== Main ==========================
+# ~~ Main ~~
 
 if __name__ == '__main__':
     """Main execution flow"""
     args = parse_arguments()
-    print('Please Wait...\n')
+    print(f"{tr('please_wait')}\n")
 
     osENV.setdefault('IIB_ACCESS_CONTROL', 'disable')
     osENV['UVICORN_LOG_LEVEL'] = 'error'
@@ -344,15 +336,15 @@ if __name__ == '__main__':
         if UI == 'ComfyUI':
             osENV['MPLBACKEND'] = 'agg'
 
-            COMFYUI_SETTINGS_PATH = SCR_PATH / 'ComfyUI.json'
-            if check_custom_nodes_deps:
+            COMFYUI_SETTINGS_PATH = SCRIPTS_PATH / 'ComfyUI.json'
+            if check_nodes_deps:
                 ipySys('python3 install-deps.py')
                 clear_output(wait=True)
 
-            if not js.key_exists(COMFYUI_SETTINGS_PATH, 'install_req', True):
-                print('Installing ComfyUI dependencies...')
+            if not key_exists(COMFYUI_SETTINGS_PATH, 'install_req', True):
+                print(tr('comfy_deps_installing'))
                 subprocess.run(['pip', 'install', '-r', 'requirements.txt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                js.save(COMFYUI_SETTINGS_PATH, 'install_req', True)
+                save(COMFYUI_SETTINGS_PATH, 'install_req', True)
                 clear_output(wait=True)
 
             was_cfg_path = EXTS / 'was-node-suite-comfyui/was_suite_config.json'
@@ -362,13 +354,13 @@ if __name__ == '__main__':
                 cfg['ffmpeg_bin_path'] = ffmpeg_path
                 was_cfg_path.write_text(json.dumps(cfg, indent=2), encoding='utf-8')
 
-        print(f"{COL.B}>> Total Tunnels:{COL.X} {total} | {COL.G}Available:{COL.X} {success} | {COL.R}Unavailable:{COL.X} {len(unavailable)}\n")
+        print(f"{COL.B}{tr('tunnels_total', total=total)}{COL.X} | {COL.G}{tr('tunnels_available', count=success)}{COL.X} | {COL.R}{tr('tunnels_unavailable', count=len(unavailable))}{COL.X}\n")
 
         # Display unavailable tunnels if any
         if args.log and unavailable:
-            print(f"{COL.R}>> Unavailable Tunnels:{COL.X}")
+            print(f"{COL.R}{tr('unavailable_header')}{COL.X}")
             for name in unavailable:
-                print(f"  - {name}: Command not found in PATH")
+                print(tr('cmd_not_found', name=name))
             print()
 
         # Display selected tagger if was used
@@ -377,7 +369,7 @@ if __name__ == '__main__':
             tag_file = find_latest_tag_file(selected_tagger)
 
             if tag_file:
-                print(f"{COL.B}>> 🏷️ Selected Tagger: {COL.lB}{selected_tagger}{COL.X} ({tag_file})\n")
+                print(f"{COL.B}{tr('selected_tagger', tagger=f'{COL.lB}{selected_tagger}{COL.X}', tag_file=tag_file)}\n")
 
         print(f"🔧 WebUI: {COL.B}{UI}{COL.X}")
 
@@ -389,13 +381,14 @@ if __name__ == '__main__':
     # Post-execution cleanup
     if zrok_token:
         ipySys('zrok disable &> /dev/null')
-        print('\n🔐 Zrok tunnel disabled :3')
+        print(f"\n{tr('zrok_disabled')}")
 
     # Display session duration
     try:
-        with open(f"{WEBUI}/static/timer.txt") as f:
+        with open(f"{WEBUI}/static/timer.txt", encoding='utf-8') as f:
             timer = float(f.read())
             duration = timedelta(seconds=time.time() - timer)
-            print(f"\n⌚️ Session duration: {COL.Y}{str(duration).split('.')[0]}{COL.X}")
+            dur_str = f"{COL.Y}{str(duration).split('.')[0]}{COL.X}"
+            print(f"\n{tr('session_duration', time=dur_str)}")
     except FileNotFoundError:
         pass

@@ -1,0 +1,365 @@
+@import url('https://fonts.googleapis.com/css2?family=Shantell+Sans&family=Tiny5&display=swap');
+
+:root {
+    /* Accent Color */
+    --aw-accent-color: #ff97ef;
+    --aw-elements-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
+
+    /* Text - Fonts */
+    --aw-font-family-primary: 'Shantell Sans', serif;
+    --aw-font-family-secondary: 'Tiny5', sans-serif;
+    --aw-color-text-primary: #f0f8ff;
+    --aw-text-size: 14px;
+    --aw-text-size-small: 13px;
+
+    /* Container */
+    --aw-container-bg: #232323;
+    --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
+    --aw-conteiner-gap: 8px;
+
+    /* Inputs */
+    --aw-input-bg: #1c1c1c;
+    --aw-input-bg-hover: #262626;
+    --aw-input-border: 1px solid #262626;
+    --aw-input-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    --aw-input-bg-checked: #323232;
+
+    /* Checkboxes */
+    --aw-checkbox-unchecked-bg: #20b2aa;
+    --aw-checkbox-checked-bg: #2196f3;
+    --aw-checkbox-gdrive-bg: #00d062;
+    --aw-checkbox-handle-bg: white;
+
+    /* Scrollbar */
+    --aw-scrollbar-width: 0.65rem;
+    --aw-scrollbar-thumb-bg: #475254;
+    --aw-scrollbar-track-bg: #111111;
+    --aw-scrollbar-thumb-hover: var(--aw-accent-color);
+
+    /* Buttons */
+    --aw-button-gradient: radial-gradient(circle at top left, purple 10%, violet 90%);
+    --aw-button-execute-hover: radial-gradient(circle at top left, purple 10%, #93ac47 90%);
+    --aw-button-hide-hover: radial-gradient(circle at top left, purple 10%, #fc3468 90%);
+}
+
+
+/* General Styles */
+
+hr {
+    border-color: grey;
+    background-color: grey;
+    opacity: 0.25;
+}
+
+.instruction {
+    font-size: 18px;
+    color: grey;
+    user-select: none;
+    cursor: default;
+}
+
+
+/* Special Fixes for IpyWidgets */
+
+/* Remove Shit-margin for Boxes */
+.widget-inline-hbox { margin: 2px 0; } /* 2px - default ipywidgets margin */
+
+/* Fix Vertical Centering */
+.widget-hbox,
+.jupyter-widgets label {
+    display: flex;
+    align-items: center;
+}
+
+/* Fix Checkbox Width */
+.widget-checkbox {
+    width: auto;
+    display: inline-flex;
+    min-width: unset;
+}
+
+
+/* === ScrollBar (For Selection Area) === */
+.widget-select-multiple select::-webkit-scrollbar {
+    width: var(--aw-scrollbar-width);
+    height: var(--aw-scrollbar-width);
+}
+.widget-select-multiple select::-webkit-scrollbar-thumb {
+    background: var(--aw-scrollbar-thumb-bg) !important;
+    border: 3px solid var(--aw-scrollbar-track-bg);
+    border-radius: 16px;
+}
+.widget-select-multiple select::-webkit-scrollbar-thumb:hover {
+    background: var(--aw-scrollbar-thumb-hover) !important;
+}
+.widget-select-multiple select::-webkit-scrollbar-track,
+.widget-select-multiple select::-webkit-scrollbar-corner {
+    background: var(--aw-scrollbar-track-bg) !important;
+    border-radius: 0 8px 8px 0;
+}
+/* FireFox Styles */
+@-moz-document url-prefix() {
+    .widget-select-multiple select {
+        scrollbar-width: auto;
+        scrollbar-color: var(--aw-scrollbar-thumb-bg) var(--aw-scrollbar-track-bg);
+    }
+}
+
+/* Text FONTs */
+
+.instruction,
+.selection-panel select,
+.output-message,
+.cleaner_button,
+.storage_info,
+.widget-checkbox label {
+    font-family: var(--aw-font-family-primary);
+    font-optical-sizing: auto;
+}
+
+
+/* Container Style */
+
+.mainCleaner-container {
+    flex: 1;
+    position: relative;
+    margin: 5px;
+    padding: 10px 25px;
+    background-color: var(--aw-container-bg);
+    border: var(--aw-container-border);
+    border-radius: 16px;
+    box-shadow: var(--aw-elements-shadow), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    overflow: hidden !important;
+}
+.mainCleaner-container::before {
+    content: 'AutoCleaner';
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-family: var(--aw-font-family-secondary);
+    font-optical-sizing: auto;
+    font-weight: 750;
+    font-size: 24px;
+    color: rgba(0, 0, 0, 0.3);
+}
+.mainCleaner-container::after {
+    content: 'ANXETY';
+    position: absolute;
+    top: 30px;
+    right: 10px;
+    font-family: var(--aw-font-family-secondary);
+    font-optical-sizing: auto;
+    font-weight: 750;
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.3);
+}
+
+
+/* Selection-Output Area Styles */
+
+/* Layout for selection and output areas */
+.selection_output-layout {
+    display: flex !important;
+    box-sizing: border-box !important;
+    margin: 0;
+    min-height: 200px;
+    align-items: stretch;
+    gap: var(--aw-conteiner-gap);
+}
+
+/* Panels */
+.selection-panel {
+    flex: 1;
+    margin: 0 !important;
+    min-width: min-content;
+}
+
+.selection-panel select {
+    appearance: none;
+    color: var(--aw-color-text-primary);
+    margin: 0;
+    padding: 10px !important;
+    width: 100%;
+    min-width: min-content;
+    height: 100%;
+    background-color: var(--aw-input-bg);
+    border: var(--aw-input-border) !important;
+    border-radius: 10px;
+    box-shadow: var(--aw-input-shadow);
+}
+.selection-panel option {
+    margin: 2px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    break-inside: avoid;
+}
+.selection-panel option:checked {
+    background-color: var(--aw-input-bg-checked);
+    color: var(--aw-color-text-primary);
+}
+.selection-panel option:hover {
+    background-color: var(--aw-input-bg-hover);
+}
+
+.output-panel {
+    flex: 1;
+    margin: 0 !important;
+    padding: 10px;
+    background-color: var(--aw-input-bg);
+    border: var(--aw-input-border);
+    border-radius: 10px;
+    box-shadow: var(--aw-input-shadow);
+    overflow-y: auto;
+}
+.output-message {
+    color: var(--aw-color-text-primary);
+    font-size: var(--aw-text-size);
+    user-select: none;
+    cursor: default;
+}
+
+.storage_info {
+    font-size: var(--aw-text-size);
+    padding: 5px 20px;
+    background-color: var(--aw-input-bg);
+    border: var(--aw-input-border);
+    border-radius: 10px;
+    box-shadow: var(--aw-input-shadow);
+    user-select: none;
+    cursor: default;
+}
+
+
+/* Button style */
+
+.lower_buttons_box {
+    gap: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.cleaner_button {
+    color: var(--aw-color-text-primary);
+    font-size: var(--aw-text-size);
+    width: auto;
+    height: 35px;
+    background-image: var(--aw-button-gradient);
+    background-size: 200% 200%;
+    background-position: left bottom;
+    border-radius: 16px;
+    transition: background 0.5s ease, transform 0.3s ease;
+}
+.cleaner_button:hover {
+    cursor: pointer;
+    background-size: 200% 200%;
+    background-position: right bottom;
+    transform: translateY(1px);
+}
+
+.button_execute:hover {
+    background-image: var(--aw-button-execute-hover);
+}
+.button_hide:hover {
+    background-image: var(--aw-button-hide-hover);
+}
+
+/* Removes ugly stroke from widget buttons. */
+.cleaner_button:active {
+    filter: brightness(0.75) !important;
+}
+.jupyter-widgets.lm-Widget:focus {
+    outline: none;
+}
+
+
+/* Slider Checkbox Style (GDrive Toggle) */
+
+.widget-checkbox.gdrive-mode {
+    margin-left: 10px;
+}
+
+.widget-checkbox.gdrive-mode label {
+    font-size: var(--aw-text-size);
+    color: var(--aw-color-text-primary);
+    user-select: none;
+}
+
+.widget-checkbox.gdrive-mode input[type='checkbox'] {
+    appearance: none;
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background-color: var(--aw-checkbox-unchecked-bg);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.85);
+}
+.widget-checkbox.gdrive-mode input[type='checkbox']:checked {
+    background-color: var(--aw-checkbox-gdrive-bg);
+}
+
+.widget-checkbox.gdrive-mode input[type='checkbox']:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 12px;
+    height: 12px;
+    background-color: var(--aw-checkbox-handle-bg);
+    border-radius: inherit;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(-50%);
+    transition: all 0.25s cubic-bezier(0.785, 0.135, 0.15, 0.85);
+}
+.widget-checkbox.gdrive-mode input[type='checkbox']:checked:before {
+    left: 20px;
+    width: 16px;
+    height: 16px;
+}
+
+
+/* Animation of Elements */
+
+.mainCleaner-container { animation: slideInTopBlur 0.7s forwards; }
+.mainCleaner-container.hide { animation: slideOutTopBlur 0.3s forwards; }
+.output-message { animation: fadeIn 0.5s forwards; }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInTopBlur {
+    0% {
+        transform: translate3d(0, 50%, 0) scale(0.85) rotate3d(1, 0, 0, -85deg);
+        filter: blur(5px) grayscale(1) brightness(0.5);
+        opacity: 0;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1) rotate3d(1, 0, 0, 0deg);
+        filter: blur(0) grayscale(0) brightness(1);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutTopBlur {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0) grayscale(0) brightness(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -100%, 0);
+        filter: blur(5px) grayscale(1) brightness(0);
+        opacity: 0;
+    }
+}

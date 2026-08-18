@@ -1,0 +1,95 @@
+/* Gradio Container */
+.gradio-container {
+  padding: 15px !important;
+}
+div.compact {
+  gap: 6px !important;
+}
+
+/* Main */
+#txt2img_gallery,
+#img2img_gallery {
+  height: 650px;  /* Output height */
+}
+
+#txt2img_results,
+#img2img_results {
+  min-width: 50%; /* Output width */
+}
+
+#txt2img_gallery > .grid-wrap,
+#txt2img_gallery > .preview,
+#img2img_gallery > .grid-wrap,
+#img2img_gallery > .preview {
+  max-height: none;
+}
+
+#txt2img_extra_networks:not(div),
+#img2img_extra_networks:not(div) {
+  order: 1 !important;
+}
+
+#setting_show_progress_every_n_steps > div.wrap > div > label > span {
+  white-space: nowrap;
+  overflow: hidden;
+  width: 220px;
+  text-overflow: ellipsis;
+}
+
+/* Fixing Sampling steps covered up on phone */
+@media screen and (min-width: 420px) {
+  #sampler_selection_txt2img,
+  #sampler_selection_img2img {
+    flex-direction: row;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  #sampler_selection_txt2img,
+  #sampler_selection_img2img {
+    flex-direction: column;
+  }
+}
+
+#txt2img_script_container > * .block.padded,
+#img2img_script_container > * .block.padded {
+  padding: 10px !important;
+}
+
+#txt2img_script_container > div,
+#img2img_script_container > div {
+  margin-bottom: 10px;
+}
+
+/* Fix img2img copy-to label layout */
+.gradio-row[id*="_copy_to_"] > div[id*="_label_copy_to_"] {
+  flex: 0 0 100%;
+  order: -1;
+}
+
+/* txt2img + img2img sampler spacing */
+[id$="2img_settings"] [id$="_sampling"],
+[id$="2img_settings"] [id$="_scheduler"] {
+  margin-bottom: 4px;
+}
+
+/* Awesome CN btn-style~ */
+#controlnet .gradio-row {
+  display: flex;
+  align-items: center;
+}
+#controlnet .gradio-row:has(.cnet-toolbutton + .cnet-toolbutton) {
+  gap: 8px;
+}
+
+#controlnet .gradio-button {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  background-color: var(--button-secondary-background-fill) !important;
+}
+#controlnet .cnet-image-row .gradio-button,
+#controlnet .controlnet_image_controls .gradio-button {
+  margin-bottom: 0 !important;
+}
