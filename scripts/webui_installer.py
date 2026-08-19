@@ -2,17 +2,21 @@
 
 import requests
 import asyncio
-import shutil
 import sys
 
 from IPython.utils import capture
 from IPython import get_ipython
 from pathlib import Path
 
+# === SDAIGEN ===
 from sdai.webui_meta import meta, build_urls, build_config_urls, build_extensions_url
-from sdai.constants import HOME_PATH, SETTINGS_PATH, GITHUB_BASE
+from sdai.constants import HOME_PATH, SETTINGS_PATH
 from sdai.services.manager import download, clone
 from sdai.utils.json import read
+
+
+ipySys = get_ipython().system
+ipyRun = get_ipython().run_line_magic
 
 
 CLONE_UI = read(SETTINGS_PATH, 'WIDGETS.clone_ui', False)
@@ -27,14 +31,8 @@ EMBED_DIR  = Path(read(SETTINGS_PATH, 'WEBUI.embed_dir'))
 UPSC_DIR   = Path(read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
 
 
-_m = meta(UI_NAME)
-
-
 # ~~ Parse CLI Arguments ~~
 SKIP_INSTALLING_UI = '-s' in sys.argv or '--skip-installing-ui' in sys.argv
-
-ipySys = get_ipython().system
-ipyRun = get_ipython().run_line_magic
 
 
 # ~~ CONFIGURATION ~~
@@ -55,9 +53,9 @@ def get_extensions_list() -> list:
     # Environment-specific extensions
     if ENV_NAME == 'Kaggle':
         extensions.append(
-            f"{GITHUB_BASE}/anxety-solo/sd-encrypt-image Encrypt-Image"
+            'https://github.com/anxety-solo/sd-encrypt-image Encrypt-Image'
             if UI_NAME != 'ComfyUI'
-            else f"{GITHUB_BASE}/anxety-solo/comfyui-encrypt-image"
+            else 'https://github.com/anxety-solo/comfyui-encrypt-image'
         )
 
     return extensions
@@ -115,6 +113,7 @@ def unpack_webui():
 
 def clone_webui():
     """Clone the WebUI repository from GitHub (with the meta branch)"""
+    _m = meta(UI_NAME)
     clone(f"{_m['github_url']} {HOME_PATH} {UI_NAME}", branch=_m['branch'])
 
 

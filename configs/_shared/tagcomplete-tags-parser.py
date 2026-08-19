@@ -5,12 +5,12 @@ import asyncio
 import aiohttp
 import re
 
+from types import TracebackType
 from datetime import datetime
-from typing import Optional
 from pathlib import Path
 
 # === SDAIGEN ===
-from sdai.constants import GITHUB_API, GITHUB_RAW, SETTINGS_PATH
+from sdai.constants import SETTINGS_PATH
 from sdai.utils.logger import Logger
 from sdai.utils.json import read
 
@@ -19,8 +19,8 @@ from sdai.utils.json import read
 
 EXTS_DIR = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
-GITHUB_API_URL = f"{GITHUB_API}/repos/DraconicDragon/dbr-e621-lists-archive/contents/tag-lists"
-GITHUB_RAW_URL = f"{GITHUB_RAW}/DraconicDragon/dbr-e621-lists-archive/main/tag-lists"
+GITHUB_API_URL = 'https://api.github.com/repos/DraconicDragon/dbr-e621-lists-archive/contents/tag-lists'
+GITHUB_RAW_URL = 'https://raw.githubusercontent.com/DraconicDragon/dbr-e621-lists-archive/main/tag-lists'
 
 # Order is IMPORTANT!
 TARGET_CATEGORIES = ['danbooru_e621_merged', 'danbooru', 'e621']
@@ -57,7 +57,7 @@ class TagsParser:
     """Finds and downloads the latest tag files for each target category"""
 
     def __init__(self, verbose: bool = False):
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
         self.tags_dir = find_tagcomplete_dir()
         self.logger   = Logger(enabled=verbose)
 
@@ -65,7 +65,7 @@ class TagsParser:
         self.session = aiohttp.ClientSession()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None):
         if self.session:
             await self.session.close()
 
@@ -86,7 +86,7 @@ class TagsParser:
         return await self._get_json(url)
 
     @staticmethod
-    def extract_date_from_filename(filename: str) -> Optional[datetime]:
+    def extract_date_from_filename(filename: str) -> datetime | None:
         """Extract date from filename like 'danbooru_2025-07-05_pt20-ia-dd.csv'"""
         match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
         if match:
@@ -179,10 +179,11 @@ class TagsParser:
 
 # ~~ CLI ~~
 
-async def main(args=None):
+async def main(args: list[str] | None = None):
     """CLI entry point"""
     parser = argparse.ArgumentParser(description=f"CSV Tags Parser for {', '.join(TARGET_CATEGORIES)}")
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
+
     args, _ = parser.parse_known_args(args)
 
     try:

@@ -1,9 +1,17 @@
 """ WebUI Metadata Module | by ANXETY """
 
-from sdai.constants import HOME_PATH, VENV_PATH, GITHUB_RAW, GITHUB_BASE, HF_REPO_URL
+# === SDAIGEN ===
+from sdai.constants import HOME_PATH, VENV_PATH, HF_REPO_URL
 
 
 # ~~ SHARED CONFIGS ~~
+
+DEFAULT_VENV = 'python31018-venv-torch260-cu124-fa.tar.lz4'
+
+DEFAULT_PYTHON   = '3.10'
+DEFAULT_UI       = 'Neo'
+DEFAULT_LAUNCHER = 'launch.py'
+DEFAULT_PORT     = 7860
 
 A1111_CONFIG = (
     ('{ui}/config.json', 'config.json'),
@@ -35,13 +43,6 @@ COMFY_CONFIG = (
     ('_shared/gradio-tunneling.py', '{venv}/lib/python{pyver}/site-packages/gradio_tunneling/main.py'),
 )
 
-DEFAULT_VENV = 'python31018-venv-torch260-cu124-fa.tar.lz4'
-
-DEFAULT_PYTHON   = '3.10'
-DEFAULT_UI       = 'Neo'
-DEFAULT_LAUNCHER = 'launch.py'
-DEFAULT_PORT     = 7860
-
 # Folder tuple order: checkpoint, vae, lora, embed, extension, upscale, output
 A1111_FOLDERS   = ('Stable-diffusion', 'VAE', 'Lora', 'embeddings', 'extensions', 'ESRGAN', 'outputs')
 CLASSIC_FOLDERS = ('Stable-diffusion', 'VAE', 'Lora', 'embeddings', 'extensions', 'ESRGAN', 'output')
@@ -53,7 +54,7 @@ COMFY_FOLDERS   = ('checkpoints', 'vae', 'loras', 'embeddings', 'custom_nodes', 
 WEBUIS = {
     'A1111': {
         'layout': 'a1111',
-        'github_url': f"{GITHUB_BASE}/AUTOMATIC1111/stable-diffusion-webui",
+        'github_url': 'https://github.com/AUTOMATIC1111/stable-diffusion-webui',
         'branch': 'master',
         'branch_exclude': None,
         'python': DEFAULT_PYTHON,
@@ -67,7 +68,7 @@ WEBUIS = {
     },
     'ComfyUI': {
         'layout': 'comfy',
-        'github_url': f"{GITHUB_BASE}/comfyanonymous/ComfyUI",
+        'github_url': 'https://github.com/comfyanonymous/ComfyUI',
         'branch': 'master',
         'branch_exclude': None,
         'python': '3.13',
@@ -81,7 +82,7 @@ WEBUIS = {
     },
     'Forge': {
         'layout': 'a1111',
-        'github_url': f"{GITHUB_BASE}/lllyasviel/stable-diffusion-webui-forge",
+        'github_url': 'https://github.com/lllyasviel/stable-diffusion-webui-forge',
         'branch': 'main',
         'branch_exclude': None,
         'python': DEFAULT_PYTHON,
@@ -95,7 +96,7 @@ WEBUIS = {
     },
     'Classic': {
         'layout': 'haoming',
-        'github_url': f"{GITHUB_BASE}/Haoming02/sd-webui-forge-classic",
+        'github_url': 'https://github.com/Haoming02/sd-webui-forge-classic',
         'branch': 'classic',
         'branch_exclude': ['neo'],
         'python': '3.11',
@@ -109,7 +110,7 @@ WEBUIS = {
     },
     'Neo': {
         'layout': 'haoming',
-        'github_url': f"{GITHUB_BASE}/Haoming02/sd-webui-forge-classic",
+        'github_url': 'https://github.com/Haoming02/sd-webui-forge-classic',
         'branch': 'neo',
         'branch_exclude': ['classic'],
         'python': '3.13',
@@ -123,7 +124,7 @@ WEBUIS = {
     },
     'ReForge': {
         'layout': 'a1111',
-        'github_url': f"{GITHUB_BASE}/Panchovix/stable-diffusion-webui-reForge",
+        'github_url': 'https://github.com/Panchovix/stable-diffusion-webui-reForge',
         'branch': 'main',
         'branch_exclude': None,
         'python': '3.12',
@@ -137,7 +138,7 @@ WEBUIS = {
     },
     'SD-UX': {
         'layout': 'a1111',
-        'github_url': f"{GITHUB_BASE}/anapnoe/stable-diffusion-webui-ux",
+        'github_url': 'https://github.com/anapnoe/stable-diffusion-webui-ux',
         'branch': 'master',
         'branch_exclude': None,
         'python': DEFAULT_PYTHON,
@@ -189,12 +190,12 @@ def build_config_urls(ui: str, github: str, branch: str) -> list:
     ui_key = resolve(ui)
 
     webui_root  = HOME_PATH / ui_key
-    configs_url = f"{GITHUB_RAW}/{github}/{branch}/configs"
+    configs_url = f"https://raw.githubusercontent.com/{github}/{branch}/configs"
 
     return [
         (
             f"{configs_url}/{src.format(ui=ui_key)}",
-            webui_root / dest.format(pyver=_m['python'], venv=str(VENV_PATH))
+            webui_root / dest.format(venv=str(VENV_PATH), pyver=_m['python'])
         )
         for src, dest in _m['config']
     ]
@@ -202,7 +203,7 @@ def build_config_urls(ui: str, github: str, branch: str) -> list:
 
 def build_extensions_url(ui: str, github: str, branch: str) -> str:
     """URL of the UI's extensions list file"""
-    return f"{GITHUB_RAW}/{github}/{branch}/configs/{resolve(ui)}/extensions.txt"
+    return f"https://raw.githubusercontent.com/{github}/{branch}/configs/{resolve(ui)}/extensions.txt"
 
 
 # ~~ PATH BUILDERS ~~
@@ -210,6 +211,7 @@ def build_extensions_url(ui: str, github: str, branch: str) -> str:
 def build_paths(ui: str) -> dict:
     """Build all WebUI directories for the given UI from meta"""
     _m = meta(ui)
+
     webui_root  = HOME_PATH / resolve(ui)
     models_root = webui_root / 'models'
 

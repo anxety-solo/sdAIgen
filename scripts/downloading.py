@@ -1,4 +1,4 @@
-""" Model Downloading Module | by ANXETY """
+""" All Downloading | by ANXETY """
 
 import subprocess
 import requests
@@ -10,39 +10,59 @@ import re
 import os
 
 from IPython.display import clear_output
-from IPython.utils import capture
 from urllib.parse import urlparse
+from IPython.utils import capture
 from IPython import get_ipython
 from datetime import timedelta
+from typing import Callable
 from pathlib import Path
 
+from os import chdir as CD
+
+# === SDAIGEN ===
 from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, HF_REPO_URL, COL
-from sdai.utils.webui import handle_setup_timer, find_model_by_partial_name
+from sdai.utils.webui import handle_setup_timer, find_model_by_partial_name, _remove_path
 from sdai.webui_meta import DEFAULT_VENV, WEBUIS, meta, build_urls
+from sdai.services.manager import download, clone, _normalize_url
 from sdai.api.civitai import CIVITAI_DOMAINS, CivitaiAPI
-from sdai.services.manager import download, clone
 from sdai.utils.json import read, save, key_exists
 from sdai.models import get_category
 from sdai.translations import tr
 
 
+ipySys = get_ipython().system
+ipyRun = get_ipython().run_line_magic
+
 ENV_NAME   = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 UI_NAME    = read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI_PATH = read(SETTINGS_PATH, 'WEBUI.webui_path')
+WEBUI_PATH = Path(read(SETTINGS_PATH, 'WEBUI.webui_path'))
+EXTS_DIR   = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
-# ~~ Parse CLI Arguments ~~
+# ~~ CLI ARGUMENTS ~~
+
 SKIP_VENV  = '-s' in sys.argv or '--skip-install-venv' in sys.argv
 GDRIVE_LOG = '-l' in sys.argv or '--gdrive-log' in sys.argv
 
-CD = os.chdir
-ipySys = get_ipython().system
-ipyRun = get_ipython().run_line_magic
+
+# ~~ LOADING SETTINGS ~~
+
+def load_settings(path: str | Path) -> dict:
+    """Load settings from a JSON file"""
+    return {
+        **(read(path, 'ENVIRONMENT') or {}),
+        **(read(path, 'WIDGETS') or {}),
+        **(read(path, 'WEBUI') or {})
+    }
+
+
+settings = load_settings(SETTINGS_PATH)
+locals().update(settings)
 
 
 # ~~ LIBRARIES | VENV ~~
 
-def install_dependencies(commands):
+def install_dependencies(commands: list):
     """Run a list of installation commands"""
     for cmd in commands:
         try:
@@ -51,7 +71,7 @@ def install_dependencies(commands):
             pass
 
 
-def install_packages(install_lib):
+def install_packages(install_lib: dict):
     """Install packages from the provided library dictionary"""
     for index, (package, install_cmd) in enumerate(install_lib.items(), start=1):
         print(f"\r[{index}/{len(install_lib)}] {COL.G}>>{COL.X} {tr('lib_installing', package=f'{COL.Y}{package}{COL.X}')}..." + ' ' * 35, end='')
@@ -63,12 +83,12 @@ def install_packages(install_lib):
             pass
 
 
-def setup_venv(url):
+def setup_venv(url: str):
     """Download and unpack the virtual environment, then wire it into PATH"""
     CD(HOME_PATH)
     fn = Path(url).name
 
-    download(f"{url} {HOME_PATH} {fn}")
+    download(f"{url} {HOME_PATH} {fn}", verbose=True)
 
     # Install dependencies based on environment
     install_commands = ['sudo apt-get -y install lz4 pv']
@@ -84,12 +104,12 @@ def setup_venv(url):
     ipySys(f"pv {fn} | lz4 -d | tar xf -")
     Path(fn).unlink()
 
-    BIN        = str(VENV_PATH / 'bin')
-    PYTHON_VER = read(SETTINGS_PATH, 'WEBUI.python_version')
-    PKG        = str(VENV_PATH / f"lib/python{PYTHON_VER}/site-packages")
+    BIN    = str(VENV_PATH / 'bin')
+    PY_VER = read(SETTINGS_PATH, 'WEBUI.python_version')
+    PKG    = str(VENV_PATH / f"lib/python{PY_VER}/site-packages")
 
     os.environ.update({
-        'PATH':       f"{BIN}:{os.environ['PATH']}" if BIN not in os.environ['PATH'] else os.environ['PATH'],
+        'PATH': f"{BIN}:{os.environ['PATH']}" if BIN not in os.environ['PATH'] else os.environ['PATH'],
         'PYTHONPATH': f"{PKG}:{os.environ['PYTHONPATH']}" if PKG not in os.environ['PYTHONPATH'] else os.environ['PYTHONPATH']
     })
     sys.path.insert(0, PKG)
@@ -98,13 +118,13 @@ def setup_venv(url):
 # Check and install dependencies
 if not key_exists(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True):
     install_lib = {
-        ## Libs
+        # Libs
         'aria2': 'pip install aria2',
         'gdown': 'pip install gdown',
-        ## Tunnels
+        # Tunnels
         'localtunnel': 'npm install -g localtunnel',
         'cloudflared': 'wget -qO /usr/bin/cl https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64; chmod +x /usr/bin/cl',
-        'zrok2':       'wget -qO zrok_1.1.10_linux_amd64.tar.gz https://github.com/openziti/zrok/releases/download/v1.1.10/zrok_1.1.10_linux_amd64.tar.gz; tar -xzf zrok_1.1.10_linux_amd64.tar.gz -C /usr/bin; rm -f zrok_1.1.10_linux_amd64.tar.gz',
+        'zrok2':       'wget -qO zrok_2.0.4_linux_amd64.tar.gz https://github.com/openziti/zrok/releases/download/v2.0.4/zrok_2.0.4_linux_amd64.tar.gz; tar -xzf zrok_2.0.4_linux_amd64.tar.gz -C /usr/bin; rm -f zrok_2.0.4_linux_amd64.tar.gz',
         'ngrok':       'wget -qO ngrok-v3-stable-linux-amd64.tgz https://bin.ngrok.com/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz; tar -xzf ngrok-v3-stable-linux-amd64.tgz -C /usr/bin; rm -f ngrok-v3-stable-linux-amd64.tgz'
     }
 
@@ -115,7 +135,6 @@ if not key_exists(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True):
 
 # Install VENV (only when missing or when the UI switched to a different venv)
 latest_ui = read(SETTINGS_PATH, 'WEBUI.latest', None)
-
 venv_needs_reinstall = (
     not VENV_PATH.exists()  # venv is missing
     or latest_ui != UI_NAME and meta(latest_ui)['venv'] != meta(UI_NAME)['venv']
@@ -136,27 +155,13 @@ if not SKIP_VENV and venv_needs_reinstall:
     setup_venv(venv_url)
     clear_output()
 
-    # Update latest UI version...
+    # Update latest UI version in settings.json
     save(SETTINGS_PATH, 'WEBUI.latest', UI_NAME)
-
-
-# ~~ Loading Settings ~~
-
-def load_settings(path):
-    return {
-        **(read(path, 'ENVIRONMENT') or {}),
-        **(read(path, 'WIDGETS') or {}),
-        **(read(path, 'WEBUI') or {})
-    }
-
-
-settings = load_settings(SETTINGS_PATH)
-locals().update(settings)
 
 
 # ~~ WEBUI ~~
 
-# ADetailer model cache (A1111 / SD-UX only)
+# --- ADetailer cache (A1111 / SD-UX only) ---
 if (cache_url := build_urls(UI_NAME).get('adetailer_cache')):
     cache_path = '/root/.cache/huggingface/hub/models--Bingsu--adetailer'
     if not os.path.exists(cache_path):
@@ -180,7 +185,7 @@ if not WEBUI_PATH.exists():
     print(tr('webui_installing', method=method, ui=f"{COL.B}{UI_NAME}{COL.X}"), end='')
     ipyRun('run', f"{SCRIPTS_PATH}/webui_installer.py")
 
-    handle_setup_timer(WEBUI_PATH, start_timer)     # Setup timer (for timer-extensions)
+    handle_setup_timer(WEBUI_PATH, start_timer) # Setup timer (for timer-extensions)
 
     install_time = time.time() - start_install
     minutes, seconds = divmod(int(install_time), 60)
@@ -194,7 +199,8 @@ else:
     print(tr('session_duration', time=f"{COL.Y}{elapsed_time}{COL.X}"))
 
 
-## Changes extensions and WebUi
+# --- Extensions and WebUI update ---
+
 def _setup_git_identity():
     ipySys('git config --global user.email "you@example.com"')
     ipySys('git config --global user.name "Your Name"')
@@ -219,8 +225,8 @@ if update_scope != 'none':
 
         ## Update extensions
         if do_ext:
-            for entry in os.listdir(WEBUI_PATH / 'extensions'):
-                dir_path = WEBUI_PATH / 'extensions' / entry
+            for entry in os.listdir(EXTS_DIR):
+                dir_path = EXTS_DIR / entry
                 if dir_path.is_dir():
                     subprocess.run(['git', 'reset', '--hard'], cwd=dir_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     subprocess.run(['git', 'pull'], cwd=dir_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -228,7 +234,8 @@ if update_scope != 'none':
     print(f"\r{tr('update_done', action=action)}")
 
 
-## Version or branch switching
+# --- Version or branch switching ---
+
 def _git_branch_exists(branch: str) -> bool:
     return subprocess.run(
         ['git', 'show-ref', '--verify', f"refs/heads/{branch}"],
@@ -252,7 +259,7 @@ if commit_hash or branch != 'none':
             # Save local changes and untracked files
             ipySys('git stash push -u -m "Temporary stash"')
 
-        if re.fullmatch(r"[0-9a-f]{7,40}", commit_hash):
+        if re.fullmatch(r'[0-9a-f]{7,40}', commit_hash):
             ipySys(f"git checkout {commit_hash}")
         else:
             ipySys(f"git fetch origin {commit_hash}")
@@ -280,53 +287,48 @@ if commit_hash or branch != 'none':
 
             if conflicts:
                 ipySys(f"git add {' '.join(conflicts)}")
+
     print(f"\r{tr('switch_done', commit=f'{COL.B}{commit_hash}{COL.X}')}")
 
 
-# ~~ Google Drive Mounting (Colab only) ~~
-from google.colab import drive
+# ~~ GOOGLE DRIVE MOUNTING (Colab only) ~~
 
-GD_BASE = '/content/drive/MyDrive/sdAIgen'
-GD_FILES = f"{GD_BASE}/files"
+GD_BASE    = '/content/drive/MyDrive/sdAIgen'
+GD_FILES   = f"{GD_BASE}/files"
 GD_OUTPUTS = f"{GD_BASE}/outputs"
 GD_CONFIGS = f"{GD_BASE}/configs"
 
-# Read GDrive settings
-_gdrive_cfg = read(SETTINGS_PATH, 'GDRIVE', {})
-gdrive_mount = _gdrive_cfg.get('mount', False)     # mount/unmount flag
+# Read gdrive settings
+_gdrive_cfg  = read(SETTINGS_PATH, 'GDRIVE', {})
+gdrive_mount = _gdrive_cfg.get('mount', False)  # mount/unmount flag
 sync_files   = _gdrive_cfg.get('gdrive_files', False)
 sync_outputs = _gdrive_cfg.get('gdrive_outputs', False)
 sync_configs = _gdrive_cfg.get('gdrive_configs', False)
 
 
-# Helper Functions
-def fs_remove(path: Path):
-    if path.is_symlink() or path.is_file():
-        path.unlink()
-    elif path.exists():
-        shutil.rmtree(path)
+# --- Helpers ---
 
-
-def merge_dirs(src, dst, label='', log=False):
+def merge_dirs(src: Path, dst: Path, label='', log=False):
     dst.mkdir(parents=True, exist_ok=True)
     for item in src.iterdir():
         if item.name == '.ipynb_checkpoints':
             continue
-        fs_remove(dst / item.name)
-        shutil.move(str(item), str(dst))
+        _remove_path(dst / item.name)
+        shutil.move(item, dst)
     shutil.rmtree(src)
     if log:
         print(f"{COL.Y}📦 {label}: {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
 
 
-def cleanup_ipynb_checkpoints(base_path):
+def cleanup_ipynb_checkpoints(base_path: Path):
     for root, dirs, _ in os.walk(base_path):
         if '.ipynb_checkpoints' in dirs:
             chk = Path(root) / '.ipynb_checkpoints'
             shutil.rmtree(chk, ignore_errors=True)
 
 
-# Main Logic
+# --- Main Logic ---
+
 def build_symlink_config(ui: str) -> dict:
     """Build symlink configuration based on UI type"""
     is_comfy = ui == 'ComfyUI'
@@ -352,7 +354,7 @@ def build_symlink_config(ui: str) -> dict:
         for local, gdir in base_files
     ]
     _files.append({
-        'local': extension_dir,
+        'local':  extension_dir,
         'gdrive': f"{GD_FILES}/{'Custom-Nodes' if is_comfy else 'Extensions'}"
     })
 
@@ -389,7 +391,7 @@ def build_symlink_config(ui: str) -> dict:
     return {'files': _files, 'outputs': _outputs, 'configs': _configs}
 
 
-def create_symlink(src, dst, symlink_name='GDrive', direct_link=False, log=False):
+def create_symlink(src: str | Path, dst: str | Path, symlink_name='GDrive', direct_link=False, log=False):
     """Create symlink with optional migration of existing content"""
     try:
         src = Path(src)
@@ -399,7 +401,7 @@ def create_symlink(src, dst, symlink_name='GDrive', direct_link=False, log=False
         if direct_link:
             # Direct link mode: replace entire directory with symlink
             if src.exists() and src.is_dir() and not src.is_symlink():
-                merge_dirs(src, dst, label=tr('merge_migrated'), log=log)
+                merge_dirs(src, dst, label=tr('gd_merge_migrated'), log=log)
 
             if src.is_symlink():
                 src.unlink()
@@ -409,30 +411,30 @@ def create_symlink(src, dst, symlink_name='GDrive', direct_link=False, log=False
             if not src.exists():
                 src.symlink_to(dst, target_is_directory=True)
                 if log:
-                    print(f"{COL.G}🔗 {tr('direct_symlink')} {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
+                    print(f"{COL.G}🔗 {tr('gd_direct_symlink')} {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
         else:
             # Subfolder mode: create GDrive folder inside src
             symlink_path = src / symlink_name
 
             # Migrate contents if GDrive subfolder exists and is real dir
             if symlink_path.exists() and not symlink_path.is_symlink():
-                merge_dirs(symlink_path, dst, label=tr('merge_migrated'), log=log)
-            fs_remove(symlink_path)
+                merge_dirs(symlink_path, dst, label=tr('gd_merge_migrated'), log=log)
+            _remove_path(symlink_path)
             src.mkdir(parents=True, exist_ok=True)
 
             # Create subfolder symlink
             if not symlink_path.exists():
                 symlink_path.symlink_to(dst, target_is_directory=True)
                 if log:
-                    print(f"{COL.G}🔗 {tr('symlink_created')} {COL.lB}{symlink_path}{COL.X} → {COL.G}{dst}{COL.X}")
+                    print(f"{COL.G}🔗 {tr('gd_symlink_created')} {COL.lB}{symlink_path}{COL.X} → {COL.G}{dst}{COL.X}")
     except Exception as exc:
-        print(f"{COL.R}❌ {tr('symlink_error')}{COL.X} {src} - {str(exc)}")
+        print(f"{COL.R}❌ {tr('gd_symlink_error')}{COL.X} {src} - {exc}")
 
 
-def create_config_symlink(local_path, gdrive_path, config_type='file', config_name='Config', log=False):
+def create_config_symlink(local_path: str | Path, gdrive_path: str | Path, config_type='file', config_name='Config', log=False):
     """Create symlink for config files or directories"""
     try:
-        local_path = Path(local_path)
+        local_path  = Path(local_path)
         gdrive_path = Path(gdrive_path)
         gdrive_path.parent.mkdir(parents=True, exist_ok=True)
         local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -442,7 +444,7 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
             if local_path.exists() and local_path.is_file() and not gdrive_path.exists():
                 shutil.copy2(local_path, gdrive_path)
                 if log:
-                    print(f"{COL.Y}{tr('gdrive_backed_up', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
+                    print(f"{COL.Y}{tr('gd_backed_up', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
 
             if local_path.exists():
                 local_path.unlink()
@@ -451,10 +453,10 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
             if local_path.exists() and local_path.is_dir() and not local_path.is_symlink():
                 merge_dirs(
                     local_path, gdrive_path,
-                    label=tr('merge_merged', config_name=config_name), log=log
+                    label=tr('gd_merge_merged', config_name=config_name), log=log
                 )
             elif local_path.exists() and not local_path.is_symlink():
-                fs_remove(local_path)
+                _remove_path(local_path)
 
         if local_path.is_symlink():
             local_path.unlink()
@@ -465,15 +467,15 @@ def create_config_symlink(local_path, gdrive_path, config_type='file', config_na
             local_path.symlink_to(gdrive_path, target_is_directory=is_dir)
             if log:
                 icon = '📁' if is_dir else '📄'
-                print(f"{COL.G}{icon} {tr('gdrive_config_symlink', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
+                print(f"{COL.G}{icon} {tr('gd_config_symlink', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
     except Exception as exc:
-        print(f"{COL.R}❌ {tr('gdrive_config_error', config_name=config_name)}{COL.X} {local_path.name} - {str(exc)}")
+        print(f"{COL.R}❌ {tr('gd_config_error', config_name=config_name)}{COL.X} {local_path.name} - {exc}")
 
 
-def restore_from_symlink(local_path, gdrive_path, config_type='file', config_name='Config', log=False):
+def restore_from_symlink(local_path: str | Path, gdrive_path: str | Path, config_type='file', config_name='Config', log=False):
     """Restore local files/directories from Google Drive before unmounting"""
     try:
-        local_path = Path(local_path)
+        local_path  = Path(local_path)
         gdrive_path = Path(gdrive_path)
 
         # Only restore if local is symlink and gdrive exists
@@ -486,12 +488,12 @@ def restore_from_symlink(local_path, gdrive_path, config_type='file', config_nam
             (shutil.copytree if is_dir else shutil.copy2)(gdrive_path, local_path)
             if log:
                 icon = '📁' if is_dir else '📄'
-                print(f"{COL.Y}{icon} {tr('gdrive_restored', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} ← {COL.B}GDrive{COL.X}")
+                print(f"{COL.Y}{icon} {tr('gd_restored', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} ← {COL.B}GDrive{COL.X}")
     except Exception as exc:
-        print(f"{COL.R}❌ {tr('gdrive_restore_error', config_name=config_name)}{COL.X} {str(exc)}")
+        print(f"{COL.R}❌ {tr('gd_restore_error', config_name=config_name)}{COL.X} {exc}")
 
 
-def _clear_category_symlinks(config_list, category, restore=False, log=False):
+def _clear_category_symlinks(config_list: list, category: str, restore=False, log=False) -> int:
     """Remove symlinks for a single category, optionally restoring files first"""
     removed = 0
     for cfg in config_list:
@@ -501,7 +503,7 @@ def _clear_category_symlinks(config_list, category, restore=False, log=False):
                 p.unlink()
                 removed += 1
                 if log:
-                    print(f"{COL.R}🗑️ {tr('gdrive_removed')} {COL.lB}{p}{COL.X}")
+                    print(f"{COL.R}🗑️ {tr('gd_removed')} {COL.lB}{p}{COL.X}")
         else:
             local = Path(cfg['local'])
             gdrive = Path(cfg['gdrive'])
@@ -516,10 +518,10 @@ def _clear_category_symlinks(config_list, category, restore=False, log=False):
     return removed
 
 
-def remove_all_symlinks(ui='A1111', restore_configs=False, log=False):
+def remove_all_symlinks(ui='A1111', restore_configs=False, log=False) -> int:
     """Remove ALL symlinks (every category)"""
-    config = build_symlink_config(ui)
-    removed  = _clear_category_symlinks(config['files'],   'files',   restore=False, log=log)
+    config  = build_symlink_config(ui)
+    removed = _clear_category_symlinks(config['files'],    'files',   restore=False, log=log)
     removed += _clear_category_symlinks(config['outputs'], 'outputs', restore=restore_configs, log=log)
     removed += _clear_category_symlinks(config['configs'], 'configs', restore=restore_configs, log=log)
     return removed
@@ -533,7 +535,9 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
       2. Create / refresh symlinks for SELECTED categories.
     On unmount: restore+remove ALL categories, then unmount.
     """
-    cleanup_ipynb_checkpoints(GD_BASE)   # Remove Jupyter shits
+    from google.colab import drive
+
+    cleanup_ipynb_checkpoints(GD_BASE)  # Remove Jupyter shits
     drive_mounted = os.path.exists('/content/drive/MyDrive')
 
     # Unmount logic
@@ -551,9 +555,9 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
 
                 print(f"\r{tr('gd_unmounted')}")
                 if removed:
-                    print(tr('gd_restored', count=removed))
+                    print(tr('gd_restore_summary', count=removed))
             except Exception as exc:
-                print(f"\r{COL.R}❌ {tr('gd_unmount_error')}{COL.X} {str(exc)}")
+                print(f"\r{COL.R}❌ {tr('gd_unmount_error')}{COL.X} {exc}")
         return
 
     # Mount logic
@@ -564,16 +568,16 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
                 drive.mount('/content/drive')
             print(f"\r{tr('gd_mounted')}")
         except Exception as exc:
-            print(f"\r{COL.R}❌ {tr('gd_mount_error')}{COL.X} {str(exc)}")
+            print(f"\r{COL.R}❌ {tr('gd_mount_error')}{COL.X} {exc}")
             return
     else:
         print(tr('gd_connected'))
 
     # Sync categories: (key, enabled, restore_on_deselect, display_name, section_header)
     categories = [
-        ('files',   sync_files,   False, tr('gdrive_files'),   tr('header_files')),
-        ('outputs', sync_outputs, True,  tr('gdrive_outputs'), tr('header_outputs')),
-        ('configs', sync_configs, True,  tr('gdrive_configs'), tr('header_configs')),
+        ('files',   sync_files,   False, tr('gd_files_label'),   tr('gd_header_files')),
+        ('outputs', sync_outputs, True,  tr('gd_outputs_label'), tr('gd_header_outputs')),
+        ('configs', sync_configs, True,  tr('gd_configs_label'), tr('gd_header_configs')),
     ]
     active   = [name for _, enabled, _, name, _ in categories if enabled]
     inactive = [name for _, enabled, _, name, _ in categories if not enabled]
@@ -622,11 +626,11 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
 
         print(tr('gd_sync_done'))
     except Exception as exc:
-        print(f"{COL.R}❌ {tr('gd_setup_error')}{COL.X} {str(exc)}")
+        print(f"{COL.R}❌ {tr('gd_setup_error')}{COL.X} {exc}")
 
 
 handle_gdrive(
-    gdrive_mount, ui=UI_NAME, log=GDRIVE_LOG,
+    gdrive_mount, UI_NAME, GDRIVE_LOG,
     sync_files=sync_files,
     sync_outputs=sync_outputs,
     sync_configs=sync_configs
@@ -635,54 +639,55 @@ handle_gdrive(
 
 # ~~ DOWNLOADING ~~
 
-def handle_errors(func):
+def handle_errors(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as exc:
-            print(tr('error_in_func', func=func.__name__, error=exc))
+            print(f">> An error occurred in {func.__name__}: {exc}")
     return wrapper
 
 
 # Get model lists (SD / XL / ANIMA) by selected type
-## model_list | vae_list | controlnet_list
+# model_list | vae_list | controlnet_list
 model_data = get_category(settings.get('model_type', 'XL'))
 model_list, vae_list, controlnet_list = (model_data.get(k, {}) for k in ('model', 'vae', 'controlnet'))
 
-## Downloading model and stuff | oh~ Hey! If you're freaked out by that code too, don't worry, me too!
+# --- Downloading models ---
+# oh~ Hey! If you're freaked out by that code too, don't worry, me too!
 print(tr('dl_start'), end='')
 
 extension_repo = []
 PREFIX_MAP = {
-    # prefix : (dir_path , short-tag)
-    'model': (model_dir, '$ckpt'),
-    'vae': (vae_dir, '$vae'),
-    'lora': (lora_dir, '$lora'),
-    'embed': (embed_dir, '$emb'),
+    # prefix : (dir_path, short_tag)
+    'model':     (model_dir, '$ckpt'),
+    'vae':       (vae_dir, '$vae'),
+    'lora':      (lora_dir, '$lora'),
+    'embed':     (embed_dir, '$emb'),
     'extension': (extension_dir, '$ext'),
     'adetailer': (adetailer_dir, '$ad'),
-    'control': (control_dir, '$cnet'),
-    'upscale': (upscale_dir, '$ups'),
+    'control':   (control_dir, '$cnet'),
+    'upscale':   (upscale_dir, '$ups'),
     # Other
-    'clip': (clip_dir, '$clip'),
-    'unet': (unet_dir, '$unet'),
-    'vision': (vision_dir, '$vis'),
-    'encoder': (encoder_dir, '$enc'),
+    'clip':      (clip_dir, '$clip'),
+    'unet':      (unet_dir, '$unet'),
+    'vision':    (vision_dir, '$vis'),
+    'encoder':   (encoder_dir, '$enc'),
     'diffusion': (diffusion_dir, '$diff'),
-    'config': (config_dir, '$cfg')
+    'config':    (config_dir, '$cfg')
 }
 for dir_path, _ in PREFIX_MAP.values():
     os.makedirs(dir_path, exist_ok=True)
 
 
-# --- Formatted Info Output ---
+# ~~ FORMATTED INFO OUTPUT ~~
 
-def _center_text(text, terminal_width=45):
+def _center_text(text: str, terminal_width=45) -> str:
     padding = (terminal_width - len(text)) // 2
     return f"{' ' * padding}{text}{' ' * padding}"
 
 
-def format_output(url, dst_dir, file_name, image_url=None):
+def format_output(url: str, dst_dir: str, file_name: str, image_url: str | None = None):
     """Formats and prints download details with colored text"""
     info = '[NONE]'
     if file_name:
@@ -695,27 +700,16 @@ def format_output(url, dst_dir, file_name, image_url=None):
     print()
     print(f"{COL.G}{sep_line}{COL.lB}{info}{COL.G}{sep_line}{COL.X}")
     print(f"{COL.Y}{'URL:':<12}{COL.X}{url}")
-    print(f"{COL.Y}{tr('field_save_dir'):<12}{COL.B}{dst_dir}")
-    print(f"{COL.Y}{tr('field_file_name'):<12}{COL.B}{file_name}{COL.X}")
+    print(f"{COL.Y}{'SAVE DIR:':<12}{COL.B}{dst_dir}")
+    print(f"{COL.Y}{'FILE NAME:':<12}{COL.B}{file_name}{COL.X}")
     if 'civitai' in url and image_url:
-        print(f"{COL.G}{tr('field_preview'):<12}{COL.X}{image_url}")
+        print(f"{COL.G}{'[Preview]:':<12}{COL.X}{image_url}")
     print()
 
 
-# --- Main Download Code ---
+# ~~ DOWNLOAD CORE ~~
 
-def _clean_url(url):
-    url_cleaners = {
-        'huggingface.co': lambda u: u.replace('/blob/', '/resolve/').split('?')[0],
-        'github.com': lambda u: u.replace('/blob/', '/raw/')
-    }
-    for domain, cleaner in url_cleaners.items():
-        if domain in url:
-            return cleaner(url)
-    return url
-
-
-def _extract_filename(url):
+def _extract_filename(url: str) -> str | None:
     if match := re.search(r'\[(.*?)\]', url):
         return match.group(1)
     if any(d in urlparse(url).netloc for d in [*CIVITAI_DOMAINS, 'drive.google.com']):
@@ -723,11 +717,9 @@ def _extract_filename(url):
     return Path(urlparse(url).path).name
 
 
-# --- Download Core ---
-
-def _process_download_link(link):
+def _process_download_link(link: str) -> tuple[str | None, str, str | None]:
     """Processes a download link, splitting prefix, URL, and filename"""
-    link = _clean_url(link)
+    link = _normalize_url(link)
     if ':' in link:
         prefix, path = link.split(':', 1)
         if prefix in PREFIX_MAP:
@@ -736,7 +728,7 @@ def _process_download_link(link):
 
 
 @handle_errors
-def run_downloads(line):
+def run_downloads(line: str):
     """Downloads files from comma-separated links, processes prefixes, and unpacks zips post-download"""
     for link in filter(None, map(str.strip, line.split(','))):
         prefix, url, filename = _process_download_link(link)
@@ -749,14 +741,14 @@ def run_downloads(line):
             try:
                 manual_download(url, dir_path, filename)
             except Exception as exc:
-                print(f"\n> {tr('download_error', error=exc)}")
+                print(f"\n> Download error: {exc}")
         else:
             url, dst_dir, file_name = url.split()
             manual_download(url, dst_dir, file_name)
 
 
 @handle_errors
-def manual_download(url, dst_dir, file_name=None):
+def manual_download(url: str, dst_dir: str, file_name: str | None = None):
     image_url = None
 
     if 'civitai' in url:
@@ -767,7 +759,7 @@ def manual_download(url, dst_dir, file_name=None):
         url, file_name = data.download_url, data.file_name          # Download_URL, File_Name
         image_url = data.image_url                                  # Image_URL
 
-        ## Preview will be downloaded automatically via [CivitAI-Extension]
+        # Preview is downloaded automatically via [CivitAI-Extension]
         # Download preview images (only for ComfyUI)
         if UI_NAME == 'ComfyUI' and image_url and data.image_name:
             download(f"{image_url} {dst_dir} {data.image_name}")
@@ -779,10 +771,10 @@ def manual_download(url, dst_dir, file_name=None):
     download(f"{url} {dst_dir} {file_name or ''}", verbose=True, debug=False, unzip=True)
 
 
-# --- SubModels - Added URLs ---
+# ~~ SUBMODELS ~~
 
 # Separation of merged numbers
-def _parse_selection_numbers(num_str, max_num):
+def _parse_selection_numbers(num_str: str, max_num: int) -> list[int]:
     """Split a string of numbers into unique integers, considering max_num as the upper limit"""
     num_str = num_str.replace(',', ' ').strip()
     unique_numbers = set()
@@ -820,7 +812,7 @@ def _parse_selection_numbers(num_str, max_num):
     return sorted(unique_numbers)
 
 
-def handle_submodels(selection, num_selection, model_dict, dst_dir, base_url):
+def handle_submodels(selection: str, num_selection: str, model_dict: dict, dst_dir: str, base_url: str) -> str:
     selected = []
 
     keys = list(model_dict)
@@ -868,9 +860,9 @@ line = handle_submodels(vae, vae_num, vae_list, vae_dir, line)
 line = handle_submodels(controlnet, controlnet_num, controlnet_list, control_dir, line)
 
 
-# --- File.txt - Added URLs ---
+# ~~ FILE SOURCES ~~
 
-def _process_lines(lines):
+def _process_lines(lines: list) -> str:
     """Processes text lines, extracts valid URLs with tags/filenames, and ensures uniqueness"""
     current_tag = None
     processed_entries = set()  # Store (tag, clean_url) to check uniqueness
@@ -910,7 +902,7 @@ def _process_lines(lines):
     return ', '.join(result_urls) if result_urls else ''
 
 
-def process_file_downloads(file_urls, additional_lines=None):
+def process_file_downloads(file_urls: list, additional_lines: str | None = None) -> str:
     """Reads URLs from files/HTTP sources"""
     lines = []
 
@@ -920,7 +912,7 @@ def process_file_downloads(file_urls, additional_lines=None):
     for source in file_urls:
         if source.startswith('http'):
             try:
-                response = requests.get(_clean_url(source))
+                response = requests.get(_normalize_url(source))
                 response.raise_for_status()
                 lines.extend(response.text.splitlines())
             except requests.RequestException:
@@ -944,7 +936,7 @@ prefixed_urls = [f"{p}:{u}" for p, u in zip(PREFIX_MAP, urls_sources) if u for u
 line += ', '.join(prefixed_urls + [process_file_downloads(file_urls, empowerment_input)])
 
 if detailed_download == 'on':
-    print(f"\n\n{COL.Y}# ====== {tr('detailed_header')} ====== #{COL.X}")
+    print(f"\n\n{COL.Y}# ====== Detailed Download ====== #{COL.X}")
     run_downloads(line)
     print(f"\n{COL.Y}# =============================== #\n{COL.X}")
 else:
@@ -954,20 +946,21 @@ else:
 print(f"\r{tr('dl_done')}" + ' '*15)
 
 
-## Install of Custom extensions
+# ~~ CUSTOM EXTENSIONS ~~
+
 extension_type = tr('ext_type_nodes') if UI_NAME == 'ComfyUI' else tr('ext_type_extensions')
 
 if extension_repo:
     print(tr('ext_installing', type=extension_type), end='')
     with capture.capture_output():
         for repo_url, repo_name in extension_repo:
-            clone(f"{repo_url} {extension_dir} {repo_name}")
+            clone(f"{repo_url} {EXTS_DIR} {repo_name}")
     print(f"\r{tr('ext_installed', count=len(extension_repo), type=extension_type)}")
 
 
 # ~~ SPECIAL ~~
 
-## Sorting models `bbox` and `segm` | Only ComfyUI
+# --- ADetailer sorting (bbox / segm) | ComfyUI only ---
 if UI_NAME == 'ComfyUI':
     for sub in ('bbox', 'segm'):
         (adetailer_dir / sub).mkdir(exist_ok=True)
@@ -981,7 +974,7 @@ if UI_NAME == 'ComfyUI':
         else:
             shutil.move(path, dest)
 
-## Copy dir from GDrive to extension_dir (if enabled)
+# --- Copy dir from GDrive to extension_dir (if enabled) ---
 if gdrive_mount and sync_files:
     gdrive_path = extension_dir / 'GDrive'
     if gdrive_path.is_dir():
@@ -990,8 +983,7 @@ if gdrive_mount and sync_files:
             dst = extension_dir / folder
             if src.is_dir():
                 shutil.copytree(src, dst, dirs_exist_ok=True)
-        os.unlink(gdrive_path)
+        _remove_path(gdrive_path)
 
-
-## List Models and stuff
+# --- List Models and stuff ---
 ipyRun('run', f"{SCRIPTS_PATH}/download_result.py")

@@ -4,7 +4,7 @@ import logging
 import json
 import os
 
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable
 from functools import wraps
 from pathlib import Path
 
@@ -55,7 +55,7 @@ def validate_args(min_args: int, max_args: int):
 
 # ~~ Core Functionality ~~
 
-def parse_key(key: str) -> List[str]:
+def parse_key(key: str) -> list[str]:
     """Parse dot-separated key with `..` escape support"""
     if not isinstance(key, str):
         logger.error('Key must be a string')
@@ -65,7 +65,7 @@ def parse_key(key: str) -> List[str]:
     return [p.replace(temp_char, '.') for p in key.replace('..', temp_char).split('.')]
 
 
-def _get_nested_value(data: Dict[str, Any], keys: List[str]) -> Any:
+def _get_nested_value(data: dict[str, Any], keys: list[str]) -> Any:
     """Get value by path through nested dictionaries"""
     current = data
     for key in keys:
@@ -75,7 +75,7 @@ def _get_nested_value(data: Dict[str, Any], keys: List[str]) -> Any:
     return current
 
 
-def _set_nested_value(data: Dict[str, Any], keys: List[str], value: Any):
+def _set_nested_value(data: dict[str, Any], keys: list[str], value: Any):
     """Set value at path, creating missing intermediate dicts"""
     current = data
     for key in keys[:-1]:
@@ -85,11 +85,12 @@ def _set_nested_value(data: Dict[str, Any], keys: List[str], value: Any):
     current[keys[-1]] = value
 
 
-def _update_nested(data: Dict[str, Any], keys: List[str], value: Any):
+def _update_nested(data: dict[str, Any], keys: list[str], value: Any):
     """Update existing path, merging dicts and preserving siblings"""
     current = data
     for part in keys[:-1]:
         current = current.setdefault(part, {})
+
     last_key = keys[-1]
     if last_key in current:
         if isinstance(current[last_key], dict) and isinstance(value, dict):
@@ -100,7 +101,7 @@ def _update_nested(data: Dict[str, Any], keys: List[str], value: Any):
         logger.warning(f"Key '{'.'.join(keys)}' not found. Update failed.")
 
 
-def _delete_nested(data: Dict[str, Any], keys: List[str], _: Any = None):
+def _delete_nested(data: dict[str, Any], keys: list[str], _: Any = None):
     """Delete key at path if it exists"""
     current = data
     for part in keys[:-1]:
@@ -111,12 +112,12 @@ def _delete_nested(data: Dict[str, Any], keys: List[str], _: Any = None):
         del current[keys[-1]]
 
 
-def _load(filepath: Union[str, Path], key: str):
+def _load(filepath: str | Path, key: str):
     """Load file data and parsed key segments"""
     return _read_json(filepath), parse_key(key)
 
 
-def _read_json(filepath: Union[str, Path]) -> Dict[str, Any]:
+def _read_json(filepath: str | Path) -> dict[str, Any]:
     """Read JSON file, returning {} on error or missing file"""
     try:
         if os.path.exists(filepath):
@@ -126,10 +127,11 @@ def _read_json(filepath: Union[str, Path]) -> Dict[str, Any]:
                     return json.loads(content)
     except Exception as exc:
         logger.error(f"Read error ({filepath}): {str(exc)}")
+
     return {}
 
 
-def _write_json(filepath: Union[str, Path], data: Dict[str, Any]):
+def _write_json(filepath: str | Path, data: dict[str, Any]):
     """Write JSON file, creating parent directories"""
     try:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -139,11 +141,12 @@ def _write_json(filepath: Union[str, Path], data: Dict[str, Any]):
         logger.error(f"Write error ({filepath}): {str(exc)}")
 
 
-def _mutate(filepath: Union[str, Path], key: str, value: Any, action: Callable):
+def _mutate(filepath: str | Path, key: str, value: Any, action: Callable):
     """Load JSON, apply action at parsed path, then write back"""
     data, keys = _load(filepath, key)
     if not keys:
         return
+
     action(data, keys, value)
     _write_json(filepath, data)
 

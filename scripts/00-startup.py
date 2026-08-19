@@ -1,8 +1,8 @@
-""" Auto Recovery | by ANXETY """
+""" Auto Recovery IPython | by ANXETY """
 
 import importlib
-import os
 import sys
+import os
 
 from pathlib import Path
 
@@ -14,7 +14,7 @@ PROJECT_PATH  = HOME_PATH / 'SDAIGEN'
 SETTINGS_PATH = PROJECT_PATH / 'settings.json'
 VENV_PATH     = HOME_PATH / 'venv'
 
-SCRIPTS_PATH  = PROJECT_PATH / 'scripts'
+SCRIPTS_PATH = PROJECT_PATH / 'scripts'
 
 
 if SETTINGS_PATH.exists():

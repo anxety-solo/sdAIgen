@@ -78,10 +78,10 @@ English • [Русский](README.ru.md)
 
 <div align="center">
     <a href="https://www.donationalerts.com/r/anxety">
-        <img src=".Docs/SVG/DA_Logo_Color.svg" width="250" height="100" alt="DonationAlerts">
+        <img src=".github/assets/svg/donationalerts-logo.svg" width="250" height="100" alt="DonationAlerts">
     </a>
     <a href="https://boosty.to/anxety/donate">
-        <img src=".Docs/SVG/Boosty_Logo_Color.svg" width="250" height="100" alt="Boosty">
+        <img src=".github/assets/svg/boosty-logo.svg" width="250" height="100" alt="Boosty">
     </a>
 </div>
 

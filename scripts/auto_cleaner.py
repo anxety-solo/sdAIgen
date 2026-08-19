@@ -1,15 +1,18 @@
 """ Auto Cleaner Widget | by ANXETY """
 
-from sdai.factory import WidgetFactory
-from sdai.constants import ASSETS_PATH, SETTINGS_PATH
-from sdai.utils.json import read
-
-from IPython.display import display, HTML
-import ipywidgets as widgets
-from pathlib import Path
 import psutil
 import json
 import os
+
+import ipywidgets as widgets
+
+from IPython.display import display, HTML
+from pathlib import Path
+
+# === SDAIGEN ===
+from sdai.constants import ASSETS_PATH, SETTINGS_PATH
+from sdai.factory import WidgetFactory
+from sdai.utils.json import read
 
 
 CSS_PATH = ASSETS_PATH / 'css' / 'auto-cleaner.css'
@@ -92,8 +95,8 @@ def get_disk_usage():
     disk = psutil.disk_usage(os.getcwd())
     return {
         'total': disk.total / (1024 ** 3),
-        'used': disk.used / (1024 ** 3),
-        'free': disk.free / (1024 ** 3)
+        'used':  disk.used / (1024 ** 3),
+        'free':  disk.free / (1024 ** 3)
     }
 
 
@@ -101,7 +104,7 @@ def update_storage_display():
     """Update storage information widget"""
     stats = get_disk_usage()
     storage_info.value = f'''
-    <div class="storage_info">Total storage: {stats['total']:.2f} GB <span style="color: #555">|</span> Used: {stats['used']:.2f} GB <span style="color: #555">|</span> Free: {stats['free']:.2f} GB</div>
+    <div class="storage_info">Total storage: {stats["total"]:.2f} GB <span style="color: #555">|</span> Used: {stats["used"]:.2f} GB <span style="color: #555">|</span> Free: {stats["free"]:.2f} GB</div>
     '''
 
 
@@ -145,8 +148,8 @@ factory.load_css(CSS_PATH)
 HR = widgets.HTML('<hr>')
 
 # Check GDrive toggle
-ENV_NAME = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-mount_gdrive = read(SETTINGS_PATH, 'GDRIVE.mount', False)
+ENV_NAME           = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+mount_gdrive       = read(SETTINGS_PATH, 'GDRIVE.mount', False)
 show_gdrive_toggle = (ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE))
 
 # Directory mapping - returns tuple (local_path, gdrive_path)

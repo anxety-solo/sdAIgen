@@ -5,8 +5,8 @@ The script was rewritten specifically for sdAIgen (to get the tunneling URL) | b
 
 import subprocess
 import platform
-import argparse
 import requests
+import argparse
 import logging
 import secrets
 import atexit
@@ -16,7 +16,6 @@ import sys
 import os
 import re
 
-from typing import List, Optional, Tuple
 from pathlib import Path
 
 
@@ -26,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 class BinaryManager:
     """Manages downloading and configuration of frpc binary"""
-    VERSION = '0.3'
-    BASE_URL = "https://cdn-media.huggingface.co/frpc-gradio-{version}/{binary_name}{extension}"
+    VERSION  = '0.3'
+    BASE_URL = 'https://cdn-media.huggingface.co/frpc-gradio-{version}/{binary_name}{extension}'
 
     def __init__(self):
         self.system    = platform.system().lower()
@@ -69,26 +68,26 @@ class BinaryManager:
 class Tunnel:
     """Manages application tunnel lifecycle"""
     TIMEOUT    = 30
-    ERROR_MSG  = "Failed to create share URL. Logs:\n{logs}"
-    GRADIO_API = "https://api.gradio.app/v3/tunnel-request"
+    ERROR_MSG  = 'Failed to create share URL. Logs:\n{logs}'
+    GRADIO_API = 'https://api.gradio.app/v3/tunnel-request'
 
     def __init__(
         self,
         local_host: str,
         local_port: int,
         share_token: str,
-        remote_server: Optional[str] = None
+        remote_server: str | None = None
     ):
         self.local_host  = local_host
         self.local_port  = local_port
         self.share_token = share_token
         self.remote_host, self.remote_port = self._resolve_remote_server(remote_server)
 
-        self.proc: Optional[subprocess.Popen] = None
+        self.proc:  subprocess.Popen | None = None
         self.binary = BinaryManager()
-        self.url: Optional[str] = None
+        self.url:   str | None = None
 
-    def _resolve_remote_server(self, server: Optional[str]) -> Tuple[str, int]:
+    def _resolve_remote_server(self, server: str | None) -> tuple[str, int]:
         """Determines remote tunnel server address"""
         if server:
             host, port = server.split(':', 1)
@@ -104,7 +103,7 @@ class Tunnel:
         self.binary.download()
         self._launch_process()
         self.url = self._read_process_output()
-        logger.info("Tunnel established at %s", self.url)
+        logger.info('Tunnel established at %s', self.url)
         return self.url
 
     def _launch_process(self):
@@ -147,17 +146,17 @@ class Tunnel:
             logger.debug(line)
 
             if 'start proxy success' in line:
-                if match := re.search(r"start proxy success: (.+)", line):
+                if match := re.search(r'start proxy success: (.+)', line):
                     return match.group(1)
                 self._handle_error(logs)
 
             elif 'login to server failed' in line:
                 self._handle_error(logs)
 
-    def _handle_error(self, logs: List[str]):
+    def _handle_error(self, logs: list[str]):
         """Handles tunnel errors"""
         self.stop()
-        logger.error("Tunnel failure logs:\n%s", '\n'.join(logs))
+        logger.error('Tunnel failure logs:\n%s', '\n'.join(logs))
         raise RuntimeError(self.ERROR_MSG.format(logs='\n'.join(logs)))
 
     def stop(self):

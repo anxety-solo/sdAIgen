@@ -1,17 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Shantell+Sans&family=Tiny5&display=swap');
 
 :root {
-    /* Accent Color */
+    /* Accent */
     --aw-accent-color: #ac8fa5;
     --aw-elements-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
 
-    /* Text - Fonts */
+    /* Fonts & Text */
     --aw-font-family-primary: 'Shantell Sans', serif;
     --aw-font-family-secondary: 'Tiny5', sans-serif;
     --aw-color-text-primary: #f0f8ff;
     --aw-text-size: 14px;
 
-    /* Container */
+    /* Containers */
     --aw-container-bg: #232323;
     --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
     --aw-output-container-bg: #1f1f1f;
@@ -21,7 +21,7 @@
 }
 
 
-/* Text FONTs */
+/* === Fonts & Text === */
 
 .widget-html,
 .header-main-title,
@@ -31,16 +31,10 @@
     user-select: none;
 }
 
-
-/* Element Text Style */
-
 .widget-html {
     font-size: var(--aw-text-size);
     color: var(--aw-color-text-primary) !important;
 }
-
-
-/* General Styles */
 
 .header-main-title,
 .section-title {
@@ -48,14 +42,11 @@
     font-weight: bold;
     text-align: center;
 }
-.header-main-title {
-    color: var(--aw-accent-color);
-    text-align: center;
-    /* margin-bottom: 15px; */
-}
-.section-title {
-    color: #0083c0;
-}
+.header-main-title { color: var(--aw-accent-color); }
+.section-title     { color: #0083c0; }
+
+
+/* === General === */
 
 hr {
     background-color: grey;
@@ -64,7 +55,7 @@ hr {
 }
 
 
-/* Header Container */
+/* === Header === */
 
 .header-wrap {
     display: flex;
@@ -74,28 +65,28 @@ hr {
 }
 
 .header-ui {
-    color: var(--aw-accent-color);
+    padding: 3px 10px;
     font-family: var(--aw-font-family-secondary);
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 3px 10px;
-    background: rgba(172, 143, 165, 0.2);
-    border: 1px solid rgba(172, 143, 165, 0.35);
+    color: var(--aw-accent-color);
+    background: color-mix(in srgb, var(--aw-accent-color) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--aw-accent-color) 35%, transparent);
     border-radius: 10px;
 }
 
 .header-version {
+    font-size: 14px;
     color: grey;
     opacity: 0.35;
-    font-size: 14px;
 }
 
-/* Container Style */
+
+/* === Containers === */
 
 .mainResult-container {
     position: relative;
-    /* flex-direction: column; */
     margin: 40px 10px 10px 10px;
     padding: 15px 30px;
     background-color: var(--aw-container-bg);
@@ -110,11 +101,10 @@ hr {
     position: absolute;
     top: 10px;
     right: 15px;
-    color: rgba(0, 0, 0, 0.3);
     font-family: var(--aw-font-family-secondary);
-    font-optical-sizing: auto;
     font-weight: 750;
     font-size: 24px;
+    color: rgba(0, 0, 0, 0.3);
 }
 
 .sectionsContainer {
@@ -129,29 +119,29 @@ hr {
     text-align: start;
     overflow: visible;
 }
+
 .output-section {
     flex: 1 1 auto !important;
     padding: 15px;
-    /* min-width: min-content; */
     background-color: var(--aw-output-section-bg);
     border: var(--aw-output-section-border);
     border-radius: 16px;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.3);
     align-items: stretch !important;
-    transition: all 0.15s;
 }
+
 .section-title {
     width: 100%;
     margin-bottom: 5px;
 }
-/* good use of space */
+
 .output-section ._horizontal {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
 }
 
 
-/* Animation of Elements */
+/* === Animations === */
 
 .mainResult-container,
 .output-section {
@@ -162,23 +152,11 @@ hr {
 }
 
 @keyframes showedResult {
-    0% {
-        transform: translate3d(0, 15%, 0);
-        opacity: 0;
-    }
-    100% {
-        transform: translate3d(0, 0, 0);
-        opacity: 1;
-    }
+    0%   { transform: translate3d(0, 15%, 0); opacity: 0; }
+    100% { transform: translate3d(0, 0, 0);   opacity: 1; }
 }
 
 @keyframes showedText {
-    0% {
-        transform: translate3d(-30%, 0, 0);
-        opacity: 0;
-    }
-    100% {
-        transform: translate3d(0, 0, 0);
-        opacity: 1;
-    }
+    0%   { transform: translate3d(-30%, 0, 0); opacity: 0; }
+    100% { transform: translate3d(0, 0, 0);    opacity: 1; }
 }

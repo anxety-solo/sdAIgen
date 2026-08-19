@@ -1,42 +1,45 @@
 """ WebUI Launcher | by ANXETY """
 
-from sdai.constants import HOME_PATH, SCRIPTS_PATH, SETTINGS_PATH, VENV_PATH, COL
-from sdai.services.tunnel_hub import Tunnel
-from sdai.translations import tr
-from sdai.utils.json import read, save, update, key_exists
-
-from IPython.display import clear_output
-from IPython import get_ipython
-from datetime import timedelta
-from pathlib import Path
 import subprocess
 import requests
 import argparse
 import logging
 import shutil
 import shlex
-import time
 import json
+import time
 import yaml
 import os
 import re
 
+from IPython.display import clear_output
+from IPython import get_ipython
+from datetime import timedelta
+from pathlib import Path
 
-osENV = os.environ
-CD = os.chdir
+from os import chdir as CD
+
+# === SDAIGEN ===
+from sdai.constants import HOME_PATH, SCRIPTS_PATH, SETTINGS_PATH, VENV_PATH, COL
+from sdai.utils.json import read, save, update, key_exists
+from sdai.services.tunnel_hub import Tunnel
+from sdai.translations import tr
+
+
+osENV  = os.environ
 ipySys = get_ipython().system
 
 osENV['PYTHONWARNINGS'] = 'ignore'
 
 ENV_NAME = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-UI = read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI = read(SETTINGS_PATH, 'WEBUI.webui_path')
-EXTS = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+UI       = read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI    = read(SETTINGS_PATH, 'WEBUI.webui_path')
+EXTS     = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
-BIN = str(VENV_PATH / 'bin')
+BIN            = str(VENV_PATH / 'bin')
 PYTHON_VERSION = read(SETTINGS_PATH, 'WEBUI.python_version')
-PKG = str(VENV_PATH / f"lib/python{PYTHON_VERSION}/site-packages")
+PKG            = str(VENV_PATH / f"lib/python{PYTHON_VERSION}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
@@ -46,15 +49,18 @@ osENV.update({
 
 # Tag-CSV Mapping
 TAGGER_MAP = {
-    'm': 'merged', 'merged': 'merged',
-    'e': 'e621', 'e621': 'e621',
-    'd': 'danbooru', 'danbooru': 'danbooru'
+    'm':        'merged',
+    'merged':   'merged',
+    'e':        'e621',
+    'e621':     'e621',
+    'd':        'danbooru',
+    'danbooru': 'danbooru'
 }
 
 
 # ~~ Load Settings ~~
 
-def load_settings(path):
+def load_settings(path: Path) -> dict:
     """Load settings from a JSON file"""
     try:
         return {
@@ -74,7 +80,7 @@ locals().update(settings)
 
 # ~~ Helper Functions ~~
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log', action='store_true', help='Show failed tunnel details')
     parser.add_argument(
@@ -94,7 +100,7 @@ def _trashing():
         subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def find_latest_tag_file(target='danbooru'):
+def find_latest_tag_file(target: str = 'danbooru') -> str | None:
     """Find the latest tag file for specified target in TagComplete extension"""
     from datetime import datetime
 
@@ -144,12 +150,12 @@ def find_latest_tag_file(target='danbooru'):
     return latest_file
 
 
-def _update_config_paths(tagger=None):
+def _update_config_paths(tagger: str | None = None):
     """Update configuration paths in WebUI config file"""
     target_tagger = TAGGER_MAP.get(tagger, 'danbooru')
 
     config_mapping = {
-        'tac_tagFile': find_latest_tag_file(target_tagger),
+        'tac_tagFile':         find_latest_tag_file(target_tagger),
         'tagger_hf_cache_dir': f"{WEBUI}/models/interrogators/",
         'ad_extra_models_dir': adetailer_dir,
         # 'sd_vae': 'None'
@@ -176,7 +182,7 @@ def _update_config_paths(tagger=None):
                     save(config_file, 'VERSION_UID', version_uid)
 
 
-def get_launch_command():
+def get_launch_command() -> str:
     """Construct launch command based on configuration"""
     base_args = commandline_arguments
     password = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
@@ -222,7 +228,7 @@ def get_public_ip() -> str:
         return 'N/A'
 
 
-def setup_tunnels(tunnel_port):
+def setup_tunnels(tunnel_port: int) -> tuple[list, int, int, list]:
     """Setup tunnel configurations with command availability check"""
     public_ip = get_public_ip()
 
@@ -242,13 +248,13 @@ def setup_tunnels(tunnel_port):
         ('Localtunnel', {
             'command': f"lt --port {tunnel_port}",
             'pattern': r'[\w-]+\.loca\.lt',
-            'note': f"| Password: {COL.G}{public_ip}{COL.X}"
+            'note':    f"| Password: {COL.G}{public_ip}{COL.X}"
         })
     ]
 
     # Zrok setup
     if zrok_token:
-        env_path = HOME_PATH / '.zrok/environment.json'
+        env_path = HOME_PATH / '.zrok2/environment.json'
         current_token = None
 
         if env_path.exists():
@@ -256,12 +262,12 @@ def setup_tunnels(tunnel_port):
                 current_token = json.load(f).get('zrok_token')
 
         if current_token != zrok_token:
-            ipySys('zrok disable &> /dev/null')
-            ipySys(f"zrok enable {zrok_token} &> /dev/null")
+            ipySys('zrok2 disable &> /dev/null')
+            ipySys(f"zrok2 enable {zrok_token} &> /dev/null")
 
         services.append(('Zrok', {
-            'command': f"zrok share public http://localhost:{tunnel_port}/ --headless",
-            'pattern': r'[\w-]+\.share\.zrok\.io'
+            'command': f"zrok2 share public localhost:{tunnel_port} --headless",
+            'pattern': r'[\w-]+\.shares\.zrok\.io'
         }))
 
     # Ngrok setup
@@ -282,12 +288,12 @@ def setup_tunnels(tunnel_port):
         }))
 
     # Check command availability
-    available_tunnels = []
+    available_tunnels   = []
     unavailable_tunnels = []
 
-    print(f"{COL.Y}{tr('checking_tunnels')}{COL.X}")
+    print(f"{COL.Y}{tr('tunnels_checking')}{COL.X}")
     for name, config in services:
-        print(f"- 🕒 {tr('checking_tunnel', name=f'{COL.lB}{name}{COL.X}')}...", end=' ')
+        print(f"- 🕒 {tr('tunnel_checking', name=f'{COL.lB}{name}{COL.X}')}...", end=' ')
         if is_command_available(config['command']):
             available_tunnels.append((name, config))
             print(f"{COL.G}✓{COL.X}")
@@ -348,7 +354,7 @@ if __name__ == '__main__':
                 clear_output(wait=True)
 
             was_cfg_path = EXTS / 'was-node-suite-comfyui/was_suite_config.json'
-            ffmpeg_path = shutil.which('ffmpeg')
+            ffmpeg_path  = shutil.which('ffmpeg')
             if was_cfg_path.exists() and ffmpeg_path:
                 cfg = json.loads(was_cfg_path.read_text(encoding='utf-8'))
                 cfg['ffmpeg_bin_path'] = ffmpeg_path
@@ -380,7 +386,7 @@ if __name__ == '__main__':
 
     # Post-execution cleanup
     if zrok_token:
-        ipySys('zrok disable &> /dev/null')
+        ipySys('zrok2 disable &> /dev/null')
         print(f"\n{tr('zrok_disabled')}")
 
     # Display session duration

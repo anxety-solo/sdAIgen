@@ -1,12 +1,14 @@
 """ ComfyUI Dependencies Installer | by ANXETY """
 
-from importlib.metadata import distribution, PackageNotFoundError
-from pathlib import Path
 import subprocess
 import importlib
 import sys
-import re
 import os
+import re
+
+from importlib.metadata import distribution, PackageNotFoundError
+from pathlib import Path
+
 
 def get_enabled_subdirectories(base_directory):
     """Find active directories with dependencies"""
@@ -25,6 +27,7 @@ def get_enabled_subdirectories(base_directory):
     print()
     return subdirs
 
+
 def get_git_package_name(git_url):
     """Extract package name from Git URL"""
     clean_url = git_url.split('git+')[-1].rstrip('/')
@@ -38,6 +41,7 @@ def get_git_package_name(git_url):
     # General case for .git repositories
     match = re.search(r'/([^/]+?)(\.git)?$', clean_url)
     return match.group(1) if match else None
+
 
 def is_git_installed(git_url):
     """Check if Git package is installed by attempting import"""
@@ -60,6 +64,7 @@ def is_git_installed(git_url):
             continue
     return False
 
+
 def check_package(package_spec):
     """Check package installation with version verification"""
     try:
@@ -77,6 +82,7 @@ def check_package(package_spec):
 
     except (PackageNotFoundError, AttributeError):
         return False
+
 
 def compare_versions(v1, v2, operator):
     """Universal version comparison"""
@@ -96,6 +102,7 @@ def compare_versions(v1, v2, operator):
     if operator == '<': return a < b
     return False
 
+
 def install_package(package_spec):
     """Install a package"""
     print(f"\033[1;32mInstalling >> \033[0m{package_spec}")
@@ -105,6 +112,7 @@ def install_package(package_spec):
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
+
 
 def process_requirements(file_path, installed):
     """Process requirements file"""
@@ -121,6 +129,7 @@ def process_requirements(file_path, installed):
                 install_package(line)
                 installed.add(line)
 
+
 def run_install_script(script_path, executed):
     """Execute installation script"""
     if script_path.exists() and str(script_path) not in executed:
@@ -133,12 +142,14 @@ def run_install_script(script_path, executed):
         )
         executed.add(str(script_path))
 
+
 def save_state(installed, scripts, log_file):
     """Save installation state to log file"""
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write('\n'.join(installed))
         f.write('\n\n# Executed scripts:\n')
         f.write('\n'.join(scripts))
+
 
 def load_previous_state(log_file):
     """Load previous installation state from log"""
@@ -163,6 +174,7 @@ def load_previous_state(log_file):
 
     return installed, scripts
 
+
 def main():
     base_dir = 'custom_nodes'
     log_file = 'installed_packages.txt'
@@ -181,6 +193,7 @@ def main():
         print('\n\033[1;31mInterrupted by user\033[0m')
     except Exception as e:
         print(f"\n\033[1;31mError: {e}\033[0m")
+
 
 if __name__ == '__main__':
     main()

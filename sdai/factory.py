@@ -1,8 +1,10 @@
-""" Widget Factory Module | by ANXETY """
+""" ipyWidgets Factory Module | by ANXETY """
+
+import time
+
+import ipywidgets as widgets
 
 from IPython.display import HTML, display
-import ipywidgets as widgets
-import time
 
 
 class WidgetFactory:
@@ -24,7 +26,6 @@ class WidgetFactory:
         print(f"WARNING: Invalid class_names type: {type(class_names).__name__}")
         return []
 
-
     def add_classes(self, widget, class_names):
         """Add CSS classes to a widget"""
         for cls in self._validate_class_names(class_names):
@@ -41,14 +42,11 @@ class WidgetFactory:
         except Exception as exc:
             print(f"Error loading {name}: {exc}")
 
-
     def load_css(self, css_path):
         self._load_asset(css_path, 'style', 'CSS')
 
-
     def load_js(self, js_path):
         self._load_asset(js_path, 'script', 'JavaScript')
-
 
     def create_html(self, content, class_names=None):
         """Create an HTML widget with optional CSS classes"""
@@ -56,7 +54,6 @@ class WidgetFactory:
         if class_names:
             self.add_classes(widget, class_names)
         return widget
-
 
     def create_header(self, name, class_names=None):
         """Create a header HTML widget"""
@@ -73,7 +70,6 @@ class WidgetFactory:
         for child, layout in zip(children, layouts):
             child.layout = layout
 
-
     def _create_widget(self, widget_type, class_names=None, **kwargs):
         """Create a widget of a specified type with optional classes and styles"""
         style = kwargs.get('style', self.default_style)
@@ -87,7 +83,6 @@ class WidgetFactory:
 
         return widget
 
-
     def _create_input(self, widget_type, description, value='', placeholder='', class_names=None, **kwargs):
         """Create an input widget of given type"""
         return self._create_widget(
@@ -98,7 +93,6 @@ class WidgetFactory:
             class_names=class_names,
             **kwargs
         )
-
 
     def create_file_upload(self, accept, multiple=False, description='', class_names=None, **kwargs):
         """Create a FileUpload widget"""
@@ -112,14 +106,11 @@ class WidgetFactory:
             **kwargs
         )
 
-
     def create_text(self, description, value='', placeholder='', class_names=None, **kwargs):
         return self._create_input(widgets.Text, description, value, placeholder, class_names, **kwargs)
 
-
     def create_textarea(self, description, value='', placeholder='', class_names=None, **kwargs):
         return self._create_input(widgets.Textarea, description, value, placeholder, class_names, **kwargs)
-
 
     def create_dropdown(self, options, description, value=None, placeholder='', class_names=None, **kwargs):
         """Create a dropdown with simple 'in' matching | supports (label, value) tuples"""
@@ -151,7 +142,6 @@ class WidgetFactory:
             **kwargs
         )
 
-
     def create_select_multiple(self, options, description, value=None, class_names=None, **kwargs):
         """Create a multiple select widget"""
         if isinstance(value, str):
@@ -168,14 +158,11 @@ class WidgetFactory:
             **kwargs
         )
 
-
     def create_checkbox(self, description, value=False, class_names=None, **kwargs):
         return self._create_widget(widgets.Checkbox, description=description, value=value, class_names=class_names, **kwargs)
 
-
     def create_button(self, description, class_names=None, **kwargs):
         return self._create_widget(widgets.Button, description=description, class_names=class_names, **kwargs)
-
 
     def _create_box(self, box_type, children, class_names=None, **kwargs):
         """Create a box layout (horizontal or vertical) for widgets"""
@@ -184,16 +171,13 @@ class WidgetFactory:
 
         return self._create_widget(box_type, children=children, class_names=class_names, **kwargs)
 
-
     def create_hbox(self, children, class_names=None, **kwargs):
         """Create a horizontal box layout for widgets"""
         return self._create_box(widgets.HBox, children, class_names, **kwargs)
 
-
     def create_vbox(self, children, class_names=None, **kwargs):
         """Create a vertical box layout for widgets"""
         return self._create_box(widgets.VBox, children, class_names, **kwargs)
-
 
     def create_box(self, children, direction='column', wrap=True, class_names=None, **kwargs):
         """Create a flexible Box container with adjustable direction and wrapping"""
@@ -217,7 +201,6 @@ class WidgetFactory:
                 display(widget)
         else:
             display(widgets)
-
 
     def close(self, widgets, class_names=None, delay=0.2):
         """Close one or multiple widgets after a delay"""

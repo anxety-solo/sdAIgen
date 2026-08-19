@@ -6,15 +6,17 @@ import io
 import os
 import re
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from pathlib import Path
 from PIL import Image
+from typing import Any
 
 # === SDAIGEN ===
-from sdai.constants import CIVITAI_API, CIVITAI_BASE
 from sdai.utils.logger import Logger
 
+
+CIVITAI_BASE = 'https://civitai.red'
+CIVITAI_API  = 'https://civitai.com/api/v1'
 
 CIVITAI_DOMAINS = ('civitai.com', 'civitai.red', 'civitai.green')
 
@@ -28,11 +30,13 @@ class ModelData:
     model_type: str
     base_model: str
     file_name: str
-    image_url: Optional[str] = None
-    image_name: Optional[str] = None
-    trained_words: Optional[List[str]] = None
-    sha256: Optional[str] = None
-    model_page_url: Optional[str] = None
+    model_name: str | None = None
+    version_name: str | None = None
+    image_url: str | None = None
+    image_name: str | None = None
+    trained_words: list[str] | None = None
+    sha256: str | None = None
+    model_page_url: str | None = None
 
 
 class CivitaiAPI:
@@ -44,20 +48,19 @@ class CivitaiAPI:
         meta = api.get_model_data(url='https://civitai.red/models/...')
     """
 
-    BASE_URL        = CIVITAI_API
     SUPPORTED_TYPES = {'Checkpoint', 'TextualInversion', 'LORA'}    # For Save Preview
     IS_KAGGLE       = 'KAGGLE_URL_BASE' in os.environ
 
-    def __init__(self, token: Optional[str] = None, verbose: bool = True, debug: bool = False):
-        self.token = (token or '').strip()
+    def __init__(self, token: str | None = None, verbose: bool = True, debug: bool = False):
+        self.token  = (token or '').strip()
         self.logger = Logger(enabled=verbose, debug=debug)
 
 
     # ~~ Core Helpers ~~
 
-    def _get_data(self, path: str) -> Optional[Dict]:
+    def _get_data(self, path: str) -> dict | None:
         """GET request to API endpoint and return parsed JSON or None"""
-        url     = f"{self.BASE_URL}/{path}"
+        url = f"{CIVITAI_API}/{path}"
         headers = {'Authorization': f"Bearer {self.token}"} if self.token else {}
         try:
             resp = requests.get(url, headers=headers, timeout=30)
@@ -67,7 +70,7 @@ class CivitaiAPI:
             self.logger.error(f"GET {url} — {exc}")
             return None
 
-    def _get_primary_file(self, version: Dict) -> Optional[Dict]:
+    def _get_primary_file(self, version: dict) -> dict | None:
         """Return first primary file from a version dict"""
         files = version.get('files', [])
         for file in files:
@@ -75,14 +78,14 @@ class CivitaiAPI:
                 return file
         return files[0] if files else None
 
-    def _get_download_url(self, version: Dict) -> Optional[str]:
+    def _get_download_url(self, version: dict) -> str | None:
         """Return download URL from primary file or version fallback"""
         file = self._get_primary_file(version)
         if file and file.get('downloadUrl'):
             return file['downloadUrl']
         return version.get('downloadUrl')
 
-    def _pick_preview(self, images: List[Dict], stem: str, width: int = 512) -> Tuple[Optional[str], Optional[str]]:
+    def _pick_preview(self, images: list[dict], stem: str, width: int = 512) -> tuple[str | None, str | None]:
         """Return (url, filename) for the first usable preview image or (None, None)"""
         for img in images:
             url = img.get('url', '')
@@ -98,14 +101,14 @@ class CivitaiAPI:
             return url, f"{stem}.preview.{ext}"
         return None, None
 
-    def _preview_by_sha256(self, sha256: str, stem: str) -> Tuple[Optional[str], Optional[str]]:
+    def _preview_by_sha256(self, sha256: str, stem: str) -> tuple[str | None, str | None]:
         """Look up preview on CivitAI by SHA256 hash, returns (None, None) silently on miss"""
         ver = self.find_by_sha256(sha256)
         if ver:
             return self._pick_preview(ver.get('images', []), stem)
         return None, None
 
-    def _check_early_access(self, ver: Dict) -> bool:
+    def _check_early_access(self, ver: dict) -> bool:
         """Return True if version requires Early Access payment"""
         is_ea = ver.get('availability') == 'EarlyAccess' or bool(ver.get('earlyAccessEndsAt'))
         if not is_ea:
@@ -124,7 +127,7 @@ class CivitaiAPI:
                         download_url,
                         headers={'Authorization': f"Bearer {self.token}"},
                         allow_redirects=True,
-                        timeout=10
+                        timeout=15
                     )
                     if resp.status_code < 400:
                         self.logger.debug(f"Early Access confirmed purchased: {ver_url}")
@@ -135,13 +138,13 @@ class CivitaiAPI:
         self.logger.warning(f"Early Access (skipping): {ver_url}")
         return True
 
-    def _resolve_version_from_url(self, url: str) -> Optional[Dict]:
+    def _resolve_version_from_url(self, url: str) -> dict | None:
         """
         Resolve any CivitAI URL to a full version data dict.
         For model-page URLs iterates all versions and skips unpurchased Early Access ones.
         Requested modelVersionId is tried first when present in URL.
         """
-        def resolve_version(ver_id: str) -> Optional[Dict]:
+        def resolve_version(ver_id: str) -> dict | None:
             ver = self._get_data(f"model-versions/{ver_id}")
             if not ver or self._check_early_access(ver):
                 return None
@@ -157,7 +160,7 @@ class CivitaiAPI:
         # /models/MODEL_ID
         for domain in CIVITAI_DOMAINS:
             if f"{domain}/models/" in url:
-                model_id = url.split('/models/')[1].split('/')[0].split('?')[0]
+                model_id   = url.split('/models/')[1].split('/')[0].split('?')[0]
                 req_ver_id = (
                     url.split('modelVersionId=')[1].split('&')[0]
                     if 'modelVersionId=' in url else None
@@ -193,13 +196,13 @@ class CivitaiAPI:
 
     # ~~ Model Resolution ~~
 
-    def _build_model_data(self, ver: Dict, file_name: str, download_url: str) -> Optional['ModelData']:
+    def _build_model_data(self, ver: dict, file_name: str, download_url: str) -> 'ModelData' | None:
         """Construct ModelData from a resolved version API dict"""
-        model_id = str(ver.get('modelId'))
-        ver_id = str(ver.get('id'))
+        model_id   = str(ver.get('modelId'))
+        ver_id     = str(ver.get('id'))
         model_type = ver['model']['type']
-        sha256 = self.get_sha256(ver)
-        stem = Path(file_name).stem
+        sha256     = self.get_sha256(ver)
+        stem       = Path(file_name).stem
 
         image_url, image_name = None, None
         if model_type in self.SUPPORTED_TYPES:
@@ -214,6 +217,8 @@ class CivitaiAPI:
             model_type=model_type,
             base_model=ver.get('baseModel'),
             file_name=file_name,
+            model_name=ver['model'].get('name'),
+            version_name=ver.get('name'),
             image_url=image_url,
             image_name=image_name,
             trained_words=ver.get('trainedWords'),
@@ -221,7 +226,7 @@ class CivitaiAPI:
             model_page_url=f"{CIVITAI_BASE}/models/{model_id}?modelVersionId={ver_id}",
         )
 
-    def validate_download(self, url: str, file_name: Optional[str] = None) -> Optional[ModelData]:
+    def validate_download(self, url: str, file_name: str | None = None) -> ModelData | None:
         """Resolve a CivitAI URL to ModelData, iterating versions to skip unowned Early Access"""
         ver = self._resolve_version_from_url(url)
         if not ver:
@@ -242,22 +247,22 @@ class CivitaiAPI:
 
     # ~~ General ~~
 
-    def get_model_data(self, url: str) -> Optional[Dict[str, Any]]:
+    def get_model_data(self, url: str) -> dict[str, Any] | None:
         """Fetch full version metadata dict from CivitAI by any supported URL"""
         return self._resolve_version_from_url(url)
 
-    def get_model_versions(self, model_id: str) -> Optional[List[Dict]]:
+    def get_model_versions(self, model_id: str) -> list[dict] | None:
         """Return all version dicts for a model by ID"""
         data = self._get_data(f"models/{model_id}")
         return data.get('modelVersions') if data else None
 
-    def get_sha256(self, ver: Optional[Dict] = None, version_id: Optional[str] = None) -> Optional[str]:
+    def get_sha256(self, ver: dict | None = None, version_id: str | None = None) -> str | None:
         """Extract SHA256 from version data dict, or fetch by version_id if dict not provided"""
         if ver is None and version_id:
             ver = self._get_data(f"model-versions/{version_id}")
         return ver.get('files', [{}])[0].get('hashes', {}).get('SHA256') if ver else None
 
-    def find_by_sha256(self, sha256: str) -> Optional[Dict]:
+    def find_by_sha256(self, sha256: str) -> dict | None:
         """Find version data by file SHA256 hash, returns None silently on miss"""
         return self._get_data(f"model-versions/by-hash/{sha256}")
 
@@ -277,7 +282,7 @@ class CivitaiAPI:
             self.logger.warning(f"Failed to download preview: {exc}")
             return False
 
-    def preview_by_sha256(self, sha256: str, save_path: Union[str, Path], stem: str):
+    def preview_by_sha256(self, sha256: str, save_path: str | Path, stem: str):
         """Fetch and save a CivitAI preview image found via SHA256 hash lookup.
 
         Intended for models downloaded from non-CivitAI sources (HuggingFace, etc)
@@ -291,7 +296,7 @@ class CivitaiAPI:
         save_dir.mkdir(parents=True, exist_ok=True)
         self._save_image(image_url, save_dir, image_name)
 
-    def download_preview_image(self, model_data: ModelData, save_path: Optional[Union[str, Path]] = None, resize: bool = True):
+    def download_preview_image(self, model_data: ModelData, save_path: str | Path | None = None, resize: bool = True):
         """Download and save a preview image from a ModelData object"""
         if not model_data:
             self.logger.warning('ModelData is None — skipping download_preview_image')
@@ -307,7 +312,7 @@ class CivitaiAPI:
     def _resize_image(self, raw: bytes, size: int = 512) -> io.BytesIO:
         """Resize image bytes to target max side while preserving aspect ratio"""
         try:
-            img = Image.open(io.BytesIO(raw))
+            img  = Image.open(io.BytesIO(raw))
             w, h = img.size
             new_w, new_h = (size, int(h * size / w)) if w > h else (int(w * size / h), size)
             buf = io.BytesIO()
@@ -318,7 +323,7 @@ class CivitaiAPI:
             self.logger.warning(f"Resize failed: {exc}")
             return io.BytesIO(raw)
 
-    def save_model_info(self, model_data: ModelData, save_path: Optional[Union[str, Path]] = None):
+    def save_model_info(self, model_data: ModelData, save_path: str | Path | None = None):
         """Save model metadata as a .json sidecar file next to the model"""
         if not model_data:
             self.logger.warning('ModelData is None — skipping save_model_info')
@@ -331,13 +336,15 @@ class CivitaiAPI:
             return
 
         info = {
-            'modelId':          model_data.model_id,
-            'modelVersionId':   model_data.version_id,
-            'model_type':       model_data.model_type,
-            'model_base':       model_data.base_model,
-            'activation_words': ', '.join(model_data.trained_words or []),
-            'sha256':           model_data.sha256,
-            'modelPage':        f"{CIVITAI_BASE}/models/{model_data.model_id}?modelVersionId={model_data.version_id}"
+            'modelName':    model_data.model_name,
+            'versionName':  model_data.version_name,
+            'modelId':      model_data.model_id,
+            'versionId':    model_data.version_id,
+            'contentType':  model_data.model_type,
+            'baseModel':    model_data.base_model,
+            'trainedTags':  ', '.join(model_data.trained_words or []),
+            'modelPageURL': model_data.model_page_url,
+            'sha256':       model_data.sha256,
         }
         try:
             info_path.write_text(json.dumps(info, indent=4), encoding='utf-8')

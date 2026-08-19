@@ -6,25 +6,26 @@ Author: cupang-afk https://github.com/cupang-afk
 Modified specifically for the 'sdAIgen' project; may not be compatible with normal use. | by ANXETY
 """
 
-from pathlib import Path
-from threading import Event, Lock, Thread
-from typing import Callable, List, Optional, Tuple, Union
-
+import subprocess
 import logging
+import socket
+import signal
+import shlex
+import time
 import os
 import re
-import shlex
-import signal
-import socket
-import subprocess
-import time
 
+from threading import Event, Lock, Thread
+from typing import Callable
+from pathlib import Path
+
+# === SDAIGEN ===
 from sdai.constants import COL
 
 
-StrOrPath = Union[str, Path]
-StrOrRegexPattern = Union[str, re.Pattern]
-ListHandlersOrBool = Union[List[logging.Handler], bool]
+StrOrPath = str | Path
+StrOrRegexPattern = str | re.Pattern
+ListHandlersOrBool = list[logging.Handler] | bool
 
 FILE_FORMAT = "[%(asctime)s] [%(name)s]: %(message)s"
 TUNNEL_FORMAT = "[%(name)s]: %(message)s"
@@ -68,7 +69,7 @@ class Tunnel:
         propagate: bool = False,
         log_handlers: ListHandlersOrBool = None,
         log_dir: StrOrPath = None,
-        callback: Callable[[List[Tuple[str, Optional[str], Optional[str]]]], None] = None,
+        callback: Callable[[list[tuple[str, str | None, str | None]]], None] | None = None,
     ):
         """
         Args:
@@ -95,11 +96,11 @@ class Tunnel:
         self.WINDOWS = os.name == 'nt'
         self.logger = self._setup_logger(propagate)
 
-        self.urls: List[Tuple[str, Optional[str], Optional[str]]] = []
+        self.urls: list[tuple[str, str | None, str | None]] = []
         self.urls_lock = Lock()
-        self.jobs: List[Thread] = []
-        self.processes: List[subprocess.Popen] = []
-        self.tunnel_list: List[dict] = []
+        self.jobs: list[Thread] = []
+        self.processes: list[subprocess.Popen] = []
+        self.tunnel_list: list[dict] = []
         self.stop_event = Event()
         self.printed = Event()
         self._is_running = False
@@ -145,7 +146,7 @@ class Tunnel:
         pattern: StrOrRegexPattern,
         name: str,
         note: str = None,
-        callback: Callable[[str, Optional[str], Optional[str]], None] = None,
+        callback: Callable[[str, str | None, str | None], None] | None = None,
     ) -> None:
         """Add a tunnel configuration"""
         if self.check_command_available and not self._is_command_available(command):

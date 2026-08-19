@@ -46,7 +46,7 @@ os.environ.update({
 # ~~ ENVIRONMENTS ~~
 
 SUPPORTED_ENVIRONMENTS = {
-    'COLAB_GPU':       ('Google Colab', '/content'),
+    'COLAB_GPU': ('Google Colab', '/content'),
     'KAGGLE_URL_BASE': ('Kaggle', '/kaggle/working'),
 }
 
@@ -86,6 +86,7 @@ SOURCE_FILES = {
 # ~~ ENVIRONMENT DETECTION ~~
 
 def detect_environment(force_env: str | None = None) -> tuple[str, str]:
+    """Detect the runtime environment, optionally forcing one by name"""
     envs = {name for name, _ in SUPPORTED_ENVIRONMENTS.values()}
     if force_env:
         if force_env not in envs:
@@ -103,6 +104,7 @@ def detect_environment(force_env: str | None = None) -> tuple[str, str]:
 
 
 def parse_github(value: str) -> str:
+    """Normalize a GitHub fork value into user/repo format"""
     parts = value.split('/', 1)
     user  = parts[0]
     repo  = parts[1] if len(parts) > 1 else 'sdAIgen'
@@ -116,11 +118,13 @@ def parse_github(value: str) -> str:
 # ~~ SETTINGS ~~
 
 def _check_install_deps() -> bool:
+    """Check that required CLI tools (aria2c, gdown) are available"""
     from shutil import which
     return all(which(tool) for tool in ('aria2c', 'gdown'))
 
 
 def _get_start_timer() -> int:
+    """Return the saved start timer or the current time"""
     try:
         if SETTINGS_PATH.exists():
             settings = json.loads(SETTINGS_PATH.read_text(encoding='utf-8'))
@@ -132,6 +136,7 @@ def _get_start_timer() -> int:
 
 
 def save_env_settings(data: dict):
+    """Merge settings into the project settings.json file"""
     PROJECT_PATH.mkdir(parents=True, exist_ok=True)
 
     existing = {}
@@ -150,6 +155,7 @@ def save_env_settings(data: dict):
 
 
 def create_env_settings(env_name: str, home_work_path: str, github: str, branch: str, lang: str) -> dict:
+    """Build the environment settings dict for the current session"""
     return {
         'ENVIRONMENT': {
             'env_name':       env_name,
@@ -171,6 +177,7 @@ def create_env_settings(env_name: str, home_work_path: str, github: str, branch:
 # ~~ DOWNLOAD ~~
 
 def _build_download_list(github: str, branch: str) -> list[tuple[str, Path]]:
+    """Build (url, dest_path) pairs for all project source files"""
     base_url = f"https://raw.githubusercontent.com/{github}/{branch}"
 
     return [
@@ -181,6 +188,7 @@ def _build_download_list(github: str, branch: str) -> list[tuple[str, Path]]:
 
 
 async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -> tuple:
+    """Download a single file, returning success status with error info"""
     try:
         async with session.get(url) as resp:
             resp.raise_for_status()
@@ -194,6 +202,7 @@ async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -
 
 
 async def download_files_async(github: str, branch: str, log: bool):
+    """Download all project files concurrently and optionally log errors"""
     files  = _build_download_list(github, branch)
     errors = []
 
@@ -218,7 +227,6 @@ async def download_files_async(github: str, branch: str, log: bool):
 def install_startup():
     """Install IPython auto-recovery script (runs on every kernel start)"""
     source = SCRIPTS_PATH / '00-startup.py'
-
     if not source.exists():
         return
 
@@ -232,13 +240,11 @@ def install_startup():
 def setup_imports():
     """Make the project package (sdai) importable and drop cached modules from previous runs"""
     path_str = str(PROJECT_PATH)
-
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
 
     for name, module in list(sys.modules.items()):
         module_path = getattr(module, '__file__', None)
-
         if not module_path:
             continue
 
@@ -254,6 +260,7 @@ def setup_imports():
 # ~~ ARGUMENTS ~~
 
 def parse_arguments() -> argparse.Namespace:
+    """Parse and return the CLI arguments for the setup manager"""
     envs = ', '.join(sorted(name for name, _ in SUPPORTED_ENVIRONMENTS.values()))
 
     parser = argparse.ArgumentParser(description='sdAIgen Setup Manager')

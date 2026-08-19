@@ -5,6 +5,7 @@ import re
 
 from pathlib import Path
 
+# === SDAIGEN ===
 from sdai.constants import HOME_PATH, SETTINGS_PATH
 from sdai.utils.json import read, save, update
 from sdai.webui_meta import meta, build_paths
@@ -25,6 +26,7 @@ def update_current_webui(current_ui: str):
     save(SETTINGS_PATH, 'WEBUI.python_version', _m['python'])
     save(SETTINGS_PATH, 'WEBUI.webui_path', str(HOME_PATH / current_ui))
     update(SETTINGS_PATH, 'WEBUI', {k: str(v) for k, v in build_paths(current_ui).items()})
+
     _update_webui_symlink(current_ui)
 
 
@@ -56,7 +58,6 @@ def handle_setup_timer(webui_path: str, timer_webui: float) -> float:
     """Manage timer persistence for WebUI instances"""
     timer_file = Path(webui_path) / 'static' / 'timer.txt'
     timer_file.parent.mkdir(parents=True, exist_ok=True)
-
     try:
         with timer_file.open('r', encoding='utf-8') as f:
             timer_webui = float(f.read())
@@ -71,7 +72,7 @@ def handle_setup_timer(webui_path: str, timer_webui: float) -> float:
 
 # ~~ WIDGETS HANDLERS ~~
 
-def find_model_by_partial_name(partial_name, model_dict):
+def find_model_by_partial_name(partial_name: str, model_dict: dict) -> str | None:
     """
     Find model in dictionary by partial name (case-insensitive)
     Returns the full key name if found, None otherwise.

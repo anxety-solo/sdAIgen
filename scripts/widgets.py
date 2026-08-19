@@ -1,15 +1,16 @@
 """ Main Project Widgets | by ANXETY """
 
-import ipywidgets as widgets
 import requests
 import base64
 import json
+
+import ipywidgets as widgets
 
 from IPython.display import display, HTML, Javascript
 from datetime import datetime
 
 # === SDAIGEN ===
-from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, JS_DIR_PATH, GITHUB_API, GITHUB_BASE, HUGGINGFACE_BASE
+from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, JS_DIR_PATH, HUGGINGFACE_BASE
 from sdai.utils.webui import update_current_webui, find_model_by_partial_name
 from sdai.models import XL, MODEL_CATEGORIES, get_category
 from sdai.webui_meta import DEFAULT_UI, WEBUIS, meta
@@ -25,31 +26,32 @@ CONTAINERS_WIDTH = '1080px'
 
 # ~~ HELPERS ~~
 
-def numbered(data):
+def numbered(data: dict) -> dict:
     """Prefix each model key with its number"""
     return {f"{i}. {k}": v for i, (k, v) in enumerate(data.items(), 1)}
 
 
-def options_from(data, prefixes):
+def options_from(data: dict, prefixes: list) -> list:
     """Build dropdown options from a models dict"""
     return prefixes + list(numbered(data))
 
 
-def get_widget(key):
+def get_widget(key: str) -> widgets.Widget:
     """Get a widget by its settings key"""
     return globals()[f"{key}_widget"]
 
 
-def create_expandable_button(text, url):
+def create_expandable_button(text: str, url: str) -> widgets.Widget:
     """Create an anchor button widget"""
     return factory.create_html(f'<a href="{url}" target="_blank" class="button button_api"><span class="icon"><</span><span class="text">{text}</span></a>')
 
 
-def fetch_github_branches(ui):
+def fetch_github_branches(ui: str) -> list[str]:
     """Fetch branch names from GitHub API with optional filtering"""
     _m = meta(ui)
-    repo_path = _m['github_url'].replace(f"{GITHUB_BASE}/", '')
-    api_url   = f"{GITHUB_API}/repos/{repo_path}/branches"
+
+    repo_path = _m['github_url'].replace('https://github.com/', '')
+    api_url   = f"https://api.github.com/repos/{repo_path}/branches"
 
     try:
         resp = requests.get(api_url, timeout=15)
@@ -75,20 +77,23 @@ def fetch_github_branches(ui):
 # ~~ WIDGETS (Main Container) ~~
 
 factory = WidgetFactory()
-HR = widgets.HTML('<hr>')
+HR = factory.create_html('<hr>')
 
-# --- MODEL ---
+# --- Model ---
+
 model_header      = factory.create_header(tr('model_header'))
 model_widget      = factory.create_dropdown(options_from(XL['model'], ['none']), tr('model_label'), 'Nova-IL')
 model_num_widget  = factory.create_text(tr('model_num_label'), '', tr('model_num_hint'))
 model_type_widget = factory.create_dropdown(list(MODEL_CATEGORIES), tr('model_type'), 'XL', layout={'width': 'min-content'})
 
 # --- VAE ---
+
 vae_header     = factory.create_header(tr('vae_header'))
 vae_widget     = factory.create_dropdown(options_from(XL['vae'], ['none', 'ALL']), 'Vae:', 'sdxl.vae')
 vae_num_widget = factory.create_text(tr('vae_num_label'), '', tr('vae_num_hint'))
 
-# --- ADDITIONAL ---
+# --- Additional ---
+
 additional_header        = factory.create_header(tr('additional_header'))
 update_scope_widget      = factory.create_dropdown(['none', 'UI', 'Extensions', 'ALL'], tr('update_scope_label'), 'ALL', layout={'width': 'auto'})
 clone_ui_widget          = factory.create_checkbox(tr('clone_ui_label'), False)
@@ -106,12 +111,14 @@ choose_changes_box = factory.create_hbox(
     layout={'justify_content': 'space-between'}
 )
 
-controlnet_widget     = factory.create_dropdown(options_from(XL['controlnet'], ['none', 'ALL']), 'ControlNet:', 'none')
+controlnet_widget = factory.create_dropdown(options_from(XL['controlnet'], ['none', 'ALL']), 'ControlNet:', 'none')
 controlnet_num_widget = factory.create_text(tr('controlnet_num_label'), '', tr('controlnet_num_hint'))
 
 commit_hash_widget   = factory.create_text(tr('commit_hash_label'), '', tr('commit_hash_hint'))
 branch_widget        = factory.create_dropdown(fetch_github_branches(DEFAULT_UI), tr('branch_label'), 'none', layout={'width': '400px', 'margin': '0 0 0 8px'}) # margin-left
 checkout_options_box = factory.create_hbox([commit_hash_widget, branch_widget])
+
+# --- API Tokens ---
 
 civitai_token_widget = factory.create_text(tr('civitai_token_label'), '', tr('civitai_token_hint'), class_names=['cai-token-input'])    # for check API-Key
 civitai_button       = create_expandable_button(tr('get_token_btn', service='CivitAI'), 'https://civitai.com/user/account')
@@ -129,32 +136,35 @@ zrok2_token_widget = factory.create_text(tr('zrok2_token_label'))
 zrok2_button       = create_expandable_button(tr('register_token_btn', service='Zrok2'), 'https://colab.research.google.com/drive/1d2sjWDJi_GYBUavrHSuQyHTDuLy36WpU')
 zrok2_box          = factory.create_hbox([zrok2_token_widget, zrok2_button])
 
+# --- Arguments ---
+
 commandline_arguments_widget = factory.create_text(tr('arguments_label'), meta(DEFAULT_UI)['launch_args'])
 
 accent_colors_options = ['anxety', 'blue', 'green', 'peach', 'pink', 'red', 'yellow']
 theme_accent_widget   = factory.create_dropdown(accent_colors_options, tr('theme_accent_label'), 'anxety', layout={'width': 'auto', 'margin': '0 0 0 8px'}) # margin-left
 additional_footer_box = factory.create_hbox([commandline_arguments_widget, theme_accent_widget])
 
-# --- CUSTOM DOWNLOAD ---
+# --- Custom Download ---
+
 custom_download_header_popup = factory.create_html(f'''
-<div class='header' style='cursor: pointer;' onclick='toggleContainer()'>{tr('cdl_header')}</div>
-<div class='info'>{tr('cdl_info')}</div>
-<div class='popup'>
+<div class="header" style="cursor: pointer;" onclick="toggleContainer()">{tr('cdl_header')}</div>
+<div class="info">{tr('cdl_info')}</div>
+<div class="popup">
     {tr('cdl_separate')}
     {tr('cdl_custom_name')}
-    <span class='required'>{tr('cdl_required')}</span> - <span class='extension'>{tr('cdl_extension')}</span>
-    <div class='sample'>
-        <span class='sample_label'>{tr('cdl_file_example')}</span>
-        https://civitai.com/api/download/models/229782<span class='braces'>[</span><span class='file_name'>Detailer</span><span class='extension'>.safetensors</span><span class='braces'>]</span>
+    <span class="required">{tr('cdl_required')}</span> - <span class="extension">{tr('cdl_extension')}</span>
+    <div class="sample">
+        <span class="sample_label">{tr('cdl_file_example')}</span>
+        https://civitai.com/api/download/models/229782<span class="braces">[</span><span class="file_name">Detailer</span><span class="extension">.safetensors</span><span class="braces">]</span>
         <br>
-        <span class='sample_label'>{tr('cdl_ext_example')}</span>
-        https://github.com/hako-mikan/sd-webui-regional-prompter<span class='braces'>[</span><span class='file_name'>Regional-Prompter</span><span class='braces'>]</span>
+        <span class="sample_label">{tr('cdl_ext_example')}</span>
+        https://github.com/hako-mikan/sd-webui-regional-prompter<span class="braces">[</span><span class="file_name">Regional-Prompter</span><span class="braces">]</span>
     </div>
 </div>
 ''')
 
-empowerment_widget       = factory.create_checkbox(tr('empowerment_label'), False, class_names=['empowerment'])
-empowerment_input_widget = factory.create_textarea('', '', tr('empowerment_hint'), class_names=['empowerment-input', 'hidden'])
+empowerment_widget = factory.create_checkbox(tr('cdl_empowerment_label'), False, class_names=['empowerment'])
+empowerment_input_widget = factory.create_textarea('', '', tr('cdl_empowerment_hint'), class_names=['empowerment-input', 'hidden'])
 
 model_urls_widget       = factory.create_text('Model:')
 vae_urls_widget         = factory.create_text('Vae:')
@@ -162,15 +172,16 @@ lora_urls_widget        = factory.create_text('LoRa:')
 embedding_urls_widget   = factory.create_text('Embedding:')
 extensions_urls_widget  = factory.create_text('Extensions:')
 adetailer_urls_widget   = factory.create_text('ADetailer:')
-custom_file_urls_widget = factory.create_text(tr('file_urls_label'))
+custom_file_urls_widget = factory.create_text(tr('cdl_file_urls_label'))
 
 # --- Save Button ---
-save_button = factory.create_button(tr('save'), class_names=['button', 'button_save'])
+
+save_button = factory.create_button(tr('settings_save'), class_names=['button', 'button_save'])
 
 
 # ~~ Side Container ~~
 
-# --- GDrive Symlinks Panel ---
+# GDrive Symlinks Panel
 gdrive_header         = factory.create_header(tr('gd_symlinks_header'))
 gdrive_files_widget   = factory.create_checkbox(tr('gd_files_label'), True)
 gdrive_outputs_widget = factory.create_checkbox(tr('gd_outputs_label'), False)
@@ -183,6 +194,7 @@ gdrive_settings_box = factory.create_vbox(
 )
 
 # --- GDrive Toggle Button ---
+
 BTN_STYLE = {'width': '48px', 'height': '48px'}
 TOOLTIPS  = (tr('gd_unmount_tooltip'), tr('gd_mount_tooltip'))
 
@@ -192,7 +204,7 @@ gdrive_button.tooltip = TOOLTIPS[not gdrive_status] # Invert index
 gdrive_button.toggle  = gdrive_status
 
 
-def _set_gdrive_state(state):
+def _set_gdrive_state(state: bool):
     """Apply GDrive mount state to the toggle button and panel classes"""
     gdrive_button.toggle = state
     if state:
@@ -208,29 +220,30 @@ if ENV_NAME != 'Google Colab':
 else:
     _set_gdrive_state(gdrive_status)
 
-    def handle_toggle(btn):
-        _set_gdrive_state(not btn.toggle)
-        btn.tooltip = TOOLTIPS[not btn.toggle]
+    def handle_toggle(button: widgets.Button):
+        _set_gdrive_state(not button.toggle)
+        button.tooltip = TOOLTIPS[not button.toggle]
 
     gdrive_button.on_click(handle_toggle)
 
-
 # --- Export/Import Widget Settings Buttons ---
+
 export_button = factory.create_button('', layout=BTN_STYLE, class_names=['sideContainer-btn', 'export-btn'])
-export_button.tooltip = tr('export_tooltip')
+export_button.tooltip = tr('settings_export_tooltip')
 
 import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, class_names=['sideContainer-btn', 'import-btn'])
-import_button.tooltip = tr('import_tooltip')
+import_button.tooltip = tr('settings_import_tooltip')
 
 export_output = widgets.Output(layout={'display': 'none'})
 
 # --- PopUp Notification (Alias) ---
+
 # PopUp Notification — hidden output widget, JS renders notifications
 notify_output = widgets.Output(layout={'height': '0', 'overflow': 'hidden', 'margin': '0', 'padding': '0'})
 display(notify_output)
 
 
-def show_notification(message, message_type='info', duration=2500):
+def show_notification(message: str, message_type='info', duration=2500):
     """Call JS function showNotification"""
     message_escaped = message.replace('`', '\\`').replace('\n', '\\n')
     js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
@@ -239,8 +252,9 @@ def show_notification(message, message_type='info', duration=2500):
         display(Javascript(js_code))
 
 
-# --- EXPORT SETTINGS ---
-def _collect_widget_values():
+# ~~ EXPORT SETTINGS ~~
+
+def _collect_widget_values() -> dict:
     """Collect current widget values for export/save"""
     return {
         'widgets': {key: get_widget(key).value for key in SETTINGS_KEYS},
@@ -248,36 +262,37 @@ def _collect_widget_values():
     }
 
 
-def export_settings(button=None):
+def export_settings(button: widgets.Button | None = None):
     """Export widget settings to a JSON file"""
     try:
         settings_data = _collect_widget_values()
 
         json_str = json.dumps(settings_data, indent=2, ensure_ascii=False)
-        b64      = base64.b64encode(json_str.encode()).decode()
+        b64 = base64.b64encode(json_str.encode()).decode()
 
-        webui    = selected_webui_widget.value
+        ui       = selected_webui_widget.value
         date     = datetime.now().strftime('%Y%m%d')
-        filename = f"widgets_settings-{webui}-{date}.json"
+        filename = f"widgets_settings-{ui}-{date}.json"
 
         with export_output:
             export_output.clear_output()
             display(HTML(f'''
-                <a download='{filename}'
-                   href='data:application/json;base64,{b64}'
-                   id='aw-download-link'
-                   style='display:none;'></a>
+                <a download="{filename}"
+                   href="data:application/json;base64,{b64}"
+                   id="aw-download-link"
+                   style="display:none;"></a>
                 <script>
                     document.getElementById('aw-download-link').click();
                 </script>
             '''))
-        show_notification(tr('exported'), 'success')
+        show_notification(tr('settings_exported'), 'success')
     except Exception as exc:
-        show_notification(tr('export_failed', error=str(exc)), 'error')
+        show_notification(tr('settings_export_failed', error=str(exc)), 'error')
 
 
-# --- APPLY SETTINGS ---
-def apply_imported_settings(data):
+# ~~ APPLY SETTINGS ~~
+
+def apply_imported_settings(data: dict):
     """Apply imported widget settings"""
     try:
         success_count = total_count = 0
@@ -306,15 +321,16 @@ def apply_imported_settings(data):
                     pass
 
         if success_count == total_count:
-            show_notification(tr('imported'), 'success')
+            show_notification(tr('settings_imported'), 'success')
         else:
-            show_notification(tr('import_partial', count=success_count, total=total_count), 'warning')
+            show_notification(tr('settings_import_partial', count=success_count, total=total_count), 'warning')
     except Exception as exc:
-        show_notification(tr('import_failed', error=str(exc)), 'error')
+        show_notification(tr('settings_import_failed', error=str(exc)), 'error')
 
 
-# --- OBSERVE (CALLBACK) ---
-def handle_file_upload(change):
+# ~~ OBSERVE (CALLBACK) ~~
+
+def handle_file_upload(change: dict):
     """Handle JSON file upload and apply settings"""
     if not change.get('new'):
         return
@@ -323,7 +339,7 @@ def handle_file_upload(change):
 
         # Get content, support dict (Colab) and tuple/list (Kaggle)
         file_data = list(uploaded_data.values())[0] if isinstance(uploaded_data, dict) else uploaded_data[0]
-        content = file_data['content']
+        content   = file_data['content']
 
         # Decode if necessary
         json_str = bytes(content).decode('utf-8') if isinstance(content, (bytes, memoryview)) else content
@@ -331,7 +347,7 @@ def handle_file_upload(change):
         data = json.loads(json_str)
         apply_imported_settings(data)
     except Exception as exc:
-        show_notification(tr('import_failed', error=str(exc)), 'error')
+        show_notification(tr('settings_import_failed', error=str(exc)), 'error')
     finally:
         # Reset for re-uploading
         import_button._counter = 0
@@ -349,7 +365,7 @@ factory.load_js(JS_DIR_PATH / 'main-widgets.js')    # load JS (widgets)
 
 # Display Sections
 model_widgets = [model_header, model_widget, model_num_widget, model_type_widget]
-vae_widgets   = [vae_header, vae_widget, vae_num_widget]
+vae_widgets = [vae_header, vae_widget, vae_num_widget]
 additional_widgets = [
     additional_header,
     choose_changes_box,
@@ -411,16 +427,16 @@ mainContainer = factory.create_hbox(
 factory.display(mainContainer)
 
 
-# --- Post Run Scripts ---
+# Post Run Scripts
 display(Javascript('setTimeout(checkCivitaiKey, 2500)'))
 
 
 # ~~ CALLBACK FUNCTION ~~
 
-def update_model_type(change, widget):
+def update_model_type(change: dict, widget):
     """Switch Model/Vae/ControlNet options"""
     model_type = change['new']
-    data       = get_category(model_type)
+    data = get_category(model_type)
 
     model_dict = numbered(data.get('model', {}))
     vae_dict   = numbered(data.get('vae', {}))
@@ -439,15 +455,15 @@ def update_model_type(change, widget):
     d_model, d_vae, d_cnet = defaults[model_type]
 
     # Apply values
-    def pick(partial, dictionary, fallback):
+    def pick(partial: str, dictionary: dict, fallback: str) -> str:
         return find_model_by_partial_name(partial, dictionary) or fallback
 
     model_widget.value      = pick(d_model, model_dict, model_widget.options[-1])
-    vae_widget.value        = pick(d_vae,   vae_dict,   vae_widget.options[-1])
-    controlnet_widget.value = pick(d_cnet,  cnet_dict,  d_cnet)
+    vae_widget.value        = pick(d_vae, vae_dict, vae_widget.options[-1])
+    controlnet_widget.value = pick(d_cnet, cnet_dict, d_cnet)
 
 
-def update_clone_ui(change, widget):
+def update_clone_ui(change: dict, widget):
     """Disable the Update dropdown when clone mode is enabled"""
     if change['new']:
         update_scope_widget.add_class('_disabled')
@@ -455,14 +471,15 @@ def update_clone_ui(change, widget):
         update_scope_widget.remove_class('_disabled')
 
 
-def update_selected_webui(change, widget):
+def update_selected_webui(change: dict, widget):
     """Update widgets when the WebUI selection changes"""
-    webui = change['new']
-    _m = meta(webui)
-    commandline_arguments_widget.value = _m['launch_args']
-    branch_widget.options = fetch_github_branches(webui)
+    ui = change['new']
+    _m = meta(ui)
 
-    is_comfy = webui == 'ComfyUI'
+    commandline_arguments_widget.value = _m['launch_args']
+    branch_widget.options = fetch_github_branches(ui)
+
+    is_comfy = ui == 'ComfyUI'
 
     update_scope_widget.options            = ['none', 'UI'] if is_comfy else ['none', 'UI', 'Extensions', 'ALL']
     update_scope_widget.value              = 'UI' if is_comfy else 'ALL'
@@ -471,7 +488,7 @@ def update_selected_webui(change, widget):
     extensions_urls_widget.description     = 'Custom Nodes:' if is_comfy else 'Extensions:'
 
 
-def update_empowerment(change, widget):
+def update_empowerment(change: dict, widget: widgets.Widget):
     """Toggle between empowerment textarea and URL fields"""
     selected_emp = change['new']
 
@@ -506,15 +523,15 @@ factory.connect_widgets([(empowerment_widget,    'value')], update_empowerment)
 # ~~ Load / Save - Settings ~~
 
 SETTINGS_KEYS = [
-      'model_type', 'model', 'model_num', 'vae', 'vae_num',
-      # Additional
-      'update_scope', 'clone_ui', 'selected_webui', 'check_nodes_deps', 'detailed_download',
-      'controlnet', 'controlnet_num', 'commit_hash', 'branch',
-      'civitai_token', 'huggingface_token', 'zrok2_token', 'ngrok_token', 'commandline_arguments', 'theme_accent',
-      # CustomDL
-      'empowerment', 'empowerment_input',
-      'model_urls', 'vae_urls', 'lora_urls', 'embedding_urls', 'extensions_urls', 'adetailer_urls',
-      'custom_file_urls'
+    'model_type', 'model', 'model_num', 'vae', 'vae_num',
+    # Additional
+    'update_scope', 'clone_ui', 'selected_webui', 'check_nodes_deps', 'detailed_download',
+    'controlnet', 'controlnet_num', 'commit_hash', 'branch',
+    'civitai_token', 'huggingface_token', 'zrok2_token', 'ngrok_token', 'commandline_arguments', 'theme_accent',
+    # CustomDL
+    'empowerment', 'empowerment_input',
+    'model_urls', 'vae_urls', 'lora_urls', 'embedding_urls', 'extensions_urls', 'adetailer_urls',
+    'custom_file_urls'
 ]
 
 GDRIVE_KEYS = ['gdrive_files', 'gdrive_outputs', 'gdrive_configs']
@@ -551,8 +568,8 @@ def save_data(button):
     """Handle save button click"""
     save_settings()
     all_widgets = [
-        model_box, vae_box, additional_box, custom_download_box, save_button,               # mainContainer
-        gdrive_button, export_button, import_button, export_output, gdrive_settings_box     # sideContainer
+        model_box, vae_box, additional_box, custom_download_box, save_button,           # mainContainer
+        gdrive_button, export_button, import_button, export_output, gdrive_settings_box # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 
