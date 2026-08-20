@@ -27,8 +27,8 @@ class Logger:
         color = getattr(COL, self._LEVEL_COLORS.get(level, 'X'))
         print(f">> {color}[{level.upper()}]:{COL.X} {message}")
 
-    def debug(self, msg):   self._write(msg, 'debug')
-    def info(self, msg):    self._write(msg, 'info')
-    def warning(self, msg): self._write(msg, 'warning')
-    def error(self, msg):   self._write(msg, 'error')
-    def success(self, msg): self._write(msg, 'success')
+    def debug(self, msg: str):   self._write(msg, 'debug')
+    def info(self, msg: str):    self._write(msg, 'info')
+    def warning(self, msg: str): self._write(msg, 'warning')
+    def error(self, msg: str):   self._write(msg, 'error')
+    def success(self, msg: str): self._write(msg, 'success')

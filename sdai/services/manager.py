@@ -6,8 +6,10 @@ import zipfile
 import shlex
 import re
 
+from collections.abc import Callable
 from urllib.parse import urlparse
 from pathlib import Path
+from typing import Any
 
 from os import chdir as CD
 
@@ -44,9 +46,9 @@ def _hf_token() -> str:
     return (read(SETTINGS_PATH, 'WIDGETS.huggingface_token') or '').strip()
 
 
-def handle_errors(func):
+def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator: catch and log exceptions, return None on failure"""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except Exception as exc:
@@ -75,7 +77,6 @@ def _normalize_url(url: str) -> str:
         return url.replace('/blob/', '/resolve/').split('?')[0]
     if 'github.com' in url:
         return url.replace('/blob/', '/raw/')
-
     return url
 
 
@@ -84,7 +85,6 @@ def _with_extension(filename: str | None, url: str) -> str | None:
     if filename and not Path(filename).suffix:
         ext = Path(urlparse(url).path).suffix
         filename = (filename + ext) if ext else None
-
     return filename
 
 
@@ -97,7 +97,7 @@ def _get_filename_from_url(url: str, is_git: bool = False) -> str | None:
     return name if is_git else _with_extension(name, url)
 
 
-def _parse_line_parts(parts: list, url: str, is_git: bool = False) -> tuple[Path | None, str | None]:
+def _parse_line_parts(parts: list[str], url: str, is_git: bool = False) -> tuple[Path | None, str | None]:
     """Extract (save_path, filename) from a tokenised download/clone line"""
     save_path, filename = None, None
 
@@ -145,7 +145,7 @@ def _resolve_civitai_redirect(url: str) -> str:
 
 # ~~ DOWNLOAD ~~
 
-def _expand_sources(sources: list, callback, *args):
+def _expand_sources(sources: list[str], callback: Callable[..., Any], *args: Any):
     """Call callback for each source line, expanding local .txt files line-by-line"""
     for source in sources:
         path  = Path(source).expanduser()
@@ -156,7 +156,7 @@ def _expand_sources(sources: list, callback, *args):
 
 
 @handle_errors
-def download(line=None, verbose=False, debug=False, unzip=False):
+def download(line: str | None = None, verbose=False, debug=False, unzip=False):
     """Download files (comma-separated or from .txt file)"""
     logger.enabled, logger.debug_enabled = verbose, debug
 
@@ -360,7 +360,7 @@ def _run_command(cmd: str) -> bool:
 # ~~ GIT CLONE ~~
 
 @handle_errors
-def clone(input_source=None, recursive=True, depth=1, verbose=False, debug=False, branch=None):
+def clone(input_source: str | None = None, recursive=True, depth=1, verbose=False, debug=False, branch: str | None = None):
     """Clone one or more GitHub repositories (comma-separated or from .txt file)"""
     logger.enabled, logger.debug_enabled = verbose, debug
 

@@ -1,5 +1,7 @@
 """ WebUI Metadata Module | by ANXETY """
 
+from pathlib import Path
+
 # === SDAIGEN ===
 from sdai.constants import HOME_PATH, VENV_PATH, HF_REPO_URL
 
@@ -167,7 +169,7 @@ def meta(ui: str) -> dict:
 
 # ~~ URL BUILDERS ~~
 
-def build_urls(ui: str) -> dict:
+def build_urls(ui: str) -> dict[str, str]:
     """Build all archive URLs for the given UI"""
     _m = meta(ui)
 
@@ -184,7 +186,7 @@ def build_urls(ui: str) -> dict:
     return urls
 
 
-def build_config_urls(ui: str, github: str, branch: str) -> list:
+def build_config_urls(ui: str, github: str, branch: str) -> list[tuple[str, Path]]:
     """Build (url, dest_path) pairs for all config files of the UI"""
     _m = meta(ui)
     ui_key = resolve(ui)
@@ -208,7 +210,7 @@ def build_extensions_url(ui: str, github: str, branch: str) -> str:
 
 # ~~ PATH BUILDERS ~~
 
-def build_paths(ui: str) -> dict:
+def build_paths(ui: str) -> dict[str, Path]:
     """Build all WebUI directories for the given UI from meta"""
     _m = meta(ui)
 

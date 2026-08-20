@@ -43,7 +43,7 @@ class CivitaiAPI:
     """CivitAI REST API wrapper for model discovery, download resolution and preview fetching.
 
     Usage:
-        api = CivitaiAPI(token=<TOKEN>)
+        api  = CivitaiAPI(token=<TOKEN>)
         data = api.validate_download(url='https://civitai.red/models/...')
         meta = api.get_model_data(url='https://civitai.red/models/...')
     """
@@ -89,11 +89,14 @@ class CivitaiAPI:
         """Return (url, filename) for the first usable preview image or (None, None)"""
         for img in images:
             url = img.get('url', '')
+
             if self.IS_KAGGLE and img.get('nsfwLevel', 0) >= 12:
                 continue
             if any(url.lower().endswith(ext) for ext in ('.gif', '.mp4', '.webm')):
                 continue
+
             ext = url.split('.')[-1].split('?')[0]
+
             if 'original=true' in url:
                 url = url.replace('original=true', f"width={width}")
             else:
@@ -196,7 +199,7 @@ class CivitaiAPI:
 
     # ~~ Model Resolution ~~
 
-    def _build_model_data(self, ver: dict, file_name: str, download_url: str) -> 'ModelData' | None:
+    def _build_model_data(self, ver: dict, file_name: str, download_url: str) -> ModelData | None:
         """Construct ModelData from a resolved version API dict"""
         model_id   = str(ver.get('modelId'))
         ver_id     = str(ver.get('id'))

@@ -22,7 +22,7 @@ English • [Русский](README.ru.md)
   - Multiplatform notebook: *Google Colab, Kaggle.*
   - *Widgets* for easy interaction.
   - Preset custom: *Settings* + *Styles* + [*UI Theme*](https://github.com/anxety-solo/anxety-theme)
-  - Download previews for *models, LoRa and embedding* (CivitAi)
+  - Download previews for *models, LoRa and embedding* (CivitAI)
   - Choosing WebUI between *A1111, ComfyUI, Forge, Classic/Neo (Forge), ReForge, SD-UX.*
   - _Exclusive to **Google Colab**_: Connection to GDrive: *Files, Outputs, UI Configs.*
 
@@ -50,7 +50,7 @@ English • [Русский](README.ru.md)
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
 | [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Umi-AI-Wildcards](https://github.com/anxety-solo/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Ultimate-Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | ✔️ | ❌ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [WD14-Tagger](https://github.com/anxety-solo/sd-wd14-tagger) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 

@@ -72,9 +72,9 @@ class WidgetFactory:
 
     def _create_widget(self, widget_type, class_names=None, **kwargs):
         """Create a widget of a specified type with optional classes and styles"""
-        style = kwargs.get('style', self.default_style)
+        style = kwargs.pop('style', self.default_style)
 
-        if widget_type in [widgets.Text, widgets.Dropdown, widgets.Textarea] and 'layout' not in kwargs and kwargs.get('reset') != True:
+        if widget_type in [widgets.Text, widgets.Dropdown, widgets.Textarea] and 'layout' not in kwargs:
             kwargs['layout'] = widgets.Layout(width='100%')
 
         widget = widget_type(style=style, **kwargs)
@@ -215,7 +215,7 @@ class WidgetFactory:
             widget.close()
 
 
-    # ~~ CallBack ~~
+    # ~~ CALLBACK ~~
 
     def connect_widgets(self, widget_pairs, callbacks):
         """Connect widgets to callbacks for specified property changes"""

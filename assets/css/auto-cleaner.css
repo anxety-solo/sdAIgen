@@ -10,7 +10,6 @@
     --aw-font-family-secondary: 'Tiny5', sans-serif;
     --aw-color-text-primary: #f0f8ff;
     --aw-text-size: 14px;
-    --aw-text-size-small: 13px;
 
     /* Container */
     --aw-container-bg: #232323;
@@ -26,7 +25,6 @@
 
     /* Checkboxes */
     --aw-checkbox-unchecked-bg: #20b2aa;
-    --aw-checkbox-checked-bg: #2196f3;
     --aw-checkbox-gdrive-bg: #00d062;
     --aw-checkbox-handle-bg: white;
 
@@ -43,7 +41,7 @@
 }
 
 
-/* General Styles */
+/* === General === */
 
 hr {
     border-color: grey;
@@ -54,24 +52,29 @@ hr {
 .instruction {
     font-size: 18px;
     color: grey;
+}
+
+.instruction,
+.output-message,
+.storage_info {
     user-select: none;
     cursor: default;
 }
 
 
-/* Special Fixes for IpyWidgets */
+/* === ipywidgets fixes === */
 
-/* Remove Shit-margin for Boxes */
+/* Remove default box margin */
 .widget-inline-hbox { margin: 2px 0; } /* 2px - default ipywidgets margin */
 
-/* Fix Vertical Centering */
+/* Fix vertical centering */
 .widget-hbox,
 .jupyter-widgets label {
     display: flex;
     align-items: center;
 }
 
-/* Fix Checkbox Width */
+/* Fix checkbox width */
 .widget-checkbox {
     width: auto;
     display: inline-flex;
@@ -79,7 +82,8 @@ hr {
 }
 
 
-/* === ScrollBar (For Selection Area) === */
+/* === Scrollbar (Selection) === */
+
 .widget-select-multiple select::-webkit-scrollbar {
     width: var(--aw-scrollbar-width);
     height: var(--aw-scrollbar-width);
@@ -97,7 +101,7 @@ hr {
     background: var(--aw-scrollbar-track-bg) !important;
     border-radius: 0 8px 8px 0;
 }
-/* FireFox Styles */
+/* Firefox */
 @-moz-document url-prefix() {
     .widget-select-multiple select {
         scrollbar-width: auto;
@@ -105,7 +109,8 @@ hr {
     }
 }
 
-/* Text FONTs */
+
+/* === Fonts & Text === */
 
 .instruction,
 .selection-panel select,
@@ -118,7 +123,7 @@ hr {
 }
 
 
-/* Container Style */
+/* === Containers === */
 
 .mainCleaner-container {
     flex: 1;
@@ -155,7 +160,7 @@ hr {
 }
 
 
-/* Selection-Output Area Styles */
+/* === Selection & Output === */
 
 /* Layout for selection and output areas */
 .selection_output-layout {
@@ -201,36 +206,31 @@ hr {
     background-color: var(--aw-input-bg-hover);
 }
 
-.output-panel {
-    flex: 1;
-    margin: 0 !important;
-    padding: 10px;
+.output-panel,
+.storage_info {
     background-color: var(--aw-input-bg);
     border: var(--aw-input-border);
     border-radius: 10px;
     box-shadow: var(--aw-input-shadow);
+}
+.output-panel {
+    flex: 1;
+    margin: 0 !important;
+    padding: 10px;
     overflow-y: auto;
 }
 .output-message {
     color: var(--aw-color-text-primary);
     font-size: var(--aw-text-size);
-    user-select: none;
-    cursor: default;
 }
 
 .storage_info {
     font-size: var(--aw-text-size);
     padding: 5px 20px;
-    background-color: var(--aw-input-bg);
-    border: var(--aw-input-border);
-    border-radius: 10px;
-    box-shadow: var(--aw-input-shadow);
-    user-select: none;
-    cursor: default;
 }
 
 
-/* Button style */
+/* === Buttons === */
 
 .lower_buttons_box {
     gap: 5px;
@@ -272,7 +272,7 @@ hr {
 }
 
 
-/* Slider Checkbox Style (GDrive Toggle) */
+/* === Slider Checkbox (GDrive) === */
 
 .widget-checkbox.gdrive-mode {
     margin-left: 10px;
@@ -321,7 +321,7 @@ hr {
 }
 
 
-/* Animation of Elements */
+/* === Animations === */
 
 .mainCleaner-container { animation: slideInTopBlur 0.7s forwards; }
 .mainCleaner-container.hide { animation: slideOutTopBlur 0.3s forwards; }

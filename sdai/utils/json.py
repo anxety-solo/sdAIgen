@@ -4,9 +4,10 @@ import logging
 import json
 import os
 
-from typing import Any, Callable
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
+from typing import Any
 
 
 # ~~ Logger Configuration ~~
@@ -22,7 +23,7 @@ class CustomFormatter(logging.Formatter):
         'RESET':         '\033[0m'
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         color = self.colors.get(record.levelno, '')
         return f"{color}{super().format(record)}{self.colors['RESET']}"
 
@@ -35,11 +36,11 @@ logger.propagate = False
 
 # ~~ Argument Validation Decorator ~~
 
-def validate_args(min_args: int, max_args: int):
+def validate_args(min_args: int, max_args: int) -> Callable[..., Any]:
     """Validate argument count for variadic functions"""
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             arg_count = len(args) + len(kwargs)
             if not (min_args <= arg_count <= max_args):
                 expected = f"exactly {min_args}" if min_args == max_args else f"{min_args}-{max_args}"
@@ -112,7 +113,7 @@ def _delete_nested(data: dict[str, Any], keys: list[str], _: Any = None):
         del current[keys[-1]]
 
 
-def _load(filepath: str | Path, key: str):
+def _load(filepath: str | Path, key: str) -> tuple[dict[str, Any], list[str]]:
     """Load file data and parsed key segments"""
     return _read_json(filepath), parse_key(key)
 
@@ -141,7 +142,7 @@ def _write_json(filepath: str | Path, data: dict[str, Any]):
         logger.error(f"Write error ({filepath}): {str(exc)}")
 
 
-def _mutate(filepath: str | Path, key: str, value: Any, action: Callable):
+def _mutate(filepath: str | Path, key: str, value: Any, action: Callable[..., Any]):
     """Load JSON, apply action at parsed path, then write back"""
     data, keys = _load(filepath, key)
     if not keys:
@@ -154,7 +155,7 @@ def _mutate(filepath: str | Path, key: str, value: Any, action: Callable):
 # ~~ Main Functions ~~
 
 @validate_args(1, 3)
-def read(filepath, key=None, default=None) -> Any:
+def read(filepath: str | Path, key: str | None = None, default: Any = None) -> Any:
     """Read value from JSON file by optional dot-separated key path"""
     data = _read_json(filepath)
     if key is None:
@@ -169,25 +170,36 @@ def read(filepath, key=None, default=None) -> Any:
 
 
 @validate_args(3, 3)
-def save(filepath, key, value):
+def save(filepath: str | Path, key: str, value: Any):
     """Save value, creating full path in JSON file"""
     _mutate(filepath, key, value, _set_nested_value)
 
 
 @validate_args(3, 3)
-def update(filepath, key, value):
+def update(filepath: str | Path, key: str, value: Any):
     """Update existing path, preserving surrounding data"""
     _mutate(filepath, key, value, _update_nested)
 
 
 @validate_args(2, 2)
-def delete_key(filepath, key):
+def delete_key(filepath: str | Path, key: str):
     """Delete key from JSON file"""
     _mutate(filepath, key, None, _delete_nested)
 
 
 @validate_args(2, 3)
-def key_exists(filepath, key, value=None) -> bool:
+def key_exists(filepath: str | Path, key: str, value: Any = None) -> bool:
     """Check key existence, optionally verifying value match"""
     result = read(filepath, key)
     return result == value if value is not None else result is not None
+
+
+# ~~ Settings Loading ~~
+
+def load_settings(path: str | Path) -> dict:
+    """Load settings from a JSON file"""
+    return {
+        **(read(path, 'ENVIRONMENT') or {}),
+        **(read(path, 'WIDGETS') or {}),
+        **(read(path, 'WEBUI') or {})
+    }

@@ -10,22 +10,23 @@ import re
 import os
 
 from IPython.display import clear_output
+from collections.abc import Callable
 from urllib.parse import urlparse
 from IPython.utils import capture
 from IPython import get_ipython
 from datetime import timedelta
-from typing import Callable
 from pathlib import Path
+from typing import Any
 
 from os import chdir as CD
 
 # === SDAIGEN ===
-from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, HF_REPO_URL, COL
+from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, HF_REPO_URL, GD_BASE, GD_FILES, GD_OUTPUTS, GD_CONFIGS, COL
 from sdai.utils.webui import handle_setup_timer, find_model_by_partial_name, _remove_path
 from sdai.webui_meta import DEFAULT_VENV, WEBUIS, meta, build_urls
+from sdai.utils.json import key_exists, load_settings, read, save
 from sdai.services.manager import download, clone, _normalize_url
 from sdai.api.civitai import CIVITAI_DOMAINS, CivitaiAPI
-from sdai.utils.json import read, save, key_exists
 from sdai.models import get_category
 from sdai.translations import tr
 
@@ -47,22 +48,13 @@ GDRIVE_LOG = '-l' in sys.argv or '--gdrive-log' in sys.argv
 
 # ~~ LOADING SETTINGS ~~
 
-def load_settings(path: str | Path) -> dict:
-    """Load settings from a JSON file"""
-    return {
-        **(read(path, 'ENVIRONMENT') or {}),
-        **(read(path, 'WIDGETS') or {}),
-        **(read(path, 'WEBUI') or {})
-    }
-
-
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
 
 # ~~ LIBRARIES | VENV ~~
 
-def install_dependencies(commands: list):
+def install_dependencies(commands: list[str]):
     """Run a list of installation commands"""
     for cmd in commands:
         try:
@@ -71,7 +63,7 @@ def install_dependencies(commands: list):
             pass
 
 
-def install_packages(install_lib: dict):
+def install_packages(install_lib: dict[str, str]):
     """Install packages from the provided library dictionary"""
     for index, (package, install_cmd) in enumerate(install_lib.items(), start=1):
         print(f"\r[{index}/{len(install_lib)}] {COL.G}>>{COL.X} {tr('lib_installing', package=f'{COL.Y}{package}{COL.X}')}..." + ' ' * 35, end='')
@@ -206,7 +198,7 @@ def _setup_git_identity():
     ipySys('git config --global user.name "Your Name"')
 
 
-if update_scope != 'none':
+if update_scope != 'none' and not clone_ui:
     do_webui = update_scope.lower() in ('ui', 'all')
     do_ext   = update_scope.lower() in ('extensions', 'all')
 
@@ -292,11 +284,6 @@ if commit_hash or branch != 'none':
 
 
 # ~~ GOOGLE DRIVE MOUNTING (Colab only) ~~
-
-GD_BASE    = '/content/drive/MyDrive/sdAIgen'
-GD_FILES   = f"{GD_BASE}/files"
-GD_OUTPUTS = f"{GD_BASE}/outputs"
-GD_CONFIGS = f"{GD_BASE}/configs"
 
 # Read gdrive settings
 _gdrive_cfg  = read(SETTINGS_PATH, 'GDRIVE', {})
@@ -521,13 +508,13 @@ def _clear_category_symlinks(config_list: list, category: str, restore=False, lo
 def remove_all_symlinks(ui='A1111', restore_configs=False, log=False) -> int:
     """Remove ALL symlinks (every category)"""
     config  = build_symlink_config(ui)
-    removed = _clear_category_symlinks(config['files'],    'files',   restore=False, log=log)
+    removed = _clear_category_symlinks(config['files'],    'files',   log=log)
     removed += _clear_category_symlinks(config['outputs'], 'outputs', restore=restore_configs, log=log)
     removed += _clear_category_symlinks(config['configs'], 'configs', restore=restore_configs, log=log)
     return removed
 
 
-def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outputs=False, sync_configs=False):
+def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, sync_outputs=False, sync_configs=False):
     """Mount/unmount GDrive and sync symlinks for selected categories.
 
     On mount (or re-run with drive already mounted):
@@ -537,7 +524,7 @@ def handle_gdrive(mount_flag, ui='A1111', log=False, sync_files=False, sync_outp
     """
     from google.colab import drive
 
-    cleanup_ipynb_checkpoints(GD_BASE)  # Remove Jupyter shits
+    cleanup_ipynb_checkpoints(GD_BASE)  # Remove Jupyter checkpoints
     drive_mounted = os.path.exists('/content/drive/MyDrive')
 
     # Unmount logic
@@ -639,8 +626,8 @@ handle_gdrive(
 
 # ~~ DOWNLOADING ~~
 
-def handle_errors(func: Callable) -> Callable:
-    def wrapper(*args, **kwargs):
+def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except Exception as exc:
@@ -654,7 +641,6 @@ model_data = get_category(settings.get('model_type', 'XL'))
 model_list, vae_list, controlnet_list = (model_data.get(k, {}) for k in ('model', 'vae', 'controlnet'))
 
 # --- Downloading models ---
-# oh~ Hey! If you're freaked out by that code too, don't worry, me too!
 print(tr('dl_start'), end='')
 
 extension_repo = []
@@ -743,8 +729,11 @@ def run_downloads(line: str):
             except Exception as exc:
                 print(f"\n> Download error: {exc}")
         else:
-            url, dst_dir, file_name = url.split()
-            manual_download(url, dst_dir, file_name)
+            parts = url.split(maxsplit=2)
+            if len(parts) < 2:
+                print(f"\n> Skipping malformed download link: {url}")
+            else:
+                manual_download(*parts)
 
 
 @handle_errors
@@ -759,7 +748,6 @@ def manual_download(url: str, dst_dir: str, file_name: str | None = None):
         url, file_name = data.download_url, data.file_name          # Download_URL, File_Name
         image_url = data.image_url                                  # Image_URL
 
-        # Preview is downloaded automatically via [CivitAI-Extension]
         # Download preview images (only for ComfyUI)
         if UI_NAME == 'ComfyUI' and image_url and data.image_name:
             download(f"{image_url} {dst_dir} {data.image_name}")
@@ -768,7 +756,7 @@ def manual_download(url: str, dst_dir: str, file_name: str | None = None):
     format_output(url.split('?')[0], dst_dir, file_name, image_url)
 
     # Downloading Files | With Logs and Auto Unpacking ZIP Archives
-    download(f"{url} {dst_dir} {file_name or ''}", verbose=True, debug=False, unzip=True)
+    download(f"{url} {dst_dir} {file_name or ''}", verbose=True, unzip=True)
 
 
 # ~~ SUBMODELS ~~
@@ -818,7 +806,7 @@ def handle_submodels(selection: str, num_selection: str, model_dict: dict, dst_d
     keys = list(model_dict)
     numbered = {f"{i}. {k}": v for i, (k, v) in enumerate(model_dict.items(), 1)}
 
-    def add_by_key(key):
+    def add_by_key(key: str):
         if key in model_dict:
             selected.extend(model_dict[key])
 
@@ -832,8 +820,7 @@ def handle_submodels(selection: str, num_selection: str, model_dict: dict, dst_d
 
         if num_selection:
             for num in _parse_selection_numbers(num_selection, len(keys)):
-                if 1 <= num <= len(keys):
-                    add_by_key(keys[num - 1])
+                add_by_key(keys[num - 1])
 
     # Deduplicate
     unique = {}
@@ -862,7 +849,7 @@ line = handle_submodels(controlnet, controlnet_num, controlnet_list, control_dir
 
 # ~~ FILE SOURCES ~~
 
-def _process_lines(lines: list) -> str:
+def _process_lines(lines: list[str]) -> str:
     """Processes text lines, extracts valid URLs with tags/filenames, and ensures uniqueness"""
     current_tag = None
     processed_entries = set()  # Store (tag, clean_url) to check uniqueness
@@ -899,10 +886,10 @@ def _process_lines(lines: list) -> str:
                 result_urls.append(formatted_url)
                 processed_entries.add(entry_key)
 
-    return ', '.join(result_urls) if result_urls else ''
+    return ', '.join(result_urls)
 
 
-def process_file_downloads(file_urls: list, additional_lines: str | None = None) -> str:
+def process_file_downloads(file_urls: list[str], additional_lines: str | None = None) -> str:
     """Reads URLs from files/HTTP sources"""
     lines = []
 
@@ -976,11 +963,11 @@ if UI_NAME == 'ComfyUI':
 
 # --- Copy dir from GDrive to extension_dir (if enabled) ---
 if gdrive_mount and sync_files:
-    gdrive_path = extension_dir / 'GDrive'
+    gdrive_path = EXTS_DIR / 'GDrive'
     if gdrive_path.is_dir():
         for folder in os.listdir(gdrive_path):
             src = gdrive_path / folder
-            dst = extension_dir / folder
+            dst = EXTS_DIR / folder
             if src.is_dir():
                 shutil.copytree(src, dst, dirs_exist_ok=True)
         _remove_path(gdrive_path)

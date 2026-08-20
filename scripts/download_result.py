@@ -3,10 +3,15 @@
 import os
 import re
 
+import ipywidgets as widgets
+
+from collections.abc import Callable
+from pathlib import Path
+
 # === SDAIGEN ===
 from sdai.constants import CSS_DIR_PATH, SETTINGS_PATH
 from sdai.factory import WidgetFactory
-from sdai.utils.json import read
+from sdai.utils.json import load_settings, read
 
 
 # ~~ CONSTANTS ~~
@@ -15,18 +20,10 @@ UI_NAME         = read(SETTINGS_PATH, 'WEBUI.current')
 CONTAINER_WIDTH = '1200px'
 HEADER_DL       = 'DOWNLOAD RESULTS'
 VERSION         = 'v1.5'
+WIDGET_CSS      = CSS_DIR_PATH / 'download-result.css'
 
 
-# ~~ SETTINGS ~~
-
-def load_settings(path):
-    """Load settings from a JSON file"""
-    return {
-        **read(path, 'ENVIRONMENT'),
-        **read(path, 'WIDGETS'),
-        **read(path, 'WEBUI'),
-    }
-
+# ~~ LOADING SETTINGS ~~
 
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
@@ -40,7 +37,7 @@ HR = factory.create_html('<hr>')
 
 # ~~ FILE UTILS ~~
 
-def get_files(directory, extensions, excluded_dirs=None, filter_func=None):
+def get_files(directory: str | Path, extensions: str | tuple[str, ...], excluded_dirs: list[str] | None = None, filter_func: Callable[[str], bool] | None = None) -> list[str]:
     """Return files matching extensions, with optional exclusion and filtering"""
     if not os.path.isdir(directory):
         return []
@@ -58,7 +55,7 @@ def get_files(directory, extensions, excluded_dirs=None, filter_func=None):
     return files
 
 
-def get_folders(directory, exclude_hidden=True):
+def get_folders(directory: str | Path, exclude_hidden=True) -> list[str]:
     """List folders, flattening 'GDrive' into its subfolders"""
     if not os.path.isdir(directory):
         return []
@@ -78,15 +75,14 @@ def get_folders(directory, exclude_hidden=True):
     return folders
 
 
-def controlnet_filter(filename):
-    """Extract the model name from a ControlNet filename"""
-    match = re.match(r'^[^_]*_[^_]*_[^_]*_(.*)_fp16\.safetensors', filename)
-    return match.group(1) if match else filename
+def controlnet_filter(filename: str) -> bool:
+    """Match ControlNet filenames with the standard naming pattern"""
+    return bool(re.match(r'^[^_]*_[^_]*_[^_]*_(.*)_fp16\.safetensors', filename))
 
 
 # ~~ SECTIONS ~~
 
-def create_section(title, items, is_grid=False):
+def create_section(title: str, items: list[str], is_grid=False) -> widgets.Widget:
     """Create a section with a title and its items"""
     item_widgets = [
         factory.create_html(f'<div class="output-item">{item}</div>') for item in items
@@ -99,17 +95,17 @@ def create_section(title, items, is_grid=False):
     return factory.create_vbox([header, content], class_names=['output-section'])
 
 
-def create_sections():
+def create_sections() -> list[widgets.Widget]:
     """Create all sections, skipping empty ones"""
     ext_type = 'Nodes' if UI_NAME == 'ComfyUI' else 'Extensions'
 
     sections = [
-        # (Title, Items, is_grid)
+        # (Title, Items)
         ('Models',      get_files(model_dir, ('.safetensors', '.ckpt'))),
         ('VAEs',        get_files(vae_dir, ('.safetensors', '.vae'))),
         ('Embeddings',  get_files(embed_dir, ('.safetensors', '.pt'), excluded_dirs=['SD', 'XL'])),
         ('LoRAs',       get_files(lora_dir, '.safetensors')),
-        (ext_type,      get_folders(extension_dir), True),
+        (ext_type,      get_folders(extension_dir)),
         ('ADetailers',  get_files(adetailer_dir, ('.safetensors', '.pt'))),
         ('Clips',       get_files(clip_dir, '.safetensors')),
         ('Unets',       get_files(unet_dir, ('.safetensors', '.gguf'))),
@@ -119,12 +115,16 @@ def create_sections():
         ('ControlNets', get_files(control_dir, '.safetensors', filter_func=controlnet_filter)),
     ]
 
-    return [create_section(*section) for section in sections if section[1]]
+    return [
+        create_section(title, items, is_grid=(title == ext_type))
+        for title, items in sections
+        if items
+    ]
 
 
 # ~~ DISPLAY ~~
 
-factory.load_css(CSS_DIR_PATH / 'download-result.css')
+factory.load_css(WIDGET_CSS)
 
 header = factory.create_html(
     f'''

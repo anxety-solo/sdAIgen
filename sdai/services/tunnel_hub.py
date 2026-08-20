@@ -16,6 +16,7 @@ import os
 import re
 
 from threading import Event, Lock, Thread
+from types import TracebackType
 from typing import Callable
 from pathlib import Path
 
@@ -27,19 +28,19 @@ StrOrPath = str | Path
 StrOrRegexPattern = str | re.Pattern
 ListHandlersOrBool = list[logging.Handler] | bool
 
-FILE_FORMAT = "[%(asctime)s] [%(name)s]: %(message)s"
+FILE_FORMAT   = "[%(asctime)s] [%(name)s]: %(message)s"
 TUNNEL_FORMAT = "[%(name)s]: %(message)s"
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+DATE_FORMAT   = "%Y-%m-%d %H:%M:%S"
 
 
 class ColoredFormatter(logging.Formatter):
     """Colored formatter for console output"""
     COLORS = {
-        logging.DEBUG: '\033[36m',        # Cyan
-        logging.INFO: '\033[32m',         # Green
-        logging.WARNING: '\033[33m',      # Yellow
-        logging.ERROR: '\033[31m',        # Red
-        logging.CRITICAL: '\033[31;1m',   # Bold Red
+        logging.DEBUG:    '\033[36m',   # Cyan
+        logging.INFO:     '\033[32m',   # Green
+        logging.WARNING:  '\033[33m',   # Yellow
+        logging.ERROR:    '\033[31m',   # Red
+        logging.CRITICAL: '\033[31;1m', # Bold Red
     }
     RESET = '\033[0m'
 
@@ -67,8 +68,8 @@ class Tunnel:
         debug: bool = False,
         timeout: int = 30,
         propagate: bool = False,
-        log_handlers: ListHandlersOrBool = None,
-        log_dir: StrOrPath = None,
+        log_handlers: ListHandlersOrBool | None = None,
+        log_dir: StrOrPath | None = None,
         callback: Callable[[list[tuple[str, str | None, str | None]]], None] | None = None,
     ):
         """
@@ -89,21 +90,21 @@ class Tunnel:
         self.debug = debug
         self.timeout = timeout
         self.log_handlers = log_handlers or []
-        self.log_dir = Path(log_dir) if log_dir else Path.home() / 'tunnel_logs'
+        self.log_dir= Path(log_dir) if log_dir else Path.home() / 'tunnel_logs'
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.callback = callback
 
         self.WINDOWS = os.name == 'nt'
-        self.logger = self._setup_logger(propagate)
+        self.logger  = self._setup_logger(propagate)
 
-        self.urls: list[tuple[str, str | None, str | None]] = []
-        self.urls_lock = Lock()
-        self.jobs: list[Thread] = []
-        self.processes: list[subprocess.Popen] = []
+        self.urls:        list[tuple[str, str | None, str | None]] = []
+        self.urls_lock    = Lock()
+        self.jobs:        list[Thread] = []
+        self.processes:   list[subprocess.Popen] = []
         self.tunnel_list: list[dict] = []
-        self.stop_event = Event()
-        self.printed = Event()
-        self._is_running = False
+        self.stop_event   = Event()
+        self.printed      = Event()
+        self._is_running  = False
 
     def _setup_logger(self, propagate: bool) -> logging.Logger:
         """Setup logger with colored console and file output"""
@@ -131,7 +132,7 @@ class Tunnel:
 
         return logger
 
-    def _is_command_available(self, command: str) -> bool:
+    def is_command_available(self, command: str) -> bool:
         """Check if command is available in system PATH"""
         cmd_name = command.split()[0]
         return any(
@@ -145,11 +146,11 @@ class Tunnel:
         command: str,
         pattern: StrOrRegexPattern,
         name: str,
-        note: str = None,
+        note: str | None = None,
         callback: Callable[[str, str | None, str | None], None] | None = None,
     ) -> None:
         """Add a tunnel configuration"""
-        if self.check_command_available and not self._is_command_available(command):
+        if self.check_command_available and not self.is_command_available(command):
             self.logger.warning(f"Skipping {name} - {command.split()[0]} not installed")
             return
 
@@ -212,7 +213,7 @@ class Tunnel:
         self.printed.clear()
         self._is_running = False
 
-    def __enter__(self):
+    def __enter__(self) -> "Tunnel":
         if self._is_running:
             raise RuntimeError('Tunnel is already running by another method')
         if not self.tunnel_list:
@@ -223,7 +224,7 @@ class Tunnel:
         self.jobs.append(print_job)
 
         for tunnel in self.tunnel_list:
-            cmd = tunnel['command'].format(port=self.port)
+            cmd    = tunnel['command'].format(port=self.port)
             thread = Thread(target=self._run, args=(cmd, tunnel['name']), daemon=True)
             thread.start()
             self.jobs.append(thread)
@@ -231,7 +232,7 @@ class Tunnel:
         self._is_running = True
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, exc_tb: TracebackType | None):
         self.stop()
 
     @staticmethod
@@ -246,10 +247,10 @@ class Tunnel:
 
     @staticmethod
     def wait_for_condition(
-        condition: Callable[[], bool], *, interval: int = 1, timeout: int = None
+        condition: Callable[[], bool], *, interval: int = 1, timeout: int | None = None
     ) -> bool:
         """Wait for condition to be true, returning False on timeout"""
-        start = time.time()
+        start  = time.time()
         checks = 0
 
         if timeout is not None:

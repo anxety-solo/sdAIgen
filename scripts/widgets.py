@@ -23,6 +23,9 @@ ENV_NAME = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 
 CONTAINERS_WIDTH = '1080px'
 
+WIDGET_CSS = CSS_DIR_PATH / 'main-widgets.css'
+WIDGET_JS  = JS_DIR_PATH / 'main-widgets.js'
+
 
 # ~~ HELPERS ~~
 
@@ -31,17 +34,17 @@ def numbered(data: dict) -> dict:
     return {f"{i}. {k}": v for i, (k, v) in enumerate(data.items(), 1)}
 
 
-def options_from(data: dict, prefixes: list) -> list:
+def options_from(data: dict, prefixes: list[str]) -> list[str]:
     """Build dropdown options from a models dict"""
     return prefixes + list(numbered(data))
 
 
-def get_widget(key: str) -> widgets.Widget:
+def get_widget(key: str):
     """Get a widget by its settings key"""
     return globals()[f"{key}_widget"]
 
 
-def create_expandable_button(text: str, url: str) -> widgets.Widget:
+def create_expandable_button(text: str, url: str):
     """Create an anchor button widget"""
     return factory.create_html(f'<a href="{url}" target="_blank" class="button button_api"><span class="icon"><</span><span class="text">{text}</span></a>')
 
@@ -360,8 +363,8 @@ export_button.on_click(export_settings)
 
 # ~~ DISPLAY / SETTINGS ~~
 
-factory.load_css(CSS_DIR_PATH / 'main-widgets.css') # load CSS (widgets)
-factory.load_js(JS_DIR_PATH / 'main-widgets.js')    # load JS (widgets)
+factory.load_css(WIDGET_CSS)
+factory.load_js(WIDGET_JS)
 
 # Display Sections
 model_widgets = [model_header, model_widget, model_num_widget, model_type_widget]
@@ -433,7 +436,7 @@ display(Javascript('setTimeout(checkCivitaiKey, 2500)'))
 
 # ~~ CALLBACK FUNCTION ~~
 
-def update_model_type(change: dict, widget):
+def update_model_type(change: dict, widget: widgets.Widget):
     """Switch Model/Vae/ControlNet options"""
     model_type = change['new']
     data = get_category(model_type)
@@ -463,7 +466,7 @@ def update_model_type(change: dict, widget):
     controlnet_widget.value = pick(d_cnet, cnet_dict, d_cnet)
 
 
-def update_clone_ui(change: dict, widget):
+def update_clone_ui(change: dict, widget: widgets.Widget):
     """Disable the Update dropdown when clone mode is enabled"""
     if change['new']:
         update_scope_widget.add_class('_disabled')
@@ -471,7 +474,7 @@ def update_clone_ui(change: dict, widget):
         update_scope_widget.remove_class('_disabled')
 
 
-def update_selected_webui(change: dict, widget):
+def update_selected_webui(change: dict, widget: widgets.Widget):
     """Update widgets when the WebUI selection changes"""
     ui = change['new']
     _m = meta(ui)
@@ -564,7 +567,7 @@ def load_settings():
                 get_widget(key).value = gdrive_data[key]
 
 
-def save_data(button):
+def save_data(button: widgets.Button):
     """Handle save button click"""
     save_settings()
     all_widgets = [

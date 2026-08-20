@@ -23,8 +23,8 @@ def update_current_webui(current_ui: str):
         save(SETTINGS_PATH, 'WEBUI.current', current_ui)
 
     _m = meta(current_ui)
-    save(SETTINGS_PATH, 'WEBUI.python_version', _m['python'])
-    save(SETTINGS_PATH, 'WEBUI.webui_path', str(HOME_PATH / current_ui))
+    save(SETTINGS_PATH,   'WEBUI.python_version', _m['python'])
+    save(SETTINGS_PATH,   'WEBUI.webui_path', str(HOME_PATH / current_ui))
     update(SETTINGS_PATH, 'WEBUI', {k: str(v) for k, v in build_paths(current_ui).items()})
 
     _update_webui_symlink(current_ui)

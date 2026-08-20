@@ -37,7 +37,7 @@ SKIP_INSTALLING_UI = '-s' in sys.argv or '--skip-installing-ui' in sys.argv
 
 # ~~ CONFIGURATION ~~
 
-def get_extensions_list() -> list:
+def get_extensions_list() -> list[str]:
     """Fetch the list of extensions from the config file"""
     try:
         resp = requests.get(build_extensions_url(UI_NAME, GITHUB, BRANCH), timeout=30)

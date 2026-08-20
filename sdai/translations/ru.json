@@ -125,5 +125,12 @@
     "unavailable_header": ">> Недоступные Туннели:",
     "cmd_not_found": "- {name}: Команда не найдена в PATH",
     "selected_tagger": ">> 🏷️ Выбранный Таггер: {tagger} ({tag_file})",
-    "zrok_disabled": "🔐 Zrok2 туннель отключён :3"
+    "zrok_disabled": "🔐 Zrok2 туннель отключён :3",
+
+    "cleaner_instruction": "Используйте <span style=\"color: #B2B2B2;\">ctrl</span> или <span style=\"color: #B2B2B2;\">shift</span> для множественного выбора.",
+    "cleaner_execute_btn": "Выполнить Очистку",
+    "cleaner_hide_btn": "Скрыть Виджет",
+    "cleaner_storage": "<div class=\"storage_info\">Всего: {total:.2f} ГБ <span style=\"color: #555\">|</span> Занято: {used:.2f} ГБ <span style=\"color: #555\">|</span> Свободно: {free:.2f} ГБ</div>",
+    "cleaner_deleted": "Удалено {count} {dir_name}",
+    "cleaner_delete_error": "Ошибка удаления {file_path}: {exc}"
 }

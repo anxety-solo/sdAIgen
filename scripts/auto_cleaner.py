@@ -1,116 +1,145 @@
 """ Auto Cleaner Widget | by ANXETY """
 
 import psutil
-import json
 import os
 
 import ipywidgets as widgets
 
-from IPython.display import display, HTML
+from IPython.display import HTML, display
 from pathlib import Path
 
 # === SDAIGEN ===
-from sdai.constants import ASSETS_PATH, SETTINGS_PATH
+from sdai.constants import CSS_DIR_PATH, SETTINGS_PATH, GD_BASE, GD_FILES, GD_OUTPUTS
 from sdai.factory import WidgetFactory
-from sdai.utils.json import read
+from sdai.utils.json import load_settings, read
+from sdai.translations import tr
 
 
-CSS_PATH = ASSETS_PATH / 'css' / 'auto-cleaner.css'
+# ~~ CONSTANTS ~~
+
+WIDGET_CSS = CSS_DIR_PATH / 'auto-cleaner.css'
 CONTAINER_WIDTH = '1080px'
 
-# File handling rules
+GB = 1024 ** 3
+
 TRASH_EXTENSIONS = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
 
-# Google Drive base path
-GD_BASE = '/content/drive/MyDrive/sdAIgen'
 
+# ~~ LOADING SETTINGS ~~
 
-# ~~ Loading Settings ~~
-
-def load_settings(path):
-    """Load settings from a JSON file"""
-    try:
-        return {
-            **read(path, 'ENVIRONMENT'),
-            **read(path, 'WIDGETS'),
-            **read(path, 'WEBUI')
-        }
-    except (json.JSONDecodeError, IOError) as exc:
-        print(f"Error loading settings: {exc}")
-        return {}
-
-
-# Load settings
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
+UI_NAME      = read(SETTINGS_PATH, 'WEBUI.current')
+ENV_NAME     = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+mount_gdrive = read(SETTINGS_PATH, 'GDRIVE.mount', False)
 
-# ~~ Core Logic ~~
+show_gdrive_toggle = ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE)
 
-def should_delete_file(filename, directory_type):
-    """
-    Determine if file should be deleted and counted.
-    Returns: (should_delete: bool, should_count: bool)
-    """
-    # Skip trash files
-    if any(filename.endswith(ext) for ext in TRASH_EXTENSIONS):
+
+# ~~ DIRECTORY MAPPING ~~
+
+def gdrive_path(name: str, gd_folder: str, ui: str) -> str:
+    """Return the GDrive path for a directory"""
+    return f"{GD_OUTPUTS}/{ui}" if name == 'Output Images' else f"{GD_FILES}/{gd_folder}"
+
+
+def build_directories(ui: str) -> dict[str, dict[bool, str]]:
+    """Build directory mapping: name -> {False: local, True: gdrive}"""
+    gdrive_map = {
+        # Display Name | GD folder | Local dir
+        'Models':            ('Checkpoints',  model_dir),
+        'VAE':               ('VAE',          vae_dir),
+        'LoRA':              ('Lora',         lora_dir),
+        'ControlNet Models': ('ControlNet',   control_dir),
+        'CLIP Models':       ('Clip',         clip_dir),
+        'UNET Models':       ('Unet',         unet_dir),
+        'Vision Models':     ('Vision',       vision_dir),
+        'Encoder Models':    ('Encoder',      encoder_dir),
+        'Diffusion Models':  ('Diffusion',    diffusion_dir),
+        'Output Images':     ('Output',       output_dir),
+    }
+
+    return {
+        name: {
+            False: local,
+            True:  gdrive_path(name, gd, ui) if show_gdrive_toggle else local,
+        }
+        for name, (gd, local) in gdrive_map.items()
+    }
+
+
+DIRECTORIES = build_directories(UI_NAME)
+
+
+# ~~ CORE LOGIC ~~
+
+def should_delete_file(filename: str, directory_type: str) -> tuple[bool, bool]:
+    """Return (should_delete, should_count) flags for a file"""
+    if filename.endswith(tuple(TRASH_EXTENSIONS)):
         return False, False
 
-    is_image = any(filename.endswith(ext) for ext in IMAGE_EXTENSIONS)
+    is_image = filename.endswith(tuple(IMAGE_EXTENSIONS))
 
-    # Output Images: delete and count everything (except trash)
     if directory_type == 'Output Images':
         return True, True
-
-    # Other directories: delete images but DON'T count them
     if is_image:
         return True, False
 
-    return ('.' in filename), ('.' in filename)  # Delete and count regular files
+    has_dot = '.' in filename
+    return has_dot, has_dot
 
 
-def clean_directory(directory, directory_type):
-    """Clean directory and return count of deleted files"""
+def clean_directory(directory: str | Path, directory_type: str) -> int:
+    """Clean directory and return the number of deleted files"""
     deleted_count = 0
 
     for root, _, files in os.walk(directory):
         for file in files:
             should_delete, should_count = should_delete_file(file, directory_type)
+            if not should_delete:
+                continue
 
-            if should_delete:
-                file_path = os.path.join(root, file)
-                try:
-                    os.remove(file_path)
-                    if should_count:
-                        deleted_count += 1
-                except Exception as exc:
-                    print(f"Error deleting {file_path}: {exc}")
+            file_path = os.path.join(root, file)
+            try:
+                os.remove(file_path)
+                deleted_count += should_count
+            except Exception as exc:
+                print(tr('cleaner_delete_error', file_path=file_path, exc=exc))
 
     return deleted_count
 
 
-def get_disk_usage():
+def get_disk_usage() -> dict[str, float]:
     """Get disk usage statistics in GB"""
-    disk = psutil.disk_usage(os.getcwd())
+    usage = psutil.disk_usage(os.getcwd())
     return {
-        'total': disk.total / (1024 ** 3),
-        'used':  disk.used / (1024 ** 3),
-        'free':  disk.free / (1024 ** 3)
+        'total': usage.total / GB,
+        'used':  usage.used / GB,
+        'free':  usage.free / GB,
     }
 
 
+def storage_html(stats: dict[str, float] | None = None) -> str:
+    """Return the storage info HTML block"""
+    stats = stats or get_disk_usage()
+    return tr(
+        'cleaner_storage',
+        total=stats['total'],
+        used=stats['used'],
+        free=stats['free']
+    )
+
+
 def update_storage_display():
-    """Update storage information widget"""
-    stats = get_disk_usage()
-    storage_info.value = f'''
-    <div class="storage_info">Total storage: {stats["total"]:.2f} GB <span style="color: #555">|</span> Used: {stats["used"]:.2f} GB <span style="color: #555">|</span> Free: {stats["free"]:.2f} GB</div>
-    '''
+    """Update the storage info widget"""
+    storage_info.value = storage_html()
 
 
-# ~~ Event Handlers ~~
+# ~~ EVENT HANDLERS ~~
 
-def on_execute_click(_):
+def on_execute_click(_: widgets.Button):
     """Handle execute button click"""
     is_gdrive_mode = gdrive_mode_widget.value if show_gdrive_toggle else False
 
@@ -123,68 +152,30 @@ def on_execute_click(_):
     output_widget.clear_output()
     with output_widget:
         for dir_name, count in results.items():
-            display(HTML(f'<p class="output-message">Deleted {count} {dir_name}</p>'))
+            display(HTML(f'<p class="output-message">{tr("cleaner_deleted", count=count, dir_name=dir_name)}</p>'))
 
     update_storage_display()
 
 
-def on_hide_click(_):
+def on_hide_click(_: widgets.Button):
     """Handle hide button click"""
     factory.close(main_container, class_names=['hide'], delay=0.5)
 
 
-def on_gdrive_mode_change(change):
+def on_gdrive_mode_change(change: dict):
     """Handle GDrive mode checkbox change"""
-    is_gdrive = change['new']
-    button_suffix = ' (GD)' if is_gdrive else ''
-    execute_button.description = f"Execute Cleaning{button_suffix}"
+    suffix = ' (GD)' if change['new'] else ''
+    execute_button.description = f"{tr('cleaner_execute_btn')}{suffix}"
 
 
-# ~~ UI Construction ~~
+# ~~ UI CONSTRUCTION ~~
 
-# Initialize the WidgetFactory
 factory = WidgetFactory()
-factory.load_css(CSS_PATH)
-HR = widgets.HTML('<hr>')
+HR = factory.create_html('<hr>')
 
-# Check GDrive toggle
-ENV_NAME           = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-mount_gdrive       = read(SETTINGS_PATH, 'GDRIVE.mount', False)
-show_gdrive_toggle = (ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE))
+factory.load_css(WIDGET_CSS)
 
-# Directory mapping - returns tuple (local_path, gdrive_path)
-def get_directory_paths():
-    """Build directory mapping with local and GDrive paths"""
-    gdrive_map = {
-        # Display Names | Name Dirs in GD | path to dir
-        'Models': ('Checkpoints', model_dir),
-        'VAE': ('VAE', vae_dir),
-        'LoRA': ('Lora', lora_dir),
-        'ControlNet Models': ('ControlNet', control_dir),
-        'CLIP Models': ('Clip', clip_dir),
-        'UNET Models': ('Unet', unet_dir),
-        'Vision Models': ('Vision', vision_dir),
-        'Encoder Models': ('Encoder', encoder_dir),
-        'Diffusion Models': ('Diffusion', diffusion_dir),
-        'Output Images': ('Output', output_dir),
-    }
-
-    return {
-        name: {
-            False: local,
-            True: os.path.join(GD_BASE, gd) if show_gdrive_toggle else local
-        }
-        for name, (gd, local) in gdrive_map.items()
-    }
-
-
-DIRECTORIES = get_directory_paths()
-
-# Create widgets
-instruction_label = factory.create_html(
-    '<span class="instruction">Use <span style="color: #B2B2B2;">ctrl</span> or '
-    '<span style="color: #B2B2B2;">shift</span> for multiple selections.</span>'
-)
+instruction_label = factory.create_html(tr('cleaner_instruction'))
 
 selection_widget = factory.create_select_multiple(
     list(DIRECTORIES.keys()),
@@ -196,16 +187,15 @@ selection_widget = factory.create_select_multiple(
 output_widget = widgets.Output().add_class('output-panel')
 
 execute_button = factory.create_button(
-    'Execute Cleaning',
+    tr('cleaner_execute_btn'),
     class_names=['cleaner_button', 'button_execute']
 )
 
 hide_button = factory.create_button(
-    'Hide Widget',
+    tr('cleaner_hide_btn'),
     class_names=['cleaner_button', 'button_hide']
 )
 
-# GDrive mode checkbox (only shown in Colab when GDrive is mounted)
 gdrive_mode_widget = factory.create_checkbox(
     'GDrive',
     False,
@@ -214,19 +204,13 @@ gdrive_mode_widget = factory.create_checkbox(
 if not show_gdrive_toggle:
     gdrive_mode_widget.layout.display = 'none'
 
-stats = get_disk_usage()
-storage_info = factory.create_html(
-    f'<div class="storage_info">Total storage: {stats["total"]:.2f} GB '
-    f'<span style="color: #555">|</span> Used: {stats["used"]:.2f} GB '
-    f'<span style="color: #555">|</span> Free: {stats["free"]:.2f} GB</div>'
-)
+storage_info = factory.create_html(storage_html())
 
 # Attach event handlers
 execute_button.on_click(on_execute_click)
 hide_button.on_click(on_hide_click)
 gdrive_mode_widget.observe(on_gdrive_mode_change, names='value')
 
-# Build layout
 buttons_box = factory.create_hbox(
     [execute_button, hide_button, gdrive_mode_widget],
     class_names=['lower_buttons_box']

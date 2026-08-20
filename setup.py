@@ -1,4 +1,4 @@
-""" Setup Project Manager | by ANXETY """
+""" Setup sdAIgen Project Manager | by ANXETY """
 
 import nest_asyncio
 import importlib
@@ -109,7 +109,7 @@ def parse_github(value: str) -> str:
     user  = parts[0]
     repo  = parts[1] if len(parts) > 1 else 'sdAIgen'
 
-    if not user or not repo:
+    if not (user or repo):
         raise ValueError('Invalid fork format. Expected user OR user/repo')
 
     return f"{user}/{repo}"
@@ -119,20 +119,17 @@ def parse_github(value: str) -> str:
 
 def _check_install_deps() -> bool:
     """Check that required CLI tools (aria2c, gdown) are available"""
-    from shutil import which
-    return all(which(tool) for tool in ('aria2c', 'gdown'))
+    return all(shutil.which(tool) for tool in ('aria2c', 'gdown'))
 
 
 def _get_start_timer() -> int:
     """Return the saved start timer or the current time"""
-    try:
-        if SETTINGS_PATH.exists():
-            settings = json.loads(SETTINGS_PATH.read_text(encoding='utf-8'))
-            return settings.get('ENVIRONMENT', {}).get('start_timer', int(time.time() - 5))
-    except (json.JSONDecodeError, OSError):
-        pass
+    current_time = int(time.time() - 5)
+    if SETTINGS_PATH.exists():
+        settings = json.loads(SETTINGS_PATH.read_text(encoding='utf-8'))
+        return settings.get('ENVIRONMENT', {}).get('start_timer', current_time)
 
-    return int(time.time() - 5)
+    return current_time
 
 
 def save_env_settings(data: dict):
@@ -187,7 +184,7 @@ def _build_download_list(github: str, branch: str) -> list[tuple[str, Path]]:
     ]
 
 
-async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -> tuple:
+async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -> tuple[bool, str, Path, str | None]:
     """Download a single file, returning success status with error info"""
     try:
         async with session.get(url) as resp:

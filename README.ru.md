@@ -22,14 +22,14 @@
   - Мультиплатформенный блокнот: **Google Colab, Kaggle.**
   - *Виджеты* для простого взаимодействия.
   - Предустановленные пользовательские: *Настройки* + *Стили* + [*UI Тема*](https://github.com/anxety-solo/anxety-theme)
-  - Скачивание превью для *моделей, LoRa и embedding* (CivitAi)
+  - Скачивание превью для *моделей, LoRa и embedding* (CivitAI)
   - Выбор WebUI между *A1111, ComfyUI, Forge, Classic/Neo (Forge), ReForge, SD-UX.*
   - _Эксклюзив для **Google Colab**_: Подключение к GDrive: *Файлы, Генерации, Настройки UI.*
 
 <details>
 <summary>📚 Установленные Расширения</summary>
 
-> ✔️ Установленно · ❌ Не установлено · 🔄 Интегрированная версия · <sup>`†`</sup> — Только в *Kaggle*
+> ✔️ Установлено · ❌ Не установлено · 🔄 Интегрированная версия · <sup>`†`</sup> — Только в *Kaggle*
 
 | Extension | A1111 | Forge | Classic | Neo | ReForge | SD-UX |
 |-----------|:-----:|:-----:|:-------:|:---:|:-------:|:-----:|
@@ -50,7 +50,7 @@
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |
 | [Tag-Complete](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| [Umi-AI-Wildcards](https://github.com/Tsukreya/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [Umi-AI-Wildcards](https://github.com/anxety-solo/Umi-AI-Wildcards) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Ultimate-Upscale](https://github.com/Coyote-A/ultimate-upscale-for-automatic1111) | ✔️ | ❌ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [WD14-Tagger](https://github.com/anxety-solo/sd-wd14-tagger) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 

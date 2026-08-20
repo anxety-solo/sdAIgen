@@ -43,7 +43,8 @@
     "hidden_tabs": [
         "Extras",
         "PNG Info",
-        "Train"
+        "Train",
+        "Checkpoint Merger"
     ],
     "extra_networks_default_multiplier": 0.85,
     "samples_filename_pattern": "M=[model_name]_D=[date]",

@@ -125,5 +125,12 @@
     "unavailable_header": ">> Unavailable Tunnels:",
     "cmd_not_found": "- {name}: Command not found in PATH",
     "selected_tagger": ">> 🏷️ Selected Tagger: {tagger} ({tag_file})",
-    "zrok_disabled": "🔐 Zrok2 tunnel disabled :3"
+    "zrok_disabled": "🔐 Zrok2 tunnel disabled :3",
+
+    "cleaner_instruction": "Use <span style=\"color: #B2B2B2;\">ctrl</span> or <span style=\"color: #B2B2B2;\">shift</span> for multiple selections.",
+    "cleaner_execute_btn": "Execute Cleaning",
+    "cleaner_hide_btn": "Hide Widget",
+    "cleaner_storage": "<div class=\"storage_info\">Total storage: {total:.2f} GB <span style=\"color: #555\">|</span> Used: {used:.2f} GB <span style=\"color: #555\">|</span> Free: {free:.2f} GB</div>",
+    "cleaner_deleted": "Deleted {count} {dir_name}",
+    "cleaner_delete_error": "Error deleting {file_path}: {exc}"
 }

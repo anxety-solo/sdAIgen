@@ -4,6 +4,7 @@ import datetime
 import argparse
 
 from IPython.display import display, HTML
+from pathlib import Path
 
 
 TRANSLATIONS = {
@@ -60,20 +61,20 @@ SEASON_CONFIG = {
 
 PARTICLE_STYLES = {
     'snowflake': 'border-radius: 50%; filter: blur(1px);',
-    'petal': 'border-radius: 50% 50% 0 50%; transform: rotate(45deg); filter: blur(0.5px);',
-    'stick': 'transform-origin: center bottom;',
-    'leaf': 'clip-path: polygon(50% 0%, 0% 100%, 100% 100%);'
+    'petal':     'border-radius: 50% 50% 0 50%; transform: rotate(45deg); filter: blur(0.5px);',
+    'stick':     'transform-origin: center bottom;',
+    'leaf':      'clip-path: polygon(50% 0%, 0% 100%, 100% 100%);'
 }
 
 PARTICLE_ANIMATIONS = {
     'snowflake': 'translate(-50%, -50%) scale(0) | translate(-50%, -50%) scale(1) | translate(-50%, 350%) scale(0.5)',
-    'petal': 'translate(-50%, -50%) scale(0) | translate(-50%, -50%) scale(1) rotate(180deg) | translate(-50%, 150%) scale(0.5) rotate(360deg)',
-    'stick': 'translate(-50%, -50%) rotate(0) scale(0.5) | translate(-50%, -50%) rotate(0deg) scale(1) | translate(-50%, 150%) rotate(180deg) scale(0.5)',
-    'leaf': 'translate(-50%, -50%) rotate(0deg) | translate(-50%, -50%) rotate(180deg) | translate(-50%, 150%) rotate(360deg)'
+    'petal':     'translate(-50%, -50%) scale(0) | translate(-50%, -50%) scale(1) rotate(180deg) | translate(-50%, 150%) scale(0.5) rotate(360deg)',
+    'stick':     'translate(-50%, -50%) rotate(0) scale(0.5) | translate(-50%, -50%) rotate(0deg) scale(1) | translate(-50%, 150%) rotate(180deg) scale(0.5)',
+    'leaf':      'translate(-50%, -50%) rotate(0deg) | translate(-50%, -50%) rotate(180deg) | translate(-50%, 150%) rotate(360deg)'
 }
 
 
-def get_season():
+def get_season() -> str:
     month = datetime.datetime.now().month
     if month in range(3, 6):
         return 'spring'
@@ -84,7 +85,7 @@ def get_season():
     return 'winter'
 
 
-def generate_particle_script(season, config):
+def generate_particle_script(season: str, config: dict) -> str:
     particle = config['particle']
     particle_class = particle['class']
     color = config['particle_color']
@@ -157,10 +158,10 @@ def generate_particle_script(season, config):
     '''
 
 
-def display_info(env_name, project_path, github=None, branch='main', lang='en'):
+def display_info(env_name: str, project_path: str | Path, github: str | None = None, branch='main', lang='en'):
     season = get_season()
     config = SEASON_CONFIG[season]
-    tr = TRANSLATIONS.get(lang, TRANSLATIONS['en'])
+    tr     = TRANSLATIONS.get(lang, TRANSLATIONS['en'])
 
     content = f'''
     <div class="season-container">

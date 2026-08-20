@@ -56,7 +56,7 @@ def _ensure_tags_dir(base_dir: Path) -> Path:
 class TagsParser:
     """Finds and downloads the latest tag files for each target category"""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose=False):
         self.session: aiohttp.ClientSession | None = None
         self.tags_dir = find_tagcomplete_dir()
         self.logger   = Logger(enabled=verbose)
@@ -80,7 +80,7 @@ class TagsParser:
             self.logger.error(f"Failed fetching {url}: {exc}")
         return []
 
-    async def get_directory_contents(self, path: str = '') -> list:
+    async def get_directory_contents(self, path='') -> list:
         """Get contents of a directory from the GitHub API"""
         url = f"{GITHUB_API_URL}/{path}" if path else GITHUB_API_URL
         return await self._get_json(url)
