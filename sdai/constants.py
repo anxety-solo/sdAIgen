@@ -25,10 +25,10 @@ JS_DIR_PATH  = ASSETS_PATH / 'js'
 
 # ~~ GOOGLE DRIVE ~~
 
-GD_BASE    = '/content/drive/MyDrive/sdAIgen'
-GD_FILES   = f"{GD_BASE}/files"
-GD_OUTPUTS = f"{GD_BASE}/outputs"
-GD_CONFIGS = f"{GD_BASE}/configs"
+GD_BASE    = Path('/content/drive/MyDrive/sdAIgen')
+GD_FILES   = GD_BASE / 'files'
+GD_OUTPUTS = GD_BASE / 'outputs'
+GD_CONFIGS = GD_BASE / 'configs'
 
 
 # ~~ REMOTE SOURCES ~~

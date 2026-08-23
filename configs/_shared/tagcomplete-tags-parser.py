@@ -15,7 +15,7 @@ from sdai.utils.logger import Logger
 from sdai.utils.json import read
 
 
-# ~~ Configuration ~~
+# ~~ CONFIGURATION ~~
 
 EXTS_DIR = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
@@ -33,7 +33,7 @@ TAGCOMPLETE_NAMES = {
 logger = Logger()
 
 
-# ~~ Helpers ~~
+# ~~ HELPERS ~~
 
 def find_tagcomplete_dir() -> Path:
     """Find the TagComplete extension directory (create default if missing)"""
@@ -51,13 +51,13 @@ def _ensure_tags_dir(base_dir: Path) -> Path:
     return tags_dir
 
 
-# ~~ Tags Parser ~~
+# ~~ TAGS PARSER ~~
 
 class TagsParser:
     """Finds and downloads the latest tag files for each target category"""
 
     def __init__(self, verbose=False):
-        self.session: aiohttp.ClientSession | None = None
+        self.session: aiohttp.ClientSession = None
         self.tags_dir = find_tagcomplete_dir()
         self.logger   = Logger(enabled=verbose)
 
@@ -78,6 +78,7 @@ class TagsParser:
                 self.logger.error(f"Failed fetching {url}: {response.status}")
         except Exception as exc:
             self.logger.error(f"Failed fetching {url}: {exc}")
+
         return []
 
     async def get_directory_contents(self, path='') -> list:
@@ -94,6 +95,7 @@ class TagsParser:
                 return datetime.strptime(match.group(1), '%Y-%m-%d')
             except ValueError:
                 pass
+
         return None
 
     async def find_latest_files(self) -> dict:
@@ -146,6 +148,7 @@ class TagsParser:
                 self.logger.error(f"Error downloading {filename}: {response.status}")
         except Exception as exc:
             self.logger.error(f"Error downloading {filename}: {exc}")
+
         return False
 
     async def download_latest_tags(self) -> int:
@@ -174,12 +177,13 @@ class TagsParser:
             print(f"Downloaded {downloaded} tag files to {self.tags_dir}")
         if skipped:
             self.logger.info(f"Skipped {skipped} existing files")
+
         return downloaded
 
 
 # ~~ CLI ~~
 
-async def main(args: list[str] | None = None):
+async def main(args: list[str] = None):
     """CLI entry point"""
     parser = argparse.ArgumentParser(description=f"CSV Tags Parser for {', '.join(TARGET_CATEGORIES)}")
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')

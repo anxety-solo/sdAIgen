@@ -66,7 +66,7 @@
     "adetailer_unpacking": "🚚 Распаковка кэша моделей ADetailer...",
     "method_unpacking": "Распаковка",
     "method_cloning": "Клонирование",
-    "webui_installing": "⌚ {method} Stable Diffusion... | WEBUI: {ui}",
+    "webui_installing": "⌚ {method} Stable Diffusion... | WebUI: {ui}",
     "webui_installed": "🚀 {method} {ui} Завершена! {time} ⚡",
     "webui_current": "🔧 Текущий WebUI: {ui}",
     "session_duration": "⌚️ Продолжительность сеанса: {time}",

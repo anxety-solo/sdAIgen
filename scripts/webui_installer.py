@@ -1,5 +1,6 @@
 """ WebUI Installer | by ANXETY """
 
+import subprocess
 import requests
 import asyncio
 import sys
@@ -31,7 +32,7 @@ EMBED_DIR  = Path(read(SETTINGS_PATH, 'WEBUI.embed_dir'))
 UPSC_DIR   = Path(read(SETTINGS_PATH, 'WEBUI.upscale_dir'))
 
 
-# ~~ Parse CLI Arguments ~~
+# ~~ PARSE CLI ARGUMENTS ~~
 SKIP_INSTALLING_UI = '-s' in sys.argv or '--skip-installing-ui' in sys.argv
 
 
@@ -64,9 +65,21 @@ def get_extensions_list() -> list[str]:
 async def download_configuration():
     """Download all configuration files for the current UI"""
     await asyncio.gather(*[
-        asyncio.to_thread(download, f"{url} {dest.parent} {dest.name}")
+        _download_file(url, dest)
         for url, dest in build_config_urls(UI_NAME, GITHUB, BRANCH)
     ])
+
+
+async def _download_file(url: str, dest: Path):
+    """Download a single config file into its absolute destination path"""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    process = await asyncio.create_subprocess_shell(
+        f"curl -sLo {dest} {url}",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+    await process.communicate()
 
 
 # ~~ EXTENSIONS ~~
@@ -118,7 +131,7 @@ def clone_webui():
 
 
 def run_tagcomplete_tag_parser():
-    ipyRun('run', f"{WEBUI_PATH}/tagcomplete-tags-parser.py")
+    ipyRun('run', str(WEBUI_PATH / 'tagcomplete-tags-parser.py'))
 
 
 # ~~ MAIN ~~

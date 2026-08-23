@@ -21,10 +21,10 @@ from sdai.translations import tr
 
 ENV_NAME = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 
-CONTAINERS_WIDTH = '1080px'
-
 WIDGET_CSS = CSS_DIR_PATH / 'main-widgets.css'
 WIDGET_JS  = JS_DIR_PATH / 'main-widgets.js'
+
+CONTAINERS_WIDTH = '1080px'
 
 
 # ~~ HELPERS ~~
@@ -77,7 +77,7 @@ def fetch_github_branches(ui: str) -> list[str]:
         return ['none']
 
 
-# ~~ WIDGETS (Main Container) ~~
+# ~~ MAIN CONTAINER ~~
 
 factory = WidgetFactory()
 HR = factory.create_html('<hr>')
@@ -92,13 +92,13 @@ model_type_widget = factory.create_dropdown(list(MODEL_CATEGORIES), tr('model_ty
 # --- VAE ---
 
 vae_header     = factory.create_header(tr('vae_header'))
-vae_widget     = factory.create_dropdown(options_from(XL['vae'], ['none', 'ALL']), 'Vae:', 'sdxl.vae')
+vae_widget     = factory.create_dropdown(options_from(XL['vae'], ['none', 'All']), 'Vae:', 'sdxl.vae')
 vae_num_widget = factory.create_text(tr('vae_num_label'), '', tr('vae_num_hint'))
 
 # --- Additional ---
 
 additional_header        = factory.create_header(tr('additional_header'))
-update_scope_widget      = factory.create_dropdown(['none', 'UI', 'Extensions', 'ALL'], tr('update_scope_label'), 'ALL', layout={'width': 'auto'})
+update_scope_widget      = factory.create_dropdown(['none', 'UI', 'Extensions', 'All'], tr('update_scope_label'), 'All', layout={'width': 'auto'})
 clone_ui_widget          = factory.create_checkbox(tr('clone_ui_label'), False)
 check_nodes_deps_widget  = factory.create_checkbox(tr('check_nodes_deps_label'), True, layout={'display': 'none'})
 selected_webui_widget    = factory.create_dropdown(list(WEBUIS), 'WebUI:', DEFAULT_UI, layout={'width': 'auto'})
@@ -114,7 +114,7 @@ choose_changes_box = factory.create_hbox(
     layout={'justify_content': 'space-between'}
 )
 
-controlnet_widget = factory.create_dropdown(options_from(XL['controlnet'], ['none', 'ALL']), 'ControlNet:', 'none')
+controlnet_widget     = factory.create_dropdown(options_from(XL['controlnet'], ['none', 'All']), 'ControlNet:', 'none')
 controlnet_num_widget = factory.create_text(tr('controlnet_num_label'), '', tr('controlnet_num_hint'))
 
 commit_hash_widget   = factory.create_text(tr('commit_hash_label'), '', tr('commit_hash_hint'))
@@ -124,7 +124,7 @@ checkout_options_box = factory.create_hbox([commit_hash_widget, branch_widget])
 # --- API Tokens ---
 
 civitai_token_widget = factory.create_text(tr('civitai_token_label'), '', tr('civitai_token_hint'), class_names=['cai-token-input'])    # for check API-Key
-civitai_button       = create_expandable_button(tr('get_token_btn', service='CivitAI'), 'https://civitai.com/user/account')
+civitai_button       = create_expandable_button(tr('get_token_btn', service='CivitAI'), 'https://civitai.red/user/account')
 civitai_box          = factory.create_hbox([civitai_token_widget, civitai_button])
 
 huggingface_token_widget = factory.create_text(tr('huggingface_token_label'), '', tr('huggingface_token_hint'))
@@ -158,7 +158,7 @@ custom_download_header_popup = factory.create_html(f'''
     <span class="required">{tr('cdl_required')}</span> - <span class="extension">{tr('cdl_extension')}</span>
     <div class="sample">
         <span class="sample_label">{tr('cdl_file_example')}</span>
-        https://civitai.com/api/download/models/229782<span class="braces">[</span><span class="file_name">Detailer</span><span class="extension">.safetensors</span><span class="braces">]</span>
+        https://civitai.red/api/download/models/229782<span class="braces">[</span><span class="file_name">Detailer</span><span class="extension">.safetensors</span><span class="braces">]</span>
         <br>
         <span class="sample_label">{tr('cdl_ext_example')}</span>
         https://github.com/hako-mikan/sd-webui-regional-prompter<span class="braces">[</span><span class="file_name">Regional-Prompter</span><span class="braces">]</span>
@@ -166,7 +166,7 @@ custom_download_header_popup = factory.create_html(f'''
 </div>
 ''')
 
-empowerment_widget = factory.create_checkbox(tr('cdl_empowerment_label'), False, class_names=['empowerment'])
+empowerment_widget       = factory.create_checkbox(tr('cdl_empowerment_label'), False, class_names=['empowerment'])
 empowerment_input_widget = factory.create_textarea('', '', tr('cdl_empowerment_hint'), class_names=['empowerment-input', 'hidden'])
 
 model_urls_widget       = factory.create_text('Model:')
@@ -182,7 +182,7 @@ custom_file_urls_widget = factory.create_text(tr('cdl_file_urls_label'))
 save_button = factory.create_button(tr('settings_save'), class_names=['button', 'button_save'])
 
 
-# ~~ Side Container ~~
+# ~~ SIDE CONTAINER ~~
 
 # GDrive Symlinks Panel
 gdrive_header         = factory.create_header(tr('gd_symlinks_header'))
@@ -218,7 +218,7 @@ def _set_gdrive_state(state: bool):
         gdrive_settings_box.remove_class('gdrive-visible')
 
 
-if ENV_NAME != 'Google Colab':
+if ENV_NAME != 'Colab':
     gdrive_button.layout.display = 'none'   # Hide button if not Colab
 else:
     _set_gdrive_state(gdrive_status)
@@ -238,6 +238,7 @@ import_button = factory.create_file_upload(accept='.json', layout=BTN_STYLE, cla
 import_button.tooltip = tr('settings_import_tooltip')
 
 export_output = widgets.Output(layout={'display': 'none'})
+display(export_output)
 
 # --- PopUp Notification (Alias) ---
 
@@ -246,12 +247,13 @@ notify_output = widgets.Output(layout={'height': '0', 'overflow': 'hidden', 'mar
 display(notify_output)
 
 
-def show_notification(message: str, message_type='info', duration=2500):
+def show_notification(message: str, message_type='info'):
     """Call JS function showNotification"""
     message_escaped = message.replace('`', '\\`').replace('\n', '\\n')
-    js_code = f"showNotification(`{message_escaped}`, '{message_type}', {duration});"
+    js_code = f"showNotification(`{message_escaped}`, '{message_type}');"
 
     with notify_output:
+        notify_output.clear_output()
         display(Javascript(js_code))
 
 
@@ -265,7 +267,7 @@ def _collect_widget_values() -> dict:
     }
 
 
-def export_settings(button: widgets.Button | None = None):
+def export_settings(button: widgets.Button = None):
     """Export widget settings to a JSON file"""
     try:
         settings_data = _collect_widget_values()
@@ -368,7 +370,7 @@ factory.load_js(WIDGET_JS)
 
 # Display Sections
 model_widgets = [model_header, model_widget, model_num_widget, model_type_widget]
-vae_widgets = [vae_header, vae_widget, vae_num_widget]
+vae_widgets   = [vae_header, vae_widget, vae_num_widget]
 additional_widgets = [
     additional_header,
     choose_changes_box,
@@ -397,19 +399,19 @@ vae_box             = factory.create_vbox(vae_widgets, class_names=['container']
 additional_box      = factory.create_vbox(additional_widgets, class_names=['container'])
 custom_download_box = factory.create_vbox(custom_download_widgets, class_names=['container', 'container_cdl'])
 
-# Create Containers
 model_vae_box = factory.create_hbox(
     [model_box, vae_box],
     class_names=['widgetContainer', 'model-vae-wrapper'],
 )
 
+# Create Containers
 widgetContainer = factory.create_vbox(
     [model_vae_box, additional_box, custom_download_box, save_button],
     class_names=['widgetContainer'],
     layout={'min_width': CONTAINERS_WIDTH, 'max_width': CONTAINERS_WIDTH}
 )
 _buttons_col = factory.create_vbox(
-    [gdrive_button, export_button, import_button, export_output],
+    [gdrive_button, export_button, import_button],
     class_names=['sideContainer-buttons']
 )
 _side_inner = factory.create_hbox(
@@ -436,7 +438,7 @@ display(Javascript('setTimeout(checkCivitaiKey, 2500)'))
 
 # ~~ CALLBACK FUNCTION ~~
 
-def update_model_type(change: dict, widget: widgets.Widget):
+def update_model_type(change: dict, widget):
     """Switch Model/Vae/ControlNet options"""
     model_type = change['new']
     data = get_category(model_type)
@@ -446,14 +448,14 @@ def update_model_type(change: dict, widget: widgets.Widget):
     cnet_dict  = numbered(data.get('controlnet', {}))
 
     model_widget.options      = ['none'] + list(model_dict)
-    vae_widget.options        = ['none', 'ALL'] + list(vae_dict)
-    controlnet_widget.options = ['none', 'ALL'] + list(cnet_dict)
+    vae_widget.options        = ['none', 'All'] + list(vae_dict)
+    controlnet_widget.options = ['none', 'All'] + list(cnet_dict)
 
     # Defaults set
     defaults = {
         'SD':    ('BluMix', 'Blessed2.vae', 'none'),
         'XL':    ('Nova-IL', 'sdxl.vae', 'none'),
-        'ANIMA': ('MiaoMiao', 'ALL', 'none'),
+        'ANIMA': ('MiaoMiao', 'All', 'none'),
     }
     d_model, d_vae, d_cnet = defaults[model_type]
 
@@ -466,7 +468,7 @@ def update_model_type(change: dict, widget: widgets.Widget):
     controlnet_widget.value = pick(d_cnet, cnet_dict, d_cnet)
 
 
-def update_clone_ui(change: dict, widget: widgets.Widget):
+def update_clone_ui(change: dict, widget):
     """Disable the Update dropdown when clone mode is enabled"""
     if change['new']:
         update_scope_widget.add_class('_disabled')
@@ -474,7 +476,7 @@ def update_clone_ui(change: dict, widget: widgets.Widget):
         update_scope_widget.remove_class('_disabled')
 
 
-def update_selected_webui(change: dict, widget: widgets.Widget):
+def update_selected_webui(change: dict, widget):
     """Update widgets when the WebUI selection changes"""
     ui = change['new']
     _m = meta(ui)
@@ -482,10 +484,10 @@ def update_selected_webui(change: dict, widget: widgets.Widget):
     commandline_arguments_widget.value = _m['launch_args']
     branch_widget.options = fetch_github_branches(ui)
 
-    is_comfy = ui == 'ComfyUI'
+    is_comfy = _m['layout'] == 'comfy'
 
-    update_scope_widget.options            = ['none', 'UI'] if is_comfy else ['none', 'UI', 'Extensions', 'ALL']
-    update_scope_widget.value              = 'UI' if is_comfy else 'ALL'
+    update_scope_widget.options            = ['none', 'UI'] if is_comfy else ['none', 'UI', 'Extensions', 'All']
+    update_scope_widget.value              = 'UI' if is_comfy else 'All'
     check_nodes_deps_widget.layout.display = '' if is_comfy else 'none'
     theme_accent_widget.layout.display     = 'none' if is_comfy else ''
     extensions_urls_widget.description     = 'Custom Nodes:' if is_comfy else 'Extensions:'
@@ -517,13 +519,13 @@ def update_empowerment(change: dict, widget: widgets.Widget):
 
 
 # Connecting widgets
-factory.connect_widgets([(model_type_widget,     'value')], update_model_type)
-factory.connect_widgets([(clone_ui_widget,       'value')], update_clone_ui)
+factory.connect_widgets([(model_type_widget, 'value')], update_model_type)
+factory.connect_widgets([(clone_ui_widget, 'value')], update_clone_ui)
 factory.connect_widgets([(selected_webui_widget, 'value')], update_selected_webui)
-factory.connect_widgets([(empowerment_widget,    'value')], update_empowerment)
+factory.connect_widgets([(empowerment_widget, 'value')], update_empowerment)
 
 
-# ~~ Load / Save - Settings ~~
+# ~~ LOAD / SAVE - SETTINGS ~~
 
 SETTINGS_KEYS = [
     'model_type', 'model', 'model_num', 'vae', 'vae_num',
@@ -571,8 +573,8 @@ def save_data(button: widgets.Button):
     """Handle save button click"""
     save_settings()
     all_widgets = [
-        model_box, vae_box, additional_box, custom_download_box, save_button,           # mainContainer
-        gdrive_button, export_button, import_button, export_output, gdrive_settings_box # sideContainer
+        model_box, vae_box, additional_box, custom_download_box, save_button,   # mainContainer
+        gdrive_button, export_button, import_button, gdrive_settings_box        # sideContainer
     ]
     factory.close(all_widgets, class_names=['hide'], delay=0.8)
 

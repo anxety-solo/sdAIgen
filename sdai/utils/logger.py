@@ -6,7 +6,7 @@ from sdai.constants import COL
 
 class Logger:
     """Colored console logger. Errors always shown; other levels require enabled=True"""
-    _LEVEL_COLORS = {
+    LEVEL_COLORS = {
         'debug':   'P',    # Purple
         'info':    'B',    # Blue
         'warning': 'Y',    # Yellow
@@ -14,7 +14,7 @@ class Logger:
         'success': 'G',    # Green
     }
 
-    def __init__(self, enabled: bool = True, debug: bool = False):
+    def __init__(self, enabled=True, debug=False):
         self.enabled = enabled
         self.debug_enabled = debug
 
@@ -24,7 +24,7 @@ class Logger:
         if level != 'error' and not self.enabled:
             return
 
-        color = getattr(COL, self._LEVEL_COLORS.get(level, 'X'))
+        color = getattr(COL, self.LEVEL_COLORS.get(level, 'X'))
         print(f">> {color}[{level.upper()}]:{COL.X} {message}")
 
     def debug(self, msg: str):   self._write(msg, 'debug')

@@ -1,4 +1,4 @@
-""" Setup sdAIgen Project Manager | by ANXETY """
+""" Setup SDAIGEN Project Manager | by ANXETY """
 
 import nest_asyncio
 import importlib
@@ -33,7 +33,6 @@ SETTINGS_PATH = PROJECT_PATH / 'settings.json'
 VENV_PATH     = HOME_PATH / 'venv'
 
 SCRIPTS_PATH = PROJECT_PATH / 'scripts'
-ASSETS_PATH  = PROJECT_PATH / 'assets'
 
 os.environ.update({
     'home_path':     str(HOME_PATH),
@@ -46,7 +45,8 @@ os.environ.update({
 # ~~ ENVIRONMENTS ~~
 
 SUPPORTED_ENVIRONMENTS = {
-    'COLAB_GPU': ('Google Colab', '/content'),
+    # os.env_var | env_name | work_path
+    'COLAB_GPU': ('Colab', '/content'),
     'KAGGLE_URL_BASE': ('Kaggle', '/kaggle/working'),
 }
 
@@ -85,9 +85,10 @@ SOURCE_FILES = {
 
 # ~~ ENVIRONMENT DETECTION ~~
 
-def detect_environment(force_env: str | None = None) -> tuple[str, str]:
+def detect_environment(force_env: str = None) -> tuple[str, str]:
     """Detect the runtime environment, optionally forcing one by name"""
     envs = {name for name, _ in SUPPORTED_ENVIRONMENTS.values()}
+
     if force_env:
         if force_env not in envs:
             raise EnvironmentError(
@@ -109,7 +110,7 @@ def parse_github(value: str) -> str:
     user  = parts[0]
     repo  = parts[1] if len(parts) > 1 else 'sdAIgen'
 
-    if not (user or repo):
+    if not user:
         raise ValueError('Invalid fork format. Expected user OR user/repo')
 
     return f"{user}/{repo}"
@@ -133,7 +134,7 @@ def _get_start_timer() -> int:
 
 
 def save_env_settings(data: dict):
-    """Merge settings into the project settings.json file"""
+    """Merge settings into the project 'settings.json' file"""
     PROJECT_PATH.mkdir(parents=True, exist_ok=True)
 
     existing = {}
@@ -199,7 +200,7 @@ async def _download_file(session: aiohttp.ClientSession, url: str, path: Path) -
 
 
 async def download_files_async(github: str, branch: str, log: bool):
-    """Download all project files concurrently and optionally log errors"""
+    """Download all project scripts concurrently"""
     files  = _build_download_list(github, branch)
     errors = []
 

@@ -2,7 +2,6 @@
 
 import logging
 import json
-import os
 
 from collections.abc import Callable
 from functools import wraps
@@ -10,13 +9,13 @@ from pathlib import Path
 from typing import Any
 
 
-# ~~ Logger Configuration ~~
+# ~~ LOGGER CONFIGURATION ~~
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-class CustomFormatter(logging.Formatter):
+class ColoredFormatter(logging.Formatter):
     colors = {
         logging.WARNING: '\033[33m',
         logging.ERROR:   '\033[31m',
@@ -29,12 +28,12 @@ class CustomFormatter(logging.Formatter):
 
 
 handler = logging.StreamHandler()
-handler.setFormatter(CustomFormatter())
+handler.setFormatter(ColoredFormatter())
 logger.addHandler(handler)
 logger.propagate = False
 
 
-# ~~ Argument Validation Decorator ~~
+# ~~ ARGUMENT VALIDATION DECORATOR ~~
 
 def validate_args(min_args: int, max_args: int) -> Callable[..., Any]:
     """Validate argument count for variadic functions"""
@@ -54,7 +53,7 @@ def validate_args(min_args: int, max_args: int) -> Callable[..., Any]:
     return decorator
 
 
-# ~~ Core Functionality ~~
+# ~~ CORE FUNCTIONALITY ~~
 
 def parse_key(key: str) -> list[str]:
     """Parse dot-separated key with `..` escape support"""
@@ -121,7 +120,8 @@ def _load(filepath: str | Path, key: str) -> tuple[dict[str, Any], list[str]]:
 def _read_json(filepath: str | Path) -> dict[str, Any]:
     """Read JSON file, returning {} on error or missing file"""
     try:
-        if os.path.exists(filepath):
+        filepath = Path(filepath)
+        if filepath.exists():
             with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
                 if content.strip():
@@ -135,7 +135,8 @@ def _read_json(filepath: str | Path) -> dict[str, Any]:
 def _write_json(filepath: str | Path, data: dict[str, Any]):
     """Write JSON file, creating parent directories"""
     try:
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as exc:
@@ -152,10 +153,10 @@ def _mutate(filepath: str | Path, key: str, value: Any, action: Callable[..., An
     _write_json(filepath, data)
 
 
-# ~~ Main Functions ~~
+# ~~ MAIN FUNCTIONS ~~
 
 @validate_args(1, 3)
-def read(filepath: str | Path, key: str | None = None, default: Any = None) -> Any:
+def read(filepath: str | Path, key: str = None, default: Any = None) -> Any:
     """Read value from JSON file by optional dot-separated key path"""
     data = _read_json(filepath)
     if key is None:
@@ -194,7 +195,7 @@ def key_exists(filepath: str | Path, key: str, value: Any = None) -> bool:
     return result == value if value is not None else result is not None
 
 
-# ~~ Settings Loading ~~
+# ~~ SETTINGS LOADING ~~
 
 def load_settings(path: str | Path) -> dict:
     """Load settings from a JSON file"""

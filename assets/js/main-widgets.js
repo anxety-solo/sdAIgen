@@ -1,5 +1,3 @@
-// main-widgets.js | by ANXETY
-
 // CivitAI Token check (valid = 32 chars)
 function checkCivitaiKey() {
     const input = document.querySelector('.cai-token-input input[type="text"]');
@@ -27,7 +25,7 @@ function toggleContainer() {
 
 
 // Notifications (rendered into .sideContainer)
-function showNotification(message, type = 'info', duration = 2500) {
+function showNotification(message, type = 'info', duration = 3000) {
     const ICONS = { success: '✅', error: '❌', info: '💡', warning: '⚠️' };
     const sideContainer = document.querySelector('.sideContainer');
     if (!sideContainer) return;

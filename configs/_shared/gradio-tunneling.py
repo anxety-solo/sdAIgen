@@ -76,16 +76,16 @@ class Tunnel:
         local_host: str,
         local_port: int,
         share_token: str,
-        remote_server: str | None = None
+        remote_server: str = None
     ):
         self.local_host  = local_host
         self.local_port  = local_port
         self.share_token = share_token
         self.remote_host, self.remote_port = self._resolve_remote_server(remote_server)
 
-        self.proc:  subprocess.Popen | None = None
+        self.proc: subprocess.Popen = None
         self.binary = BinaryManager()
-        self.url:   str | None = None
+        self.url: str = None
 
     def _resolve_remote_server(self, server: str | None) -> tuple[str, int]:
         """Determines remote tunnel server address"""

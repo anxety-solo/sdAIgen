@@ -16,32 +16,32 @@ DEFAULT_LAUNCHER = 'launch.py'
 DEFAULT_PORT     = 7860
 
 A1111_CONFIG = (
-    ('{ui}/config.json', 'config.json'),
-    ('{ui}/ui-config.json', 'ui-config.json'),
-    ('_shared/styles.csv', 'styles.csv'),
-    ('_shared/user.css', 'user.css'),
-    ('_shared/card-no-preview.png', 'html/card-no-preview.png'),
-    ('_shared/notification.mp3', 'notification.mp3'),
+    ('{ui}/config.json', '{webui}/config.json'),
+    ('{ui}/ui-config.json', '{webui}/ui-config.json'),
+    ('_shared/styles.csv', '{webui}/styles.csv'),
+    ('_shared/user.css', '{webui}/user.css'),
+    ('_shared/card-no-preview.png', '{webui}/html/card-no-preview.png'),
+    ('_shared/notification.mp3', '{webui}/notification.mp3'),
     ('_shared/gradio-tunneling.py', '{venv}/lib/python{pyver}/site-packages/gradio_tunneling/main.py'),
-    ('_shared/tagcomplete-tags-parser.py', 'tagcomplete-tags-parser.py'),
+    ('_shared/tagcomplete-tags-parser.py', '{webui}/tagcomplete-tags-parser.py'),
 )
 
 CLASSIC_CONFIG = (
-    ('{ui}/config.json', 'config.json'),
-    ('{ui}/ui-config.json', 'ui-config.json'),
-    ('_shared/styles.csv', 'styles.csv'),
-    ('_shared/user.css', 'user.css'),
-    ('_shared/card-no-preview.png', 'html/card-no-preview.jpg'),
-    ('_shared/notification.mp3', 'notification.mp3'),
+    ('{ui}/config.json', '{webui}/config.json'),
+    ('{ui}/ui-config.json', '{webui}/ui-config.json'),
+    ('_shared/styles.csv', '{webui}/styles.csv'),
+    ('_shared/user.css', '{webui}/user.css'),
+    ('_shared/card-no-preview.png', '{webui}/html/card-no-preview.jpg'),
+    ('_shared/notification.mp3', '{webui}/notification.mp3'),
     ('_shared/gradio-tunneling.py', '{venv}/lib/python{pyver}/site-packages/gradio_tunneling/main.py'),
-    ('_shared/tagcomplete-tags-parser.py', 'tagcomplete-tags-parser.py'),
+    ('_shared/tagcomplete-tags-parser.py', '{webui}/tagcomplete-tags-parser.py'),
 )
 
 COMFY_CONFIG = (
-    ('{ui}/install-deps.py', 'install-deps.py'),
-    ('{ui}/comfy.settings.json', 'user/default/comfy.settings.json'),
-    ('{ui}/comfy-manager/config.ini', 'user/__manager/config.ini'),
-    ('{ui}/workflows/anxety-workflow.json', 'user/default/workflows/anxety-workflow.json'),
+    ('{ui}/install-deps.py', '{webui}/install-deps.py'),
+    ('{ui}/comfy.settings.json', '{webui}/user/default/comfy.settings.json'),
+    ('{ui}/comfy-manager/config.ini', '{webui}/user/__manager/config.ini'),
+    ('{ui}/workflows/anxety-workflow.json', '{webui}/user/default/workflows/anxety-workflow.json'),
     ('_shared/gradio-tunneling.py', '{venv}/lib/python{pyver}/site-packages/gradio_tunneling/main.py'),
 )
 
@@ -56,7 +56,7 @@ COMFY_FOLDERS   = ('checkpoints', 'vae', 'loras', 'embeddings', 'custom_nodes', 
 WEBUIS = {
     'A1111': {
         'layout': 'a1111',
-        'github_url': 'https://github.com/AUTOMATIC1111/stable-diffusion-webui',
+        'github_url': 'https://github.com/gutris1/A1111',
         'branch': 'master',
         'branch_exclude': None,
         'python': DEFAULT_PYTHON,
@@ -173,6 +173,7 @@ def build_urls(ui: str) -> dict[str, str]:
     """Build all archive URLs for the given UI"""
     _m = meta(ui)
 
+    # archive_key | url
     urls = {
         'webui':     f"{HF_REPO_URL}/{resolve(ui)}.zip",
         'venv':      f"{HF_REPO_URL}/{_m['venv']}",
@@ -197,7 +198,7 @@ def build_config_urls(ui: str, github: str, branch: str) -> list[tuple[str, Path
     return [
         (
             f"{configs_url}/{src.format(ui=ui_key)}",
-            webui_root / dest.format(venv=str(VENV_PATH), pyver=_m['python'])
+            Path(dest.format(webui=str(webui_root), venv=str(VENV_PATH), pyver=_m['python']))
         )
         for src, dest in _m['config']
     ]

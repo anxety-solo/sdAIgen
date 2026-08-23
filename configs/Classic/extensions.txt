@@ -10,7 +10,10 @@ https://github.com/anxety-solo/anxety-theme
 ## Gutris1 Edits
 https://github.com/gutris1/sd-image-viewer Image-Viewer
 https://github.com/gutris1/sd-image-info Image-Info
-https://github.com/gutris1/sd-hub SD-Hub
+# https://github.com/gutris1/sd-hub SD-Hub
+
+# Whyxeo Edits
+https://github.com/Whyxeo/sd-whub-modelscope SD-wHub
 
 ## ---
 https://github.com/zanllp/sd-webui-infinite-image-browsing Infinite-Image-Browsing

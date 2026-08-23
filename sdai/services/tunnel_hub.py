@@ -8,6 +8,7 @@ Modified specifically for the 'sdAIgen' project; may not be compatible with norm
 
 import subprocess
 import logging
+import shutil
 import socket
 import signal
 import shlex
@@ -24,8 +25,8 @@ from pathlib import Path
 from sdai.constants import COL
 
 
-StrOrPath = str | Path
-StrOrRegexPattern = str | re.Pattern
+StrOrPath          = str | Path
+StrOrRegexPattern  = str | re.Pattern
 ListHandlersOrBool = list[logging.Handler] | bool
 
 FILE_FORMAT   = "[%(asctime)s] [%(name)s]: %(message)s"
@@ -63,14 +64,14 @@ class Tunnel:
     def __init__(
         self,
         port: int,
-        check_local_port: bool = True,
-        check_command_available: bool = False,
-        debug: bool = False,
-        timeout: int = 30,
-        propagate: bool = False,
-        log_handlers: ListHandlersOrBool | None = None,
-        log_dir: StrOrPath | None = None,
-        callback: Callable[[list[tuple[str, str | None, str | None]]], None] | None = None,
+        check_local_port=True,
+        check_command_available=False,
+        debug=False,
+        timeout=30,
+        propagate=False,
+        log_handlers: ListHandlersOrBool = None,
+        log_dir: StrOrPath = None,
+        callback: Callable[[list[tuple[str, str | None, str | None]]], None] = None,
     ):
         """
         Args:
@@ -90,7 +91,7 @@ class Tunnel:
         self.debug = debug
         self.timeout = timeout
         self.log_handlers = log_handlers or []
-        self.log_dir= Path(log_dir) if log_dir else Path.home() / 'tunnel_logs'
+        self.log_dir = Path(log_dir) if log_dir else Path.home() / 'tunnel_logs'
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.callback = callback
 
@@ -134,11 +135,7 @@ class Tunnel:
 
     def is_command_available(self, command: str) -> bool:
         """Check if command is available in system PATH"""
-        cmd_name = command.split()[0]
-        return any(
-            os.access(os.path.join(path, cmd_name), os.X_OK)
-            for path in os.environ.get('PATH', '').split(os.pathsep)
-        )
+        return shutil.which(command.split()[0]) is not None
 
     def add_tunnel(
         self,
@@ -146,8 +143,8 @@ class Tunnel:
         command: str,
         pattern: StrOrRegexPattern,
         name: str,
-        note: str | None = None,
-        callback: Callable[[str, str | None, str | None], None] | None = None,
+        note: str = None,
+        callback: Callable[[str, str | None, str | None], None] = None,
     ) -> None:
         """Add a tunnel configuration"""
         if self.check_command_available and not self.is_command_available(command):
@@ -155,10 +152,10 @@ class Tunnel:
             return
 
         self.tunnel_list.append({
-            'command': command,
-            'pattern': pattern if isinstance(pattern, re.Pattern) else re.compile(pattern),
-            'name': name,
-            'note': note,
+            'command':  command,
+            'pattern':  pattern if isinstance(pattern, re.Pattern) else re.compile(pattern),
+            'name':     name,
+            'note':     note,
             'callback': callback,
         })
 
@@ -246,9 +243,7 @@ class Tunnel:
             return False
 
     @staticmethod
-    def wait_for_condition(
-        condition: Callable[[], bool], *, interval: int = 1, timeout: int | None = None
-    ) -> bool:
+    def wait_for_condition(condition: Callable[[], bool], *, interval=1, timeout: int = None) -> bool:
         """Wait for condition to be true, returning False on timeout"""
         start  = time.time()
         checks = 0

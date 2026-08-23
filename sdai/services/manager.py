@@ -11,8 +11,6 @@ from urllib.parse import urlparse
 from pathlib import Path
 from typing import Any
 
-from os import chdir as CD
-
 # === SDAIGEN ===
 from sdai.api.civitai import CIVITAI_DOMAINS, CivitaiAPI
 from sdai.constants import SETTINGS_PATH, COL
@@ -88,7 +86,7 @@ def _with_extension(filename: str | None, url: str) -> str | None:
     return filename
 
 
-def _get_filename_from_url(url: str, is_git: bool = False) -> str | None:
+def _get_filename_from_url(url: str, is_git=False) -> str | None:
     """Derive a local filename from a URL"""
     if any(domain in url for domain in [*CIVITAI_DOMAINS, 'drive.google.com']):
         return None
@@ -97,13 +95,13 @@ def _get_filename_from_url(url: str, is_git: bool = False) -> str | None:
     return name if is_git else _with_extension(name, url)
 
 
-def _parse_line_parts(parts: list[str], url: str, is_git: bool = False) -> tuple[Path | None, str | None]:
+def _parse_line_parts(parts: list[str], url: str, is_git=False) -> tuple[Path | None, str | None]:
     """Extract (save_path, filename) from a tokenised download/clone line"""
     save_path, filename = None, None
 
     if len(parts) >= 3:
         save_path = Path(parts[1]).expanduser()
-        filename = parts[2]
+        filename  = parts[2]
     elif len(parts) == 2:
         arg = parts[1]
         if '/' in arg or arg.startswith('~'):
@@ -156,7 +154,7 @@ def _expand_sources(sources: list[str], callback: Callable[..., Any], *args: Any
 
 
 @handle_errors
-def download(line: str | None = None, verbose=False, debug=False, unzip=False):
+def download(line: str = None, verbose=False, debug=False, unzip=False):
     """Download files (comma-separated or from .txt file)"""
     logger.enabled, logger.debug_enabled = verbose, debug
 
@@ -180,7 +178,8 @@ def _process_download(line: str, unzip: bool):
     raw_url = parts[0].replace('\\', '')
 
     civitai_filename = None
-    if _is_civitai(raw_url) and '/api/download/models/' not in raw_url:
+    is_model_page = 'modelVersionId=' in raw_url or any(f"{d}/models/" in raw_url for d in CIVITAI_DOMAINS)
+    if is_model_page and '/api/download/models/' not in raw_url:
         url, civitai_filename = _resolve_civitai_url(raw_url)
     else:
         url = _normalize_url(raw_url)
@@ -193,34 +192,32 @@ def _process_download(line: str, unzip: bool):
         logger.warning(f"Invalid URL: {url}")
         return
 
-    prev_dir = Path.cwd()
     save_path, filename = _parse_line_parts(parts, url)
     if not filename and civitai_filename:
         filename = civitai_filename
 
-    try:
-        if save_path:
-            save_path.mkdir(parents=True, exist_ok=True)
-            CD(save_path)
-        success = _download_file(url, filename)
-        if success and unzip and filename and filename.lower().endswith('.zip'):
-            _unzip_file(filename)
-    finally:
-        CD(prev_dir)
+    if save_path:
+        save_path.mkdir(parents=True, exist_ok=True)
+
+    success = _download_file(url, filename, save_path)
+    if success and unzip and filename and filename.lower().endswith('.zip'):
+        _unzip_file(save_path / filename if save_path else filename)
 
 
-def _download_file(url: str, filename: str | None) -> bool:
+def _download_file(url: str, filename: str | None, save_path: Path = None) -> bool:
     """Dispatch download method by domain"""
     if any(domain in url for domain in [*CIVITAI_DOMAINS, 'huggingface.co', 'github.com']):
-        return _aria2_download(url, filename)
+        return _aria2_download(url, filename, save_path)
     if 'drive.google.com' in url:
-        return _gdrive_download(url, filename)
+        return _gdrive_download(url, filename, save_path)
     # Download using curl
-    cmd = f'curl -#JL "{url}"' + (f' -o "{filename}"' if filename else '')
+    cmd = f'curl -#JL "{url}"'
+    if filename:
+        cmd += f' -o "{save_path / filename if save_path else filename}"'
     return _run_command(cmd)
 
 
-def _aria2_download(url: str, filename: str | None) -> bool:
+def _aria2_download(url: str, filename: str | None, save_path: Path = None) -> bool:
     """Download via aria2c with domain-appropriate auth headers and token injection"""
     ua = 'CivitaiLink:Automatic1111' if _is_civitai(url) else 'Mozilla/5.0'
 
@@ -228,7 +225,7 @@ def _aria2_download(url: str, filename: str | None) -> bool:
 
     # CivitAI Auth & Resolve Redirect
     if _is_civitai(url) and not _is_signed_storage(url):
-        url = _resolve_civitai_redirect(url)
+        url   = _resolve_civitai_redirect(url)
         token = _cai_token()
         if token and len(token) == 32 and '/api/download/models/' in url:
             aria2_args += f' --header="Authorization: Bearer {token}"'
@@ -243,17 +240,22 @@ def _aria2_download(url: str, filename: str | None) -> bool:
         filename = _get_filename_from_url(url)
 
     cmd = f'{aria2_args} "{url}"'
+
     if filename:
-        cmd += f' -o "{filename}"'
+        if save_path:
+            cmd += f' -d "{save_path}" -o "{filename}"'
+        else:
+            cmd += f' -o "{filename}"'
 
     return _aria2_monitor(cmd)
 
 
-def _gdrive_download(url: str, filename: str | None) -> bool:
+def _gdrive_download(url: str, filename: str | None, save_path: Path = None) -> bool:
     """Download from Google Drive using gdown"""
     cmd = f"gdown --fuzzy {url}"
     if filename:
-        cmd += f' -O "{filename}"'
+        target = save_path / filename if save_path else filename
+        cmd += f' -O "{target}"'
     if 'drive/folders' in url:
         cmd += ' --folder'
 
@@ -328,9 +330,10 @@ def _aria2_monitor(cmd: str) -> bool:
             print(f"\r{' ' * 180}\r", end='', flush=True)
             for err in errors:
                 print(err)
+
             if success and last_stats:
                 total, speed = last_stats
-                file_part = f"{COL.B}{filename}{COL.X} " if filename else ''
+                file_part  = f"{COL.B}{filename}{COL.X} " if filename else ''
                 stats_part = f"{COL.C}({total} @ {speed}/s){COL.X}"
                 print(f"{COL.G}✔ Done{COL.X} | {file_part}{stats_part}")
             elif success:
@@ -360,7 +363,7 @@ def _run_command(cmd: str) -> bool:
 # ~~ GIT CLONE ~~
 
 @handle_errors
-def clone(input_source: str | None = None, recursive=True, depth=1, verbose=False, debug=False, branch: str | None = None):
+def clone(input_source: str = None, recursive=True, depth=1, verbose=False, debug=False, branch: str = None):
     """Clone one or more GitHub repositories (comma-separated or from .txt file)"""
     logger.enabled, logger.debug_enabled = verbose, debug
 
@@ -375,7 +378,7 @@ def clone(input_source: str | None = None, recursive=True, depth=1, verbose=Fals
 
 
 @handle_errors
-def _process_clone(line: str, recursive: bool, depth: int, branch: str | None = None):
+def _process_clone(line: str, recursive: bool, depth: int, branch: str = None):
     """Process a single clone line: URL with optional save path and repo name"""
     if not line:
         return
@@ -387,29 +390,26 @@ def _process_clone(line: str, recursive: bool, depth: int, branch: str | None = 
         return logger.warning(f"Not a GitHub URL: {url}")
 
     save_path, repo_name = _parse_line_parts(parts, url, is_git=True)
-    prev_dir = Path.cwd()
 
-    try:
-        if save_path:
-            save_path.mkdir(parents=True, exist_ok=True)
-            CD(save_path)
+    if save_path:
+        save_path.mkdir(parents=True, exist_ok=True)
+        if not repo_name:
+            repo_name = Path(urlparse(url).path).name.removesuffix('.git') or None
 
-        cmd_parts = ['git', 'clone']
-        if depth > 0:
-            cmd_parts += ['--depth', str(depth)]
-        if branch:
-            cmd_parts += ['--branch', branch]
-        if recursive:
-            cmd_parts.append('--recursive')
+    cmd_parts = ['git', 'clone']
+    if depth > 0:
+        cmd_parts += ['--depth', str(depth)]
+    if branch:
+        cmd_parts += ['--branch', branch]
+    if recursive:
+        cmd_parts.append('--recursive')
 
-        cmd_parts.append(url)
+    cmd_parts.append(url)
 
-        if repo_name:
-            cmd_parts.append(repo_name)
+    if repo_name:
+        cmd_parts.append(str(save_path / repo_name) if save_path else repo_name)
 
-        _run_git(' '.join(cmd_parts))
-    finally:
-        CD(prev_dir)
+    _run_git(' '.join(cmd_parts))
 
 
 def _run_git(cmd: str):

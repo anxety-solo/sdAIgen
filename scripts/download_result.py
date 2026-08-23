@@ -9,9 +9,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 # === SDAIGEN ===
-from sdai.constants import CSS_DIR_PATH, SETTINGS_PATH
+from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH
 from sdai.factory import WidgetFactory
-from sdai.utils.json import load_settings, read
+from sdai.utils.json import read, load_settings
 
 
 # ~~ CONSTANTS ~~
@@ -37,9 +37,10 @@ HR = factory.create_html('<hr>')
 
 # ~~ FILE UTILS ~~
 
-def get_files(directory: str | Path, extensions: str | tuple[str, ...], excluded_dirs: list[str] | None = None, filter_func: Callable[[str], bool] | None = None) -> list[str]:
+def get_files(directory: str | Path, extensions: str | tuple[str, ...], excluded_dirs: list[str] = None, filter_func: Callable[[str], bool] = None) -> list[str]:
     """Return files matching extensions, with optional exclusion and filtering"""
-    if not os.path.isdir(directory):
+    directory = Path(directory)
+    if not directory.is_dir():
         return []
     if isinstance(extensions, str):
         extensions = (extensions,)
@@ -57,20 +58,20 @@ def get_files(directory: str | Path, extensions: str | tuple[str, ...], excluded
 
 def get_folders(directory: str | Path, exclude_hidden=True) -> list[str]:
     """List folders, flattening 'GDrive' into its subfolders"""
-    if not os.path.isdir(directory):
+    directory = Path(directory)
+    if not directory.is_dir():
         return []
 
     folders = []
-    for folder in os.listdir(directory):
-        path = os.path.join(directory, folder)
-        if not os.path.isdir(path) or (exclude_hidden and folder.startswith('__')):
+    for folder in directory.iterdir():
+        if not folder.is_dir() or (exclude_hidden and folder.name.startswith('__')):
             continue
-        if folder == 'GDrive':
+        if folder.name == 'GDrive':
             folders.extend(
-                f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))
+                f.name for f in folder.iterdir() if f.is_dir()
             )
         else:
-            folders.append(folder)
+            folders.append(folder.name)
 
     return folders
 

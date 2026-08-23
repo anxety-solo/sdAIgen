@@ -193,11 +193,19 @@ ANIMA = {
             {'url': 'https://civitai.red/api/download/models/3203207', 'name': 'MiaoMiao-Harem-Color_V1.safetensors'}
         ],
     },
+
     'vae': {
         'Qwen2D VAE': [{'url': 'https://huggingface.co/Anzhc/Qwen2D-VAE/resolve/main/Qwen2D_VAE.safetensors'}],
         'Qwen Image VAE': [{'url': 'https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors'}],
     },
+
+    'additional': {
+        'qwen_3_06b_base': [
+            {'url': 'https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/text_encoders/qwen_3_06b_base.safetensors', 'dst_dir': 'encoder_dir'}
+        ],
+    },
 }
+
 
 MODEL_CATEGORIES = {
     'SD':    SD,

@@ -21,11 +21,11 @@ from typing import Any
 from os import chdir as CD
 
 # === SDAIGEN ===
-from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, HF_REPO_URL, GD_BASE, GD_FILES, GD_OUTPUTS, GD_CONFIGS, COL
-from sdai.utils.webui import handle_setup_timer, find_model_by_partial_name, _remove_path
+from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, GD_BASE, GD_FILES, GD_OUTPUTS, GD_CONFIGS, HF_REPO_URL, COL
+from sdai.utils.webui import _remove_path, handle_setup_timer, find_model_by_partial_name
 from sdai.webui_meta import DEFAULT_VENV, WEBUIS, meta, build_urls
-from sdai.utils.json import key_exists, load_settings, read, save
-from sdai.services.manager import download, clone, _normalize_url
+from sdai.utils.json import read, save, key_exists, load_settings
+from sdai.services.manager import _normalize_url, download, clone
 from sdai.api.civitai import CIVITAI_DOMAINS, CivitaiAPI
 from sdai.models import get_category
 from sdai.translations import tr
@@ -175,7 +175,7 @@ if not WEBUI_PATH.exists():
     method = tr('method_cloning' if clone_ui else 'method_unpacking')
 
     print(tr('webui_installing', method=method, ui=f"{COL.B}{UI_NAME}{COL.X}"), end='')
-    ipyRun('run', f"{SCRIPTS_PATH}/webui_installer.py")
+    ipyRun('run', str(SCRIPTS_PATH / 'webui_installer.py'))
 
     handle_setup_timer(WEBUI_PATH, start_timer) # Setup timer (for timer-extensions)
 
@@ -318,9 +318,9 @@ def cleanup_ipynb_checkpoints(base_path: Path):
 
 def build_symlink_config(ui: str) -> dict:
     """Build symlink configuration based on UI type"""
-    is_comfy = ui == 'ComfyUI'
+    is_comfy = meta(ui)['layout'] == 'comfy'
 
-    # Files structure | Local <-> GDrive
+    # base_files: (local_dir, gdrive_folder_name)
     base_files = [
         (model_dir,     'Checkpoints'),
         (vae_dir,       'VAE'),
@@ -337,41 +337,41 @@ def build_symlink_config(ui: str) -> dict:
         (diffusion_dir, 'Diffusion'),
     ]
     _files = [
-        {'local': local, 'gdrive': f"{GD_FILES}/{gdir}"}
+        {'local': local, 'gdrive': str(GD_FILES / gdir)}
         for local, gdir in base_files
     ]
+    ext_folder = 'Custom-Nodes' if is_comfy else 'Extensions'
     _files.append({
         'local':  extension_dir,
-        'gdrive': f"{GD_FILES}/{'Custom-Nodes' if is_comfy else 'Extensions'}"
+        'gdrive': str(GD_FILES / ext_folder)
     })
 
-    # Output structure
     _outputs = [{
         'local': output_dir,
-        'gdrive': f"{GD_OUTPUTS}/{ui}",
+        'gdrive': str(GD_OUTPUTS / ui),
         'direct_link': True
     }]
 
     # Config structure
-    config_base = f"{GD_CONFIGS}/{ui}"
+    config_base = GD_CONFIGS / ui
     if is_comfy:
         # ComfyUI specific config structure
-        user_default = f"{WEBUI_PATH}/user/default"
-        user_manager = f"{WEBUI_PATH}/user/__manager"
+        user_default = WEBUI_PATH / 'user' / 'default'
+        user_manager = WEBUI_PATH / 'user' / '__manager'
         _configs = [
-            {'local': f"{user_default}/comfy.settings.json", 'gdrive': f"{config_base}/comfy.settings.json",
+            {'local': str(user_default / 'comfy.settings.json'), 'gdrive': str(config_base / 'comfy.settings.json'),
                 'type': 'file', 'name': 'ComfyUI Settings'},
-            {'local': f"{user_manager}/config.ini", 'gdrive': f"{config_base}/comfy-manager-config.ini",
+            {'local': str(user_manager / 'config.ini'), 'gdrive': str(config_base / 'comfy-manager-config.ini'),
                 'type': 'file', 'name': 'Comfy Manager Config'},
-            {'local': f"{user_default}/workflows", 'gdrive': f"{config_base}/workflows",
+            {'local': str(user_default / 'workflows'), 'gdrive': str(config_base / 'workflows'),
                 'type': 'dir', 'name': 'Workflows'}
         ]
     else:
         # A1111/Forge config structure
         _configs = [
-            {'local': f"{WEBUI_PATH}/config.json", 'gdrive': f"{config_base}/config.json",
+            {'local': str(WEBUI_PATH / 'config.json'), 'gdrive': str(config_base / 'config.json'),
                 'type': 'file', 'name': 'WebUI Config'},
-            {'local': f"{WEBUI_PATH}/ui-config.json", 'gdrive': f"{config_base}/ui-config.json",
+            {'local': str(WEBUI_PATH / 'ui-config.json'), 'gdrive': str(config_base / 'ui-config.json'),
                 'type': 'file', 'name': 'UI Config'}
         ]
 
@@ -560,7 +560,7 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
     else:
         print(tr('gd_connected'))
 
-    # Sync categories: (key, enabled, restore_on_deselect, display_name, section_header)
+    # categories: (key, enabled, restore_on_deselect, display_name, section_header)
     categories = [
         ('files',   sync_files,   False, tr('gd_files_label'),   tr('gd_header_files')),
         ('outputs', sync_outputs, True,  tr('gd_outputs_label'), tr('gd_header_outputs')),
@@ -636,14 +636,15 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
 
 
 # Get model lists (SD / XL / ANIMA) by selected type
-# model_list | vae_list | controlnet_list
-model_data = get_category(settings.get('model_type', 'XL'))
-model_list, vae_list, controlnet_list = (model_data.get(k, {}) for k in ('model', 'vae', 'controlnet'))
+model_type = settings.get('model_type', 'XL')
+model_data = get_category(model_type)
+model_list, vae_list, controlnet_list, additional_list = (model_data.get(k, {}) for k in ('model', 'vae', 'controlnet', 'additional'))
 
 # --- Downloading models ---
 print(tr('dl_start'), end='')
 
 extension_repo = []
+# prefix | (dir_path, short_tag)
 PREFIX_MAP = {
     # prefix : (dir_path, short_tag)
     'model':     (model_dir, '$ckpt'),
@@ -673,7 +674,7 @@ def _center_text(text: str, terminal_width=45) -> str:
     return f"{' ' * padding}{text}{' ' * padding}"
 
 
-def format_output(url: str, dst_dir: str, file_name: str, image_url: str | None = None):
+def format_output(url: str, dst_dir: str, file_name: str, image_url: str = None):
     """Formats and prints download details with colored text"""
     info = '[NONE]'
     if file_name:
@@ -721,6 +722,7 @@ def run_downloads(line: str):
 
         if prefix:
             dir_path, _ = PREFIX_MAP[prefix]
+
             if prefix == 'extension':
                 extension_repo.append((url, filename))
                 continue
@@ -737,10 +739,10 @@ def run_downloads(line: str):
 
 
 @handle_errors
-def manual_download(url: str, dst_dir: str, file_name: str | None = None):
+def manual_download(url: str, dst_dir: str, file_name: str = None):
     image_url = None
 
-    if 'civitai' in url:
+    if 'modelVersionId=' in url or any(f"{d}/models/" in url for d in CIVITAI_DOMAINS):
         api = CivitaiAPI(civitai_token)
         if not (data := api.validate_download(url, file_name)):
             return
@@ -803,6 +805,11 @@ def _parse_selection_numbers(num_str: str, max_num: int) -> list[int]:
 def handle_submodels(selection: str, num_selection: str, model_dict: dict, dst_dir: str, base_url: str) -> str:
     selected = []
 
+    def _resolve_dst(path_str: str) -> str:
+        if '/' in path_str or '\\' in path_str:
+            return path_str
+        return globals().get(path_str, path_str)
+
     keys = list(model_dict)
     numbered = {f"{i}. {k}": v for i, (k, v) in enumerate(model_dict.items(), 1)}
 
@@ -828,7 +835,7 @@ def handle_submodels(selection: str, num_selection: str, model_dict: dict, dst_d
         name = m.get('name') or os.path.basename(m['url'])
         unique[name] = {    # Note: `name` is an optional parameter
             'url': m['url'],
-            'dst_dir': m.get('dst_dir', dst_dir),
+            'dst_dir': _resolve_dst(m.get('dst_dir', dst_dir)),
             'name': name
         }
 
@@ -845,6 +852,7 @@ line = ''
 line = handle_submodels(model, model_num, model_list, model_dir, line)
 line = handle_submodels(vae, vae_num, vae_list, vae_dir, line)
 line = handle_submodels(controlnet, controlnet_num, controlnet_list, control_dir, line)
+line = handle_submodels('all', '', additional_list, '', line)
 
 
 # ~~ FILE SOURCES ~~
@@ -889,7 +897,7 @@ def _process_lines(lines: list[str]) -> str:
     return ', '.join(result_urls)
 
 
-def process_file_downloads(file_urls: list[str], additional_lines: str | None = None) -> str:
+def process_file_downloads(file_urls: list[str], additional_lines: str = None) -> str:
     """Reads URLs from files/HTTP sources"""
     lines = []
 
@@ -949,6 +957,8 @@ if extension_repo:
 
 # --- ADetailer sorting (bbox / segm) | ComfyUI only ---
 if UI_NAME == 'ComfyUI':
+    adetailer_dir = Path(adetailer_dir)
+
     for sub in ('bbox', 'segm'):
         (adetailer_dir / sub).mkdir(exist_ok=True)
 
@@ -973,4 +983,4 @@ if gdrive_mount and sync_files:
         _remove_path(gdrive_path)
 
 # --- List Models and stuff ---
-ipyRun('run', f"{SCRIPTS_PATH}/download_result.py")
+ipyRun('run', str(SCRIPTS_PATH / 'download_result.py'))

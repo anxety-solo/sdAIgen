@@ -21,8 +21,8 @@ from pathlib import Path
 from os import chdir as CD
 
 # === SDAIGEN ===
-from sdai.constants import COL, HOME_PATH, SCRIPTS_PATH, SETTINGS_PATH, VENV_PATH
-from sdai.utils.json import key_exists, load_settings, read, save, update
+from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, COL
+from sdai.utils.json import read, save, update, key_exists, load_settings
 from sdai.services.tunnel_hub import Tunnel
 from sdai.webui_meta import WEBUIS, meta
 from sdai.translations import tr
@@ -40,14 +40,16 @@ UI_NAME    = read(SETTINGS_PATH, 'WEBUI.current')
 WEBUI_PATH = Path(read(SETTINGS_PATH, 'WEBUI.webui_path'))
 EXTS_DIR   = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
-PY_VER = read(SETTINGS_PATH, 'WEBUI.python_version')
+
 BIN    = str(VENV_PATH / 'bin')
+PY_VER = read(SETTINGS_PATH, 'WEBUI.python_version')
 PKG    = str(VENV_PATH / f"lib/python{PY_VER}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
     'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH'],
 })
+
 
 # ~~ LOADING SETTINGS ~~
 
@@ -85,11 +87,12 @@ def setup_tunnels(tunnel_port: int, tunneling_service: Tunnel) -> tuple[list[tup
     """Configure tunnel tokens and check command availability"""
     public_ip = get_public_ip()
 
+    # services: (name, {'command': str, 'pattern': regex, 'note': str})
     services = [
-        ('Gradio',      {'command': f"gradio-tun {tunnel_port}",                          'pattern': r'[\w-]+\.gradio\.live'}),
+        ('Gradio',      {'command': f"gradio-tun {tunnel_port}", 'pattern': r'[\w-]+\.gradio\.live'}),
         ('Pinggy',      {'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{tunnel_port} a.pinggy.io", 'pattern': r'[\w-]+\.run\.pinggy-free\.link'}),
-        ('Cloudflared', {'command': f"cl tunnel --url localhost:{tunnel_port}",           'pattern': r'[\w-]+\.trycloudflare\.com'}),
-        ('Localtunnel', {'command': f"lt --port {tunnel_port}",                           'pattern': r'[\w-]+\.loca\.lt', 'note': f"| Password: {COL.G}{public_ip}{COL.X}"}),
+        ('Cloudflared', {'command': f"cl tunnel --url localhost:{tunnel_port}", 'pattern': r'[\w-]+\.trycloudflare\.com'}),
+        ('Localtunnel', {'command': f"lt --port {tunnel_port}", 'pattern': r'[\w-]+\.loca\.lt', 'note': f"| Password: {COL.G}{public_ip}{COL.X}"}),
     ]
 
     if zrok2_token:
@@ -126,13 +129,11 @@ def setup_tunnels(tunnel_port: int, tunneling_service: Tunnel) -> tuple[list[tup
 
 # ~~ TAG COMPLETE ~~
 
+# short | full_name
 TAGGER_MAP = {
-    'm':        'merged',
-    'merged':   'merged',
-    'e':        'e621',
-    'e621':     'e621',
-    'd':        'danbooru',
-    'danbooru': 'danbooru',
+    'm': 'merged', 'merged': 'merged',
+    'e': 'e621', 'e621': 'e621',
+    'd': 'danbooru', 'danbooru': 'danbooru',
 }
 
 TAGCOMPLETE_NAMES = ('a1111-sd-webui-tagcomplete', 'sd-webui-tagcomplete', 'webui-tagcomplete', 'tag-complete', 'tagcomplete')
@@ -140,7 +141,7 @@ TAGCOMPLETE_NAMES = ('a1111-sd-webui-tagcomplete', 'sd-webui-tagcomplete', 'webu
 CONFIG_FILE = WEBUI_PATH / 'config.json'
 
 
-def find_latest_tag_file(target: str = 'danbooru') -> str | None:
+def find_latest_tag_file(target='danbooru') -> str | None:
     """Find the latest tag file for the target in the TagComplete extension"""
     tagcomplete_dir = next(
         (ext for ext in EXTS_DIR.iterdir() if ext.is_dir() and ext.name.lower() in TAGCOMPLETE_NAMES),
@@ -192,7 +193,7 @@ def _sync_version_uid():
         _set_config('VERSION_UID', match.group(1))
 
 
-def _update_config_paths(tagger: str | None = None):
+def _update_config_paths(tagger: str = None):
     """Update tagger and ADetailer paths in the WebUI config"""
     _set_config('tac_tagFile', find_latest_tag_file(TAGGER_MAP.get(tagger, 'danbooru')))
     _set_config('tagger_hf_cache_dir', f"{WEBUI_PATH}/models/interrogators/")

@@ -66,7 +66,7 @@
     "adetailer_unpacking": "🚚 Unpacking ADetailer model cache...",
     "method_unpacking": "Unpacking",
     "method_cloning": "Cloning",
-    "webui_installing": "⌚ {method} Stable Diffusion... | WEBUI: {ui}",
+    "webui_installing": "⌚ {method} Stable Diffusion... | WebUI: {ui}",
     "webui_installed": "🚀 {method} {ui} complete! {time} ⚡",
     "webui_current": "🔧 Current WebUI: {ui}",
     "session_duration": "⌚️ Session duration: {time}",

@@ -30,13 +30,13 @@ class ModelData:
     model_type: str
     base_model: str
     file_name: str
-    model_name: str | None = None
-    version_name: str | None = None
-    image_url: str | None = None
-    image_name: str | None = None
-    trained_words: list[str] | None = None
-    sha256: str | None = None
-    model_page_url: str | None = None
+    model_name: str = None
+    version_name: str = None
+    image_url: str = None
+    image_name: str = None
+    trained_words: list[str] = None
+    sha256: str = None
+    model_page_url: str = None
 
 
 class CivitaiAPI:
@@ -51,12 +51,12 @@ class CivitaiAPI:
     SUPPORTED_TYPES = {'Checkpoint', 'TextualInversion', 'LORA'}    # For Save Preview
     IS_KAGGLE       = 'KAGGLE_URL_BASE' in os.environ
 
-    def __init__(self, token: str | None = None, verbose: bool = True, debug: bool = False):
+    def __init__(self, token: str = None, verbose=True, debug=False):
         self.token  = (token or '').strip()
         self.logger = Logger(enabled=verbose, debug=debug)
 
 
-    # ~~ Core Helpers ~~
+    # ~~ CORE HELPERS ~~
 
     def _get_data(self, path: str) -> dict | None:
         """GET request to API endpoint and return parsed JSON or None"""
@@ -85,7 +85,7 @@ class CivitaiAPI:
             return file['downloadUrl']
         return version.get('downloadUrl')
 
-    def _pick_preview(self, images: list[dict], stem: str, width: int = 512) -> tuple[str | None, str | None]:
+    def _pick_preview(self, images: list[dict], stem: str, width=512) -> tuple[str | None, str | None]:
         """Return (url, filename) for the first usable preview image or (None, None)"""
         for img in images:
             url = img.get('url', '')
@@ -193,11 +193,11 @@ class CivitaiAPI:
             ver_id = url.split('modelVersionId=')[1].split('&')[0]
             return resolve_version(ver_id)
 
-        self.logger.error(f"Unsupported CivitAI URL format: {url}")
+        self.logger.error(f"Unsupported CivitAI URL format (use a model page, /api/download/ link or modelVersionId): {url}")
         return None
 
 
-    # ~~ Model Resolution ~~
+    # ~~ MODEL RESOLUTION ~~
 
     def _build_model_data(self, ver: dict, file_name: str, download_url: str) -> ModelData | None:
         """Construct ModelData from a resolved version API dict"""
@@ -229,7 +229,7 @@ class CivitaiAPI:
             model_page_url=f"{CIVITAI_BASE}/models/{model_id}?modelVersionId={ver_id}",
         )
 
-    def validate_download(self, url: str, file_name: str | None = None) -> ModelData | None:
+    def validate_download(self, url: str, file_name: str = None) -> ModelData | None:
         """Resolve a CivitAI URL to ModelData, iterating versions to skip unowned Early Access"""
         ver = self._resolve_version_from_url(url)
         if not ver:
@@ -248,7 +248,7 @@ class CivitaiAPI:
         return self._build_model_data(ver, file_name, download_url)
 
 
-    # ~~ General ~~
+    # ~~ GENERAL ~~
 
     def get_model_data(self, url: str) -> dict[str, Any] | None:
         """Fetch full version metadata dict from CivitAI by any supported URL"""
@@ -259,7 +259,7 @@ class CivitaiAPI:
         data = self._get_data(f"models/{model_id}")
         return data.get('modelVersions') if data else None
 
-    def get_sha256(self, ver: dict | None = None, version_id: str | None = None) -> str | None:
+    def get_sha256(self, ver: dict = None, version_id: str = None) -> str | None:
         """Extract SHA256 from version data dict, or fetch by version_id if dict not provided"""
         if ver is None and version_id:
             ver = self._get_data(f"model-versions/{version_id}")
@@ -269,7 +269,7 @@ class CivitaiAPI:
         """Find version data by file SHA256 hash, returns None silently on miss"""
         return self._get_data(f"model-versions/by-hash/{sha256}")
 
-    def _save_image(self, image_url: str, save_dir: Path, image_name: str, resize: bool = False) -> bool:
+    def _save_image(self, image_url: str, save_dir: Path, image_name: str, resize=False) -> bool:
         """Download and save an image; skips if already present, returns True on success"""
         file_path = save_dir / image_name
         if file_path.exists():
@@ -299,7 +299,7 @@ class CivitaiAPI:
         save_dir.mkdir(parents=True, exist_ok=True)
         self._save_image(image_url, save_dir, image_name)
 
-    def download_preview_image(self, model_data: ModelData, save_path: str | Path | None = None, resize: bool = True):
+    def download_preview_image(self, model_data: ModelData, save_path: str | Path = None, resize=True):
         """Download and save a preview image from a ModelData object"""
         if not model_data:
             self.logger.warning('ModelData is None — skipping download_preview_image')
@@ -312,7 +312,7 @@ class CivitaiAPI:
         save_dir.mkdir(parents=True, exist_ok=True)
         self._save_image(model_data.image_url, save_dir, model_data.image_name, resize=resize)
 
-    def _resize_image(self, raw: bytes, size: int = 512) -> io.BytesIO:
+    def _resize_image(self, raw: bytes, size=512) -> io.BytesIO:
         """Resize image bytes to target max side while preserving aspect ratio"""
         try:
             img  = Image.open(io.BytesIO(raw))
@@ -326,7 +326,7 @@ class CivitaiAPI:
             self.logger.warning(f"Resize failed: {exc}")
             return io.BytesIO(raw)
 
-    def save_model_info(self, model_data: ModelData, save_path: str | Path | None = None):
+    def save_model_info(self, model_data: ModelData, save_path: str | Path = None):
         """Save model metadata as a .json sidecar file next to the model"""
         if not model_data:
             self.logger.warning('ModelData is None — skipping save_model_info')

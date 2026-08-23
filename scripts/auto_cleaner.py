@@ -9,9 +9,9 @@ from IPython.display import HTML, display
 from pathlib import Path
 
 # === SDAIGEN ===
-from sdai.constants import CSS_DIR_PATH, SETTINGS_PATH, GD_BASE, GD_FILES, GD_OUTPUTS
+from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, GD_BASE, GD_FILES, GD_OUTPUTS
 from sdai.factory import WidgetFactory
-from sdai.utils.json import load_settings, read
+from sdai.utils.json import read, load_settings
 from sdai.translations import tr
 
 
@@ -35,18 +35,19 @@ UI_NAME      = read(SETTINGS_PATH, 'WEBUI.current')
 ENV_NAME     = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
 mount_gdrive = read(SETTINGS_PATH, 'GDRIVE.mount', False)
 
-show_gdrive_toggle = ENV_NAME == 'Google Colab' and mount_gdrive and os.path.exists(GD_BASE)
+show_gdrive_toggle = ENV_NAME == 'Colab' and mount_gdrive and os.path.exists(GD_BASE)
 
 
 # ~~ DIRECTORY MAPPING ~~
 
 def gdrive_path(name: str, gd_folder: str, ui: str) -> str:
     """Return the GDrive path for a directory"""
-    return f"{GD_OUTPUTS}/{ui}" if name == 'Output Images' else f"{GD_FILES}/{gd_folder}"
+    return str(GD_OUTPUTS / ui) if name == 'Output Images' else str(GD_FILES / gd_folder)
 
 
 def build_directories(ui: str) -> dict[str, dict[bool, str]]:
     """Build directory mapping: name -> {False: local, True: gdrive}"""
+    # gdrive_map: display_name | (gd_folder, local_dir)
     gdrive_map = {
         # Display Name | GD folder | Local dir
         'Models':            ('Checkpoints',  model_dir),
@@ -91,7 +92,7 @@ def should_delete_file(filename: str, directory_type: str) -> tuple[bool, bool]:
     return has_dot, has_dot
 
 
-def clean_directory(directory: str | Path, directory_type: str) -> int:
+def clean_directory(directory: str | Path, directory_type: str, on_error=None) -> int:
     """Clean directory and return the number of deleted files"""
     deleted_count = 0
 
@@ -101,12 +102,16 @@ def clean_directory(directory: str | Path, directory_type: str) -> int:
             if not should_delete:
                 continue
 
-            file_path = os.path.join(root, file)
+            file_path = str(Path(root) / file)
             try:
                 os.remove(file_path)
                 deleted_count += should_count
             except Exception as exc:
-                print(tr('cleaner_delete_error', file_path=file_path, exc=exc))
+                message = tr('cleaner_delete_error', file_path=file_path, exc=exc)
+                if on_error:
+                    on_error(message)
+                else:
+                    print(message)
 
     return deleted_count
 
@@ -121,7 +126,7 @@ def get_disk_usage() -> dict[str, float]:
     }
 
 
-def storage_html(stats: dict[str, float] | None = None) -> str:
+def storage_html(stats: dict[str, float] = None) -> str:
     """Return the storage info HTML block"""
     stats = stats or get_disk_usage()
     return tr(
@@ -143,18 +148,42 @@ def on_execute_click(_: widgets.Button):
     """Handle execute button click"""
     is_gdrive_mode = gdrive_mode_widget.value if show_gdrive_toggle else False
 
-    results = {
-        option: clean_directory(DIRECTORIES[option][is_gdrive_mode], option)
-        for option in selection_widget.value
-        if option in DIRECTORIES
-    }
+    errors = []
+    results = {}
+    for option in selection_widget.value:
+        if option not in DIRECTORIES:
+            continue
+        try:
+            results[option] = clean_directory(
+                DIRECTORIES[option][is_gdrive_mode],
+                option,
+                on_error=errors.append,
+            )
+        except Exception as exc:
+            errors.append(str(exc))
 
-    output_widget.clear_output()
-    with output_widget:
-        for dir_name, count in results.items():
-            display(HTML(f'<p class="output-message">{tr("cleaner_deleted", count=count, dir_name=dir_name)}</p>'))
+    try:
+        messages = [
+            f'<p class="output-message">{tr("cleaner_deleted", count=count, dir_name=dir_name)}</p>'
+            for dir_name, count in results.items()
+        ]
+        messages += [f'<p class="output-message" style="color: #fc3468">{msg}</p>' for msg in errors]
 
-    update_storage_display()
+        with output_widget:
+            output_widget.clear_output()
+            for message in messages:
+                display(HTML(message))
+    except Exception as exc:
+        output_widget.outputs = [{
+            'output_type': 'stream',
+            'name': 'stderr',
+            'text': str(exc),
+        }]
+
+    try:
+        update_storage_display()
+    except Exception:
+        pass
 
 
 def on_hide_click(_: widgets.Button):
@@ -175,7 +204,7 @@ HR = factory.create_html('<hr>')
 
 factory.load_css(WIDGET_CSS)
 
-instruction_label = factory.create_html(tr('cleaner_instruction'))
+instruction_label = factory.create_html(f'<span class="instruction">{tr("cleaner_instruction")}</span>')
 
 selection_widget = factory.create_select_multiple(
     list(DIRECTORIES.keys()),

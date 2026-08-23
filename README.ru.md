@@ -45,7 +45,7 @@
 | [Infinite-Image-Browsing](https://github.com/zanllp/sd-webui-infinite-image-browsing) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [Regional-Prompter](https://github.com/hako-mikan/sd-webui-regional-prompter) | ✔️ | ✔️ | ✔️ | ❌ | ✔️ | ✔️ |
 | [SD-Couple](https://github.com/Haoming02/sd-forge-couple) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
-| [SD-Hub](https://github.com/gutris1/sd-hub) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| [SD-wHub](https://github.com/Whyxeo/sd-whub-modelscope) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [sdAIgen-misc](https://github.com/anxety-solo/sdaigen-misc) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ |
 | [State](https://github.com/ilian6806/stable-diffusion-webui-state) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
 | [SuperMerger](https://github.com/hako-mikan/sd-webui-supermerger) | ✔️ | ✔️ | ❌ | ❌ | ✔️ | ✔️ |

@@ -61,7 +61,7 @@ class WidgetFactory:
         return self.create_html(f'<div class="{classes}">{name}</div>')
 
 
-    # ~~ Widgets ~~
+    # ~~ WIDGETS ~~
 
     def _apply_layouts(self, children, layouts):
         """Apply layouts to children widgets"""
@@ -192,7 +192,7 @@ class WidgetFactory:
         return self._create_box(widgets.Box, children, class_names=class_names, layout=layout, **kwargs)
 
 
-    # ~~ Other ~~
+    # ~~ OTHER ~~
 
     def display(self, widgets):
         """Display one or multiple widgets"""

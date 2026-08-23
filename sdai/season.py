@@ -19,7 +19,7 @@ TRANSLATIONS = {
         'done_message':   'Готово! Теперь вы можете выполнить ячейки ниже. ☄️',
         'runtime_env':    'Среда выполнения:',
         'project_path':   'Расположение проекта:',
-        'current_github': 'Текущий гитхаб:',
+        'current_github': 'Текущий github:',
         'current_branch': 'Текущая ветка:'
     }
 }
@@ -30,32 +30,28 @@ SEASON_CONFIG = {
         'primary': '#666666',
         'accent': '#ffffff',
         'icon': '❄️',
-        'particle_color': '#ffffff',
-        'particle': {'class': 'snowflake', 'size': (8, 8), 'duration': (2, 5), 'interval': 50, 'max': 100}
+        'particle': {'class': 'snowflake', 'color': '#ffffff', 'size': (8, 8), 'duration': (2, 5), 'interval': 50, 'max': 100}
     },
     'spring': {
         'bg': 'linear-gradient(180deg, #9366b433, transparent)',
         'primary': '#9366b4',
         'accent': '#dbcce6',
         'icon': '🌸',
-        'particle_color': '#ffb3ba',
-        'particle': {'class': 'petal', 'size': (8, 8), 'duration': (3, 6), 'interval': 250, 'max': 40}
+        'particle': {'class': 'petal', 'color': '#ffb3ba', 'size': (8, 8), 'duration': (3, 6), 'interval': 250, 'max': 40}
     },
     'summer': {
         'bg': 'linear-gradient(180deg, #ffe76633, transparent)',
         'primary': '#ffe766',
         'accent': '#fff7cc',
         'icon': '🌴',
-        'particle_color': '#ffd700',
-        'particle': {'class': 'stick', 'size': (2, 15), 'duration': (3, 7), 'interval': 100, 'max': 25}
+        'particle': {'class': 'stick', 'color': '#ffd700', 'size': (2, 15), 'duration': (3, 7), 'interval': 100, 'max': 25}
     },
     'autumn': {
         'bg': 'linear-gradient(180deg, #ff8f6633, transparent)',
         'primary': '#ff8f66',
         'accent': '#ffd9cc',
         'icon': '🍁',
-        'particle_color': '#ff8f66',
-        'particle': {'class': 'leaf', 'size': (12, 12), 'duration': (3, 6), 'interval': 250, 'max': 40}
+        'particle': {'class': 'leaf', 'color': '#ff8f66', 'size': (12, 12), 'duration': (3, 6), 'interval': 250, 'max': 40}
     }
 }
 
@@ -75,6 +71,7 @@ PARTICLE_ANIMATIONS = {
 
 
 def get_season() -> str:
+    """Return current season based on month"""
     month = datetime.datetime.now().month
     if month in range(3, 6):
         return 'spring'
@@ -85,10 +82,11 @@ def get_season() -> str:
     return 'winter'
 
 
-def generate_particle_script(season: str, config: dict) -> str:
-    particle = config['particle']
+def generate_particle_script(config: dict) -> str:
+    """Generate HTML/JS script for season particles"""
+    particle       = config['particle']
     particle_class = particle['class']
-    color = config['particle_color']
+    particle_color = particle['color']
 
     anim_steps = PARTICLE_ANIMATIONS[particle_class].split(' | ')
 
@@ -97,7 +95,7 @@ def generate_particle_script(season: str, config: dict) -> str:
           position: absolute;
           width: {particle['size'][0]}px;
           height: {particle['size'][1]}px;
-          background: {color};
+          background: {particle_color};
           {PARTICLE_STYLES[particle_class]}
           opacity: 0;
           pointer-events: none;
@@ -158,7 +156,8 @@ def generate_particle_script(season: str, config: dict) -> str:
     '''
 
 
-def display_info(env_name: str, project_path: str | Path, github: str | None = None, branch='main', lang='en'):
+def display_info(env_name: str, project_path: str | Path, github: str = None, branch='main', lang='en'):
+    """Display styled season info card with particles"""
     season = get_season()
     config = SEASON_CONFIG[season]
     tr     = TRANSLATIONS.get(lang, TRANSLATIONS['en'])
@@ -271,7 +270,7 @@ def display_info(env_name: str, project_path: str | Path, github: str | None = N
     '''
 
     display(HTML(content + style + script))
-    display(HTML(generate_particle_script(season, config)))
+    display(HTML(generate_particle_script(config)))
 
 
 if __name__ == '__main__':
