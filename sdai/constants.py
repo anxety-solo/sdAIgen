@@ -1,4 +1,4 @@
-""" Project Constants Module | by ANXETY """
+""" Runtime Constants: Paths, GDrive & HF Endpoints | by ANXETY """
 
 import os
 
@@ -35,7 +35,7 @@ GD_CONFIGS = GD_BASE / 'configs'
 
 HUGGINGFACE_BASE = 'https://huggingface.co'
 
-HF_REPO_NAME = 'NagisaNao/ANXETY'
+HF_REPO_NAME = 'NagisaNao/ANXETY_WIP'
 HF_REPO_URL  = f"{HUGGINGFACE_BASE}/{HF_REPO_NAME}/resolve/main"
 
 
@@ -48,5 +48,5 @@ class COL:
     B  =  '\033[34m'    # Blue
     P  =  '\033[35m'    # Purple
     C  =  '\033[36m'    # Cyan
-    lB =  '\033[36;1m'  # lightBlue + BOLD
+    cB =  '\033[36;1m'  # Cyan + BOLD
     X  =  '\033[0m'     # Reset

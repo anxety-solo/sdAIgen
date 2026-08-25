@@ -1,4 +1,4 @@
-""" ipyWidgets Factory Module | by ANXETY """
+""" Widget Factory: ipywidgets Builders & Layout Helpers | by ANXETY """
 
 import time
 

@@ -3,7 +3,7 @@ Tunnel management for creating subprocess-based tunnels.
 Originated from: https://raw.githubusercontent.com/cupang-afk/subprocess-tunnel/refs/heads/master/src/tunnel.py
 Author: cupang-afk https://github.com/cupang-afk
 
-Modified specifically for the 'sdAIgen' project; may not be compatible with normal use. | by ANXETY
+Modified specifically for the sdAIgen project; may not be compatible with normal use | by ANXETY
 """
 
 import subprocess
@@ -17,8 +17,8 @@ import os
 import re
 
 from threading import Event, Lock, Thread
+from collections.abc import Callable
 from types import TracebackType
-from typing import Callable
 from pathlib import Path
 
 # === SDAIGEN ===

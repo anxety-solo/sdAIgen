@@ -15,7 +15,7 @@
     /* Container */
     --aw-container-bg: #232323;
     --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
-    --aw-conteiner-gap: 5px;
+    --aw-container-gap: 5px;
 
     /* Inputs */
     --aw-input-bg: #1c1c1c;
@@ -180,30 +180,30 @@ a {
 
 .mainContainer * { overflow: visible !important; } /* Fix containers shadow */
 .mainContainer {
-    padding: calc(var(--aw-conteiner-gap) + 5px);
-    gap: calc(var(--aw-conteiner-gap) + 5px);
+    padding: calc(var(--aw-container-gap) + 5px);
+    gap: calc(var(--aw-container-gap) + 5px);
 }
 
 .widgetContainer,
 .sideContainer {
-    gap: var(--aw-conteiner-gap);
+    gap: var(--aw-container-gap);
     position: relative;
     overflow: visible;
 }
 .widgetContainer > .model-vae-wrapper {
-    gap: var(--aw-conteiner-gap);
+    gap: var(--aw-container-gap);
     align-items: stretch;
 }
 
 /* Buttons column | GDrive panel side-by-side */
 .sideContainer-inner {
-    gap: calc(var(--aw-conteiner-gap) + 5px);
+    gap: calc(var(--aw-container-gap) + 5px);
     align-items: flex-start;
 }
 .sideContainer-buttons {
     display: flex;
     flex-direction: column;
-    gap: var(--aw-conteiner-gap);
+    gap: var(--aw-container-gap);
 }
 
 .container {

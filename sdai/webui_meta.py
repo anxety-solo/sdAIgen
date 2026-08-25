@@ -1,4 +1,4 @@
-""" WebUI Metadata Module | by ANXETY """
+""" WebUI Registry: Meta, URLs & Paths Builder | by ANXETY """
 
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from sdai.constants import HOME_PATH, VENV_PATH, HF_REPO_URL
 
 # ~~ SHARED CONFIGS ~~
 
-DEFAULT_VENV = 'python31018-venv-torch260-cu124-fa.tar.lz4'
+DEFAULT_VENV = 'python31021-venv-torch2121-cu130-fa.tar.lz4'
 
 DEFAULT_PYTHON   = '3.10'
 DEFAULT_UI       = 'Neo'
@@ -74,7 +74,7 @@ WEBUIS = {
         'branch': 'master',
         'branch_exclude': None,
         'python': '3.13',
-        'venv': 'python31312-venv-torch2100-cu130-ComfyUI.tar.lz4',
+        'venv': 'python31315-venv-torch2121-cu130-ComfyUI.tar.lz4',
         'port': 8188,
         'folders': COMFY_FOLDERS,
         'config': COMFY_CONFIG,
@@ -102,7 +102,7 @@ WEBUIS = {
         'branch': 'classic',
         'branch_exclude': ['neo'],
         'python': '3.11',
-        'venv': 'python31113-venv-torch280-cu126-Classic.tar.lz4',
+        'venv': 'python31113-venv-torch2121-cu130-Classic.tar.lz4',
         'port': DEFAULT_PORT,
         'folders': CLASSIC_FOLDERS,
         'config': CLASSIC_CONFIG,
@@ -116,12 +116,12 @@ WEBUIS = {
         'branch': 'neo',
         'branch_exclude': ['classic'],
         'python': '3.13',
-        'venv': 'python31312-venv-torch2100-cu130-Neo.tar.lz4',
+        'venv': 'python31315-venv-torch2121-cu130-Neo.tar.lz4',
         'port': DEFAULT_PORT,
         'folders': CLASSIC_FOLDERS,
         'config': CLASSIC_CONFIG,
         'launcher': DEFAULT_LAUNCHER,
-        'launch_args': '--xformers --cuda-malloc --cuda-stream  --persistent-patches --skip-version-check',
+        'launch_args': '--xformers --cuda-stream --skip-version-check',
         'adetailer_cache': False,
     },
     'ReForge': {
@@ -130,12 +130,12 @@ WEBUIS = {
         'branch': 'main',
         'branch_exclude': None,
         'python': '3.12',
-        'venv': 'python31213-venv-torch2100-cu130-ReForge.tar.lz4',
+        'venv': 'python31213-venv-torch2121-cu130-ReForge.tar.lz4',
         'port': DEFAULT_PORT,
         'folders': A1111_FOLDERS,
         'config': A1111_CONFIG,
         'launcher': DEFAULT_LAUNCHER,
-        'launch_args': '--xformers',
+        'launch_args': '--xformers --cuda-stream',
         'adetailer_cache': False,
     },
     'SD-UX': {

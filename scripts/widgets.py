@@ -1,4 +1,4 @@
-""" Main Project Widgets | by ANXETY """
+""" Main Widgets: Settings Hub & GDrive Panel | by ANXETY """
 
 import requests
 import base64
@@ -11,8 +11,8 @@ from datetime import datetime
 
 # === SDAIGEN ===
 from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, JS_DIR_PATH, HUGGINGFACE_BASE
-from sdai.utils.webui import update_current_webui, find_model_by_partial_name
-from sdai.models import XL, MODEL_CATEGORIES, get_category
+from sdai.utils.webui import update_current_webui
+from sdai.models import XL, MODEL_CATEGORIES, get_category, find_model_by_partial_name
 from sdai.webui_meta import DEFAULT_UI, WEBUIS, meta
 from sdai.utils.json import read, save, key_exists
 from sdai.factory import WidgetFactory
@@ -92,7 +92,7 @@ model_type_widget = factory.create_dropdown(list(MODEL_CATEGORIES), tr('model_ty
 # --- VAE ---
 
 vae_header     = factory.create_header(tr('vae_header'))
-vae_widget     = factory.create_dropdown(options_from(XL['vae'], ['none', 'All']), 'Vae:', 'sdxl.vae')
+vae_widget     = factory.create_dropdown(options_from(XL['vae'], ['none', 'All']), 'VAE:', 'sdxl.vae')
 vae_num_widget = factory.create_text(tr('vae_num_label'), '', tr('vae_num_hint'))
 
 # --- Additional ---
@@ -170,7 +170,7 @@ empowerment_widget       = factory.create_checkbox(tr('cdl_empowerment_label'), 
 empowerment_input_widget = factory.create_textarea('', '', tr('cdl_empowerment_hint'), class_names=['empowerment-input', 'hidden'])
 
 model_urls_widget       = factory.create_text('Model:')
-vae_urls_widget         = factory.create_text('Vae:')
+vae_urls_widget         = factory.create_text('VAE:')
 lora_urls_widget        = factory.create_text('LoRa:')
 embedding_urls_widget   = factory.create_text('Embedding:')
 extensions_urls_widget  = factory.create_text('Extensions:')

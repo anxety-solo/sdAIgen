@@ -1,4 +1,4 @@
-""" JSON Utilities Module | by ANXETY """
+""" JSON: Dot-Key Nested Read/Write Helpers | by ANXETY """
 
 import logging
 import json

@@ -1,4 +1,4 @@
-""" Auto Recovery IPython | by ANXETY """
+""" IPython Startup: Auto-Recovery & Path Injection | by ANXETY """
 
 import importlib
 import sys

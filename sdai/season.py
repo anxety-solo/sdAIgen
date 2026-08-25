@@ -1,4 +1,4 @@
-""" Season Info Module | by ANXETY """
+""" Seasonal Info Card: Animated Banner & Particles | by ANXETY """
 
 import datetime
 import argparse

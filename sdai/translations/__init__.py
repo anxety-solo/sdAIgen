@@ -1,4 +1,4 @@
-""" Translations Module (i18n) | by ANXETY """
+""" i18n: Language Loader & tr() Resolver | by ANXETY """
 
 import json
 

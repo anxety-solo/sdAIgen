@@ -1,4 +1,4 @@
-""" WebUI Launcher | by ANXETY """
+""" WebUI Launcher: Tunnels, Tagger & Server Start | by ANXETY """
 
 import subprocess
 import argparse
@@ -116,7 +116,7 @@ def setup_tunnels(tunnel_port: int, tunneling_service: Tunnel) -> tuple[list[tup
     print(f"{COL.Y}{tr('tunnels_checking')}{COL.X}")
     available, unavailable = [], []
     for name, config in services:
-        print(f"- 🕒 {tr('tunnel_checking', name=f'{COL.lB}{name}{COL.X}')}...", end=' ')
+        print(f"- 🕒 {tr('tunnel_checking', name=f'{COL.cB}{name}{COL.X}')}...", end=' ')
         if tunneling_service.is_command_available(config['command']):
             available.append((name, config))
             print(f"{COL.G}✓{COL.X}")
@@ -249,7 +249,7 @@ def _setup_comfyui():
         clear_output(wait=True)
 
     was_config = EXTS_DIR / 'was-node-suite-comfyui/was_suite_config.json'
-    ffmpeg     = shutil.which('ffmpeg')
+    ffmpeg = shutil.which('ffmpeg')
     if was_config.exists() and ffmpeg:
         config = json.loads(was_config.read_text(encoding='utf-8'))
         config['ffmpeg_bin_path'] = ffmpeg
@@ -261,7 +261,7 @@ def _print_selected_tagger(tagger: str):
     target   = TAGGER_MAP.get(tagger, tagger)
     tag_file = find_latest_tag_file(target)
     if tag_file:
-        print(f"{COL.B}{tr('selected_tagger', tagger=f'{COL.lB}{target}{COL.X}', tag_file=tag_file)}\n")
+        print(f"{COL.B}{tr('selected_tagger', tagger=f'{COL.cB}{target}{COL.X}', tag_file=tag_file)}\n")
 
 
 def _print_session_duration():

@@ -1,4 +1,4 @@
-""" ComfyUI Dependencies Installer | by ANXETY """
+""" ComfyUI Deps: Custom Nodes Requirements Installer | by ANXETY """
 
 import subprocess
 import importlib
@@ -8,14 +8,8 @@ import re
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
 
-
-# ~~ COLORS ~~
-
-C_CYAN   = '\033[1;34m'    # Checking
-C_GREEN  = '\033[1;32m'    # Installing
-C_YELLOW = '\033[1;33m'    # Install script
-C_RED    = '\033[1;31m'    # Error
-C_RESET  = '\033[0m'
+# === SDAIGEN ===
+from sdai.constants import COL
 
 
 # ~~ PACKAGE CHECKS ~~
@@ -85,7 +79,7 @@ def compare_versions(v1: str, v2: str, operator: str) -> bool:
 
 def install_package(package_spec: str):
     """Install a package with pip"""
-    print(f"{C_GREEN}Installing >> {C_RESET}{package_spec}")
+    print(f"{COL.G}Installing >> {COL.X}{package_spec}")
     subprocess.run(
         [sys.executable, '-m', 'pip', 'install', '-q', package_spec],
         check=True,
@@ -105,8 +99,8 @@ def get_enabled_subdirectories(base_directory: str | Path) -> list[tuple[Path, P
         if not subdir.is_dir() or name.startswith('.') or name.endswith('.disabled') or name == '__pycache__':
             continue
 
-        print(f"{C_CYAN}Checking dependencies >> {C_RESET}{name}")
-        requirements  = subdir / 'requirements.txt'
+        print(f"{COL.B}Checking dependencies >> {COL.X}{name}")
+        requirements   = subdir / 'requirements.txt'
         install_script = subdir / 'install.py'
 
         if requirements.exists() or install_script.exists():
@@ -136,7 +130,7 @@ def run_install_script(script_path: Path, executed: set[str]):
     if not script_path.exists() or str(script_path) in executed:
         return
 
-    print(f"{C_YELLOW}Running install script >> {C_RESET}{script_path}")
+    print(f"{COL.Y}Running install script >> {COL.X}{script_path}")
     subprocess.run(
         [sys.executable, str(script_path)],
         check=True,
@@ -191,9 +185,9 @@ def main():
         save_state(installed, executed, log_file)
 
     except KeyboardInterrupt:
-        print(f"\n{C_RED}Interrupted by user{C_RESET}")
+        print(f"\n{COL.R}Interrupted by user{COL.X}")
     except Exception as exc:
-        print(f"\n{C_RED}Error: {exc}{C_RESET}")
+        print(f"\n{COL.R}Error: {exc}{COL.X}")
 
 
 if __name__ == '__main__':

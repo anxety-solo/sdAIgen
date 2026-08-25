@@ -1,4 +1,4 @@
-""" All Downloading | by ANXETY """
+""" Download Orchestrator: Venv, GDrive & Assets | by ANXETY """
 
 import subprocess
 import requests
@@ -22,12 +22,12 @@ from os import chdir as CD
 
 # === SDAIGEN ===
 from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, GD_BASE, GD_FILES, GD_OUTPUTS, GD_CONFIGS, HF_REPO_URL, COL
-from sdai.utils.webui import _remove_path, handle_setup_timer, find_model_by_partial_name
 from sdai.webui_meta import DEFAULT_VENV, WEBUIS, meta, build_urls
 from sdai.utils.json import read, save, key_exists, load_settings
 from sdai.services.manager import _normalize_url, download, clone
+from sdai.models import find_model_by_partial_name, get_category
+from sdai.utils.webui import _remove_path, handle_setup_timer
 from sdai.api.civitai import CIVITAI_DOMAINS, CivitaiAPI
-from sdai.models import get_category
 from sdai.translations import tr
 
 
@@ -304,7 +304,7 @@ def merge_dirs(src: Path, dst: Path, label='', log=False):
         shutil.move(item, dst)
     shutil.rmtree(src)
     if log:
-        print(f"{COL.Y}📦 {label}: {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
+        print(f"{COL.Y}📦 {label}: {COL.cB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
 
 
 def cleanup_ipynb_checkpoints(base_path: Path):
@@ -398,7 +398,7 @@ def create_symlink(src: str | Path, dst: str | Path, symlink_name='GDrive', dire
             if not src.exists():
                 src.symlink_to(dst, target_is_directory=True)
                 if log:
-                    print(f"{COL.G}🔗 {tr('gd_direct_symlink')} {COL.lB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
+                    print(f"{COL.G}🔗 {tr('gd_direct_symlink')} {COL.cB}{src}{COL.X} → {COL.G}{dst}{COL.X}")
         else:
             # Subfolder mode: create GDrive folder inside src
             symlink_path = src / symlink_name
@@ -413,7 +413,7 @@ def create_symlink(src: str | Path, dst: str | Path, symlink_name='GDrive', dire
             if not symlink_path.exists():
                 symlink_path.symlink_to(dst, target_is_directory=True)
                 if log:
-                    print(f"{COL.G}🔗 {tr('gd_symlink_created')} {COL.lB}{symlink_path}{COL.X} → {COL.G}{dst}{COL.X}")
+                    print(f"{COL.G}🔗 {tr('gd_symlink_created')} {COL.cB}{symlink_path}{COL.X} → {COL.G}{dst}{COL.X}")
     except Exception as exc:
         print(f"{COL.R}❌ {tr('gd_symlink_error')}{COL.X} {src} - {exc}")
 
@@ -431,7 +431,7 @@ def create_config_symlink(local_path: str | Path, gdrive_path: str | Path, confi
             if local_path.exists() and local_path.is_file() and not gdrive_path.exists():
                 shutil.copy2(local_path, gdrive_path)
                 if log:
-                    print(f"{COL.Y}{tr('gd_backed_up', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
+                    print(f"{COL.Y}{tr('gd_backed_up', config_name=config_name, name=f'{COL.cB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
 
             if local_path.exists():
                 local_path.unlink()
@@ -454,7 +454,7 @@ def create_config_symlink(local_path: str | Path, gdrive_path: str | Path, confi
             local_path.symlink_to(gdrive_path, target_is_directory=is_dir)
             if log:
                 icon = '📁' if is_dir else '📄'
-                print(f"{COL.G}{icon} {tr('gd_config_symlink', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
+                print(f"{COL.G}{icon} {tr('gd_config_symlink', config_name=config_name, name=f'{COL.cB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
     except Exception as exc:
         print(f"{COL.R}❌ {tr('gd_config_error', config_name=config_name)}{COL.X} {local_path.name} - {exc}")
 
@@ -475,7 +475,7 @@ def restore_from_symlink(local_path: str | Path, gdrive_path: str | Path, config
             (shutil.copytree if is_dir else shutil.copy2)(gdrive_path, local_path)
             if log:
                 icon = '📁' if is_dir else '📄'
-                print(f"{COL.Y}{icon} {tr('gd_restored', config_name=config_name, name=f'{COL.lB}{local_path.name}{COL.X}')} ← {COL.B}GDrive{COL.X}")
+                print(f"{COL.Y}{icon} {tr('gd_restored', config_name=config_name, name=f'{COL.cB}{local_path.name}{COL.X}')} ← {COL.B}GDrive{COL.X}")
     except Exception as exc:
         print(f"{COL.R}❌ {tr('gd_restore_error', config_name=config_name)}{COL.X} {exc}")
 
@@ -490,7 +490,7 @@ def _clear_category_symlinks(config_list: list, category: str, restore=False, lo
                 p.unlink()
                 removed += 1
                 if log:
-                    print(f"{COL.R}🗑️ {tr('gd_removed')} {COL.lB}{p}{COL.X}")
+                    print(f"{COL.R}🗑️ {tr('gd_removed')} {COL.cB}{p}{COL.X}")
         else:
             local = Path(cfg['local'])
             gdrive = Path(cfg['gdrive'])
@@ -685,7 +685,7 @@ def format_output(url: str, dst_dir: str, file_name: str, image_url: str = None)
     sep_line = '───' * 20
 
     print()
-    print(f"{COL.G}{sep_line}{COL.lB}{info}{COL.G}{sep_line}{COL.X}")
+    print(f"{COL.G}{sep_line}{COL.cB}{info}{COL.G}{sep_line}{COL.X}")
     print(f"{COL.Y}{'URL:':<12}{COL.X}{url}")
     print(f"{COL.Y}{'SAVE DIR:':<12}{COL.B}{dst_dir}")
     print(f"{COL.Y}{'FILE NAME:':<12}{COL.B}{file_name}{COL.X}")

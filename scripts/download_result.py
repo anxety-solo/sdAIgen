@@ -1,4 +1,4 @@
-""" Download Results Widget | by ANXETY """
+""" Results Widget: Installed Models Summary | by ANXETY """
 
 import os
 import re

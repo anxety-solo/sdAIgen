@@ -1,4 +1,4 @@
-""" Logger Module | by ANXETY """
+""" Colored Logger: Leveled Console Output | by ANXETY """
 
 # === SDAIGEN ===
 from sdai.constants import COL

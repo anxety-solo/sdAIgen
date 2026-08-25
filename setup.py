@@ -1,4 +1,4 @@
-""" Setup SDAIGEN Project Manager | by ANXETY """
+""" SDAIGEN Bootstrap: Env Detection & Source Fetcher | by ANXETY """
 
 import nest_asyncio
 import importlib

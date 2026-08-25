@@ -1,4 +1,4 @@
-""" CivitAI API Module | by ANXETY """
+""" CivitAI API: Model Resolution, Preview & Metadata | by ANXETY """
 
 import requests
 import json
@@ -8,8 +8,8 @@ import re
 
 from dataclasses import dataclass
 from pathlib import Path
-from PIL import Image
 from typing import Any
+from PIL import Image
 
 # === SDAIGEN ===
 from sdai.utils.logger import Logger

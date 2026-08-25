@@ -1,7 +1,6 @@
-""" WebUI Utilities Module | by ANXETY """
+"""  WebUI Utils: State Sync, Symlinks & Timer | by ANXETY """
 
 import shutil
-import re
 
 from pathlib import Path
 
@@ -68,20 +67,3 @@ def handle_setup_timer(webui_path: str, timer_webui: float) -> float:
         f.write(str(timer_webui))
 
     return timer_webui
-
-
-# ~~ WIDGETS HANDLERS ~~
-
-def find_model_by_partial_name(partial_name: str, model_dict: dict) -> str | None:
-    """
-    Find model in dictionary by partial name (case-insensitive)
-    Returns the full key name if found, None otherwise.
-    """
-    if not partial_name or partial_name.lower() in {'none', 'all'}:
-        return partial_name
-
-    def normalize(name: str) -> str:
-        return re.sub(r'^\d+\.\s*', '', name).lower()
-
-    target = normalize(partial_name)
-    return next((key for key in model_dict if target in normalize(key)), None)

@@ -1,6 +1,6 @@
 ---
 name: python-code-style
-description: Custom Python code formatting style used by this user. Apply whenever writing, generating, editing, or reformatting Python code for this user — scripts, functions, classes, refactors, code review. Covers a one-line module docstring (`""" Name | by ANXETY """`), blank-line spacing between functions/methods, compact function bodies with blank lines only at real logic shifts, `# ~~ SECTION ~~` markers with nested `# --- Sub-section ---`, single vs double quotes (f-strings/docstrings/HTML exception), naming caught exceptions `exc` not `e`, no period on single-line docstrings, opt-in type annotations (only if asked; default args skip unless multi-type; no explicit None return; 3.10+ syntax), import ordering (bare then from-imports, `as`-aliases in their own sub-group, by descending length; `# === PROJECT NAME ===` before local imports), aligning variables/dicts/lists into columns (skip 2-item groups with a big gap), and a required trailing blank line at EOF. Use instead of PEP 8 defaults, even unprompted.
+description: Custom Python code formatting style used by this user. Apply whenever writing, generating, editing, or reformatting Python code for this user — scripts, functions, classes, refactors, code review. Covers a one-line module docstring (`""" Name | by ANXETY """`), blank-line spacing between functions/methods, compact function bodies with blank lines only at real logic shifts, `# ~~ SECTION ~~` markers with nested `# --- Sub-section ---`, single vs double quotes (f-strings/docstrings/HTML exception), naming caught exceptions `exc` not `e`, no period on single-line docstrings, opt-in type annotations with a defaulted-argument mapping (concrete defaults drop annotation, `None` default keeps type and drops `| None`; 3.10+ syntax), import ordering (bare then from-imports, `as`-aliases in their own sub-group, by descending length; `# === PROJECT NAME ===` before local imports), aligning variables/dicts/lists into columns, and a trailing blank line at EOF. Use instead of PEP 8 defaults, even unprompted.
 ---
 
 # Python Code Style
@@ -180,28 +180,37 @@ def get_path():
 When annotations are requested, follow these rules:
 
 - Every function gets type annotations for its arguments and for its return value.
-- Exception: an argument with a **default value** is **not** annotated — the default already makes the type obvious, so the annotation would be redundant.
-- Exception to that exception: if the argument can accept **more than one type** (e.g. `str | Path`), annotate it even though it has a default — the default alone doesn't convey which types are acceptable.
+- Exception: an argument with a **concrete-value default** (a literal like `True`, `512`, `'x'`) is **not** annotated — the literal already makes the type obvious, so the annotation is dropped entirely.
+- Special case: an argument whose default is **`None`** and whose type would otherwise be written `type | None` keeps its annotation, but the `| None` is dropped — write `param: type = None`, not `param: type | None = None` and not `param=None`. The base type still isn't obvious from `None` alone, so it stays; the `| None` is redundant once you can see the default is `None`.
 - Exception: if a function just performs an action and doesn't return a value (no `return`, or a bare `return` used only to exit early), **omit the return annotation entirely** — don't write it.
 - Never write `-> None:` explicitly. It's the one case where "no annotation" and "explicit `None` annotation" would look different, but this style always omits it — a function with no return annotation is understood to return nothing.
 - Write annotations using modern Python 3.10+ syntax: built-in generics (`list[int]`, `dict[str, int]`, `tuple[str, ...]`) instead of `typing.List`/`typing.Dict`/`typing.Tuple`, and `X | None` / `X | Y` instead of `Optional[X]` / `Union[X, Y]`. Don't import from `typing` for things the built-ins and `|` now cover.
+
+Mapping for defaulted arguments:
+
+```
+param: bool = True        → param=True          # concrete value -> annotation dropped
+param: int = 512          → param=512            # concrete value -> annotation dropped
+param: str = 'x'          → param='x'            # concrete value -> annotation dropped
+param: type | None = None → param: type = None   # None default -> type kept, '| None' dropped
+```
 
 ```python
 def add(a: int, b: int) -> int:
     return a + b
 
-def func(a: int, b=5) -> int:
-    # 'a' has no default -> annotated. 'b' has a default and only one plausible type -> not annotated.
+def configure(enabled=True, retries=512, name='x'):
+    # all three defaults are concrete values -> no annotations
     ...
 
-def load_file(path: str | Path = 'config.json') -> dict:
-    # 'path' has a default, but it accepts more than one type -> still annotated.
+def find_handler(handler: Callable = None):
+    # default is None -> base type kept, '| None' dropped
     ...
 
 def find_user(user_id: int) -> dict[str, str] | None:
     ...
 
-def log_event(message: str, level: int = 1):
+def log_event(message: str, level=1):
     print(f"[{level}] {message}")
 ```
 

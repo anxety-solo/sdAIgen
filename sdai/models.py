@@ -1,4 +1,7 @@
-""" Models Data Module | by ANXETY """
+""" Model Catalog: SD/XL/ANIMA Registries & Resolver | by ANXETY """
+
+import re
+
 
 SD = {
     'model': {
@@ -212,6 +215,24 @@ MODEL_CATEGORIES = {
     'XL':    XL,
     'ANIMA': ANIMA,
 }
+
+
+# ~~ HELPERS ~~
+
+
+def find_model_by_partial_name(partial_name: str, model_dict: dict) -> str | None:
+    """
+    Find model in dictionary by partial name (case-insensitive)
+    Returns the full key name if found, None otherwise.
+    """
+    if not partial_name or partial_name.lower() in {'none', 'all'}:
+        return partial_name
+
+    def normalize(name: str) -> str:
+        return re.sub(r'^\d+\.\s*', '', name).lower()
+
+    target = normalize(partial_name)
+    return next((key for key in model_dict if target in normalize(key)), None)
 
 
 def get_category(key: str) -> dict:

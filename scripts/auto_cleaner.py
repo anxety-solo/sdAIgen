@@ -1,7 +1,8 @@
-""" Auto Cleaner Widget | by ANXETY """
+""" Cleaner Widget: Disk Usage & Selective Purge | by ANXETY """
 
 import psutil
 import os
+import shutil
 
 import ipywidgets as widgets
 
@@ -10,19 +11,21 @@ from pathlib import Path
 
 # === SDAIGEN ===
 from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, GD_BASE, GD_FILES, GD_OUTPUTS
-from sdai.factory import WidgetFactory
 from sdai.utils.json import read, load_settings
+from sdai.factory import WidgetFactory
 from sdai.translations import tr
 
-
-# ~~ CONSTANTS ~~
+UI_NAME      = read(SETTINGS_PATH, 'WEBUI.current')
+ENV_NAME     = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+mount_gdrive = read(SETTINGS_PATH, 'GDRIVE.mount', False)
 
 WIDGET_CSS = CSS_DIR_PATH / 'auto-cleaner.css'
+
 CONTAINER_WIDTH = '1080px'
 
 GB = 1024 ** 3
 
-TRASH_EXTENSIONS = {'.txt', '.aria2', '.ipynb_checkpoints', '.mp4'}
+TRASH_EXTENSIONS = {'.txt', '.aria2', '.mp4'}
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
 
 
@@ -30,10 +33,6 @@ IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif'}
 
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
-
-UI_NAME      = read(SETTINGS_PATH, 'WEBUI.current')
-ENV_NAME     = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-mount_gdrive = read(SETTINGS_PATH, 'GDRIVE.mount', False)
 
 show_gdrive_toggle = ENV_NAME == 'Colab' and mount_gdrive and os.path.exists(GD_BASE)
 
@@ -45,7 +44,7 @@ def gdrive_path(name: str, gd_folder: str, ui: str) -> str:
     return str(GD_OUTPUTS / ui) if name == 'Output Images' else str(GD_FILES / gd_folder)
 
 
-def build_directories(ui: str) -> dict[str, dict[bool, str]]:
+def build_directories(ui: str) -> dict[str, dict[bool, str | Path]]:
     """Build directory mapping: name -> {False: local, True: gdrive}"""
     # gdrive_map: display_name | (gd_folder, local_dir)
     gdrive_map = {
@@ -95,8 +94,14 @@ def should_delete_file(filename: str, directory_type: str) -> tuple[bool, bool]:
 def clean_directory(directory: str | Path, directory_type: str, on_error=None) -> int:
     """Clean directory and return the number of deleted files"""
     deleted_count = 0
+    checkpoints_removed = False
 
-    for root, _, files in os.walk(directory):
+    for root, dirs, files in os.walk(directory):
+        if '.ipynb_checkpoints' in dirs:
+            chk = Path(root) / '.ipynb_checkpoints'
+            shutil.rmtree(chk, ignore_errors=True)
+            dirs.remove('.ipynb_checkpoints')
+            checkpoints_removed = True
         for file in files:
             should_delete, should_count = should_delete_file(file, directory_type)
             if not should_delete:

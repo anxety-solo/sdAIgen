@@ -14,7 +14,7 @@
     /* Container */
     --aw-container-bg: #232323;
     --aw-container-border: 2px solid rgba(0, 0, 0, 0.4);
-    --aw-conteiner-gap: 8px;
+    --aw-container-gap: 8px;
 
     /* Inputs */
     --aw-input-bg: #1c1c1c;
@@ -169,7 +169,7 @@ hr {
     margin: 0;
     min-height: 200px;
     align-items: stretch;
-    gap: var(--aw-conteiner-gap);
+    gap: var(--aw-container-gap);
 }
 
 /* Panels */

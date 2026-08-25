@@ -1,4 +1,4 @@
-""" WebUI Installer | by ANXETY """
+""" WebUI Installer: Clone/Unpack, Configs & Extensions | by ANXETY """
 
 import subprocess
 import requests

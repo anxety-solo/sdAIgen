@@ -1,4 +1,4 @@
-""" Manager Module | by ANXETY """
+""" Download Manager: aria2/gdown/curl & Git Clone | by ANXETY """
 
 import subprocess
 import requests

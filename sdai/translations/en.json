@@ -6,8 +6,8 @@
     "model_type": "Model Type:",
 
     "vae_header": "VAE Selection",
-    "vae_num_label": "Vae Number:",
-    "vae_num_hint": "Enter vae numbers for download.",
+    "vae_num_label": "VAE Number:",
+    "vae_num_hint": "Enter VAE numbers for download.",
 
     "additional_header": "Additionally",
     "update_scope_label": "Update:",
