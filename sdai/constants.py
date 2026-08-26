@@ -35,7 +35,7 @@ GD_CONFIGS = GD_BASE / 'configs'
 
 HUGGINGFACE_BASE = 'https://huggingface.co'
 
-HF_REPO_NAME = 'NagisaNao/ANXETY_WIP'
+HF_REPO_NAME = 'NagisaNao/ANXETY'
 HF_REPO_URL  = f"{HUGGINGFACE_BASE}/{HF_REPO_NAME}/resolve/main"
 
 

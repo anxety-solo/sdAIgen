@@ -1,26 +1,34 @@
 ---
 name: python-code-style
-description: Custom Python code formatting style used by this user. Apply whenever writing, generating, editing, or reformatting Python code for this user — scripts, functions, classes, refactors, code review. Covers a one-line module docstring (`""" Name | by ANXETY """`), blank-line spacing between functions/methods, compact function bodies with blank lines only at real logic shifts, `# ~~ SECTION ~~` markers with nested `# --- Sub-section ---`, single vs double quotes (f-strings/docstrings/HTML exception), naming caught exceptions `exc` not `e`, no period on single-line docstrings, opt-in type annotations with a defaulted-argument mapping (concrete defaults drop annotation, `None` default keeps type and drops `| None`; 3.10+ syntax), import ordering (bare then from-imports, `as`-aliases in their own sub-group, by descending length; `# === PROJECT NAME ===` before local imports), aligning variables/dicts/lists into columns, and a trailing blank line at EOF. Use instead of PEP 8 defaults, even unprompted.
+description: Personal Python code formatting style belonging to a specific user (author tag "ANXETY" by default). Apply this style ONLY when the user explicitly asks for it — e.g. "format this in my style", "use my Python style", "apply ANXETY style", or an earlier standing instruction in the conversation to always use it. Do NOT apply it by default to ordinary Python requests. Once invoked, it governs: an optional one-line module docstring naming an author (default "ANXETY", override if the user names someone else), blank-line spacing between functions/methods, compact function bodies with blank lines only at real logic shifts, `# ~~ SECTION ~~` markers with nested `# --- Sub-section ---`, single vs double quotes (with an f-string/docstring/HTML exception), naming caught exceptions `exc` not `e`, no period on single-line docstrings, opt-in type annotations with a defaulted-argument mapping, import ordering (bare then from-imports, `as`-aliases in their own sub-group, sorted by descending length, plus a `# === PROJECT NAME ===` marker for local imports), aligning variables/dicts/lists into columns, and a trailing blank line at EOF.
 ---
 
-# Python Code Style
+# Python Code Style (ANXETY)
 
-This skill encodes one user's personal Python style conventions. They differ from PEP 8 in specific, deliberate ways — apply them by default any time you write or edit Python code for this user, not just when they explicitly ask for formatting.
+This skill encodes one user's personal Python style conventions. It differs from plain PEP 8 in specific, deliberate ways.
 
-## 1. Module docstring
+**This is opt-in, not a default.** Only apply these rules when the user explicitly asks for their personal/custom style — by name ("ANXETY style", "my style") or by clear standing instruction earlier in the conversation ("always format my Python like this from now on"). For ordinary Python requests with no such signal, write normal idiomatic Python and ignore this skill entirely.
+
+## 1. Module docstring (on by default, but skippable)
 
 Every `.py` file starts with a one-line docstring at the very top of the file — before imports, before anything else — in this exact form:
 
 ```python
-""" <Name Case> | by ANXETY """
+""" <Name Case> | by <Author> """
 ```
 
-- `<Name Case>` is a short Title Case name describing what the file does.
-- `ANXETY` is the fixed author name and is always written in uppercase.
-- It's allowed to expand into a multi-line docstring when the file is large or its functionality is complex enough that one line doesn't cover it — in that case give a brief multi-line description, still opening with the `<Name Case> | by ANXETY` line.
+- `<Name Case>` is not just a filename label — it's a short, Title Case description of the script's **core purpose and logic**: what the file is actually for. Think "what would I tell someone this file does in five words", not "what would I name this file".
+- If a file serves more than one distinct purpose (e.g. it bundles a couple of related components, or handles a main task plus a clearly secondary one), name the main parts, separated by `&` or `:` as fits naturally.
+- `<Author>` defaults to **ANXETY**, written in uppercase. If the user tells you to credit a different name or handle, use that instead — it replaces ANXETY, it doesn't get appended to it.
+- This docstring is added **by default** whenever this skill is active. If the user says they don't want a header docstring (for this file, or in general), skip it — don't argue for it.
+- It's fine to expand into a multi-line docstring when the file is large or complex enough that one line doesn't cover it — still open with the `<Name Case> | by <Author>` line.
 
 ```python
-""" Test Module Name | by ANXETY """
+""" Image Resizer | by ANXETY """
+```
+
+```python
+""" Main Widgets: Settings Hub & GDrive Panel | by ANXETY """
 ```
 
 ## 2. Blank lines between functions
@@ -29,19 +37,19 @@ Every `.py` file starts with a one-line docstring at the very top of the file �
 - Methods inside a class: **1 blank line** between them.
 
 ```python
-def load_config():
+def enqueue_task(task):
     ...
 
 
-def save_config():
+def dequeue_task():
     ...
 
 
-class Manager:
-    def start(self):
+class TaskQueue:
+    def push(self, task):
         ...
 
-    def stop(self):
+    def pop(self):
         ...
 ```
 
@@ -50,17 +58,21 @@ class Manager:
 Write functions tight and lean — no filler blank lines, no padding just to spread code out. But compactness never trumps readability: put a blank line inside a function exactly where the logic actually shifts (setup done and now validating, validation done and now computing, right before a `return` that closes out a distinct block) — not as a reflex between every couple of lines, and not omitted just to save lines when it would actually help someone follow the logic.
 
 ```python
-def process_order(order):
-    validate(order)
-    total = calculate_total(order)
+def fetch_with_retry(url, max_attempts):
+    attempts = 0
+    last_error = None
 
-    if total > order.limit:
-        raise ValueError('Order exceeds limit')
+    while attempts < max_attempts:
+        try:
+            return send_request(url)
+        except ConnectionError as exc:
+            last_error = exc
+            attempts += 1
 
-    return total
+    raise last_error
 ```
 
-Here the blank lines mark the two real shifts — setup into the limit check, and the check into the return — everything else stays packed together.
+Here the blank lines mark the two real shifts — setup into the retry loop, and the loop into the final raise — everything else stays packed together.
 
 ## 4. Section markers
 
@@ -73,19 +85,19 @@ Mark logical sections of a file with a comment in this exact form:
 Spacing is asymmetric on purpose: **2 blank lines above** the marker (same spacing as between top-level functions, so it reads as a clear break from whatever came before), but only **1 blank line below** it, so the marker sits close to the code it labels and it's obvious which block it belongs to.
 
 ```python
-# ~~ CONFIG ~~
+# ~~ COMMANDS ~~
 
-def load_config():
+def run_build():
     ...
 
 
-def save_config():
+def run_deploy():
     ...
 
 
 # ~~ HELPERS ~~
 
-def normalize(value):
+def parse_flags(argv):
     ...
 ```
 
@@ -95,40 +107,42 @@ def normalize(value):
 # --- Sub-section Name ---
 ```
 
+Each word in the sub-section name is capitalized (Title Case), same as the top-level marker — e.g. `# --- API Tokens ---`.
+
 These nested markers get **1 blank line above and 1 blank line below** — both sides equal, unlike the top-level `# ~~ SECTION ~~` marker's asymmetric spacing. This keeps them visually smaller/lighter than a top-level section, since they're a subdivision of it rather than a new section in their own right.
 
 ```python
-# ~~ VALIDATION ~~
+# ~~ FORM VALIDATION ~~
 
-# --- Type checks ---
+# --- Field Checks ---
 
-def check_str(value):
+def check_email(value):
     ...
 
 
-def check_int(value):
+def check_phone(value):
     ...
 
-# --- Range checks ---
+# --- Cross-Field Checks ---
 
-def check_min(value, minimum):
+def check_passwords_match(pw1, pw2):
     ...
 
 
-def check_max(value, maximum):
+def check_dates_in_order(start, end):
     ...
 ```
 
 **Inside a class:** if a `# ~~ SECTION ~~` or `# --- Sub-section ---` marker is the very **first** thing in a class body — right after the `class ...:` line, before any method — skip the blank line(s) above it. There's nothing preceding it inside the class to separate from, so the leading blank lines would just be empty space at the top of the class.
 
 ```python
-class Manager:
+class NotificationSender:
     # ~~ LIFECYCLE ~~
 
-    def start(self):
+    def connect(self):
         ...
 
-    def stop(self):
+    def disconnect(self):
         ...
 ```
 
@@ -136,18 +150,18 @@ class Manager:
 
 - Default: **single quotes** (`'...'`) everywhere — strings, dict keys, imports, etc.
 - Exception: **docstrings** and **f-strings** use **double quotes** (`"""..."""` / `f"..."`).
-- Exception to the exception: if an f-string contains HTML markup (whose tags/attributes use double quotes, e.g. `f'<div class="box">'`), use **single quotes** for that f-string so the HTML's own double quotes don't need escaping.
+- Exception to the exception: if an f-string contains HTML markup (whose tags/attributes use double quotes, e.g. `f'<div class="alert">'`), use **single quotes** for that f-string so the HTML's own double quotes don't need escaping.
 
 ```python
-name = 'worker'
-config = {'path': 'settings.json'}
+status = 'idle'
+headers = {'content-type': 'application/json'}
 
-def greet(user: str) -> str:
-    """Return a greeting for the user"""
-    return f"Hello, {user}!"
+def build_summary(name: str) -> str:
+    """Return a short status summary for the given worker"""
+    return f"Worker {name} is currently active"
 
-def render_row(label, value):
-    return f'<div class="row"><span>{label}</span>: {value}</div>'
+def render_alert_row(message, level):
+    return f'<tr class="alert-{level}"><td>{message}</td></tr>'
 ```
 
 ## 6. Exception variable naming
@@ -156,9 +170,9 @@ Name a caught exception `exc`, never `e` or any other single-letter name.
 
 ```python
 try:
-    load_config()
-except FileNotFoundError as exc:
-    print(f"Config file missing: {exc}")
+    connection = open_database()
+except TimeoutError as exc:
+    log.warning(f"Database connection timed out: {exc}")
 ```
 
 ## 7. Single-line docstrings
@@ -166,9 +180,9 @@ except FileNotFoundError as exc:
 A single-line docstring inside a function does **not** end with a period.
 
 ```python
-def get_path():
-    """Return the resolved project path"""
-    return PROJECT_PATH
+def get_cache_dir():
+    """Return the path to the local cache directory"""
+    return CACHE_DIR
 ```
 
 (Multi-line docstrings aren't covered by this rule — use normal judgment/punctuation for those.)
@@ -180,7 +194,7 @@ def get_path():
 When annotations are requested, follow these rules:
 
 - Every function gets type annotations for its arguments and for its return value.
-- Exception: an argument with a **concrete-value default** (a literal like `True`, `512`, `'x'`) is **not** annotated — the literal already makes the type obvious, so the annotation is dropped entirely.
+- Exception: an argument with a **concrete-value default** (a literal like `True`, `30`, `'utf-8'`) is **not** annotated — the literal already makes the type obvious, so the annotation is dropped entirely.
 - Special case: an argument whose default is **`None`** and whose type would otherwise be written `type | None` keeps its annotation, but the `| None` is dropped — write `param: type = None`, not `param: type | None = None` and not `param=None`. The base type still isn't obvious from `None` alone, so it stays; the `| None` is redundant once you can see the default is `None`.
 - Exception: if a function just performs an action and doesn't return a value (no `return`, or a bare `return` used only to exit early), **omit the return annotation entirely** — don't write it.
 - Never write `-> None:` explicitly. It's the one case where "no annotation" and "explicit `None` annotation" would look different, but this style always omits it — a function with no return annotation is understood to return nothing.
@@ -189,29 +203,30 @@ When annotations are requested, follow these rules:
 Mapping for defaulted arguments:
 
 ```
-param: bool = True        → param=True          # concrete value -> annotation dropped
-param: int = 512          → param=512            # concrete value -> annotation dropped
-param: str = 'x'          → param='x'            # concrete value -> annotation dropped
-param: type | None = None → param: type = None   # None default -> type kept, '| None' dropped
+param: bool = True         → param=True           # concrete value -> annotation dropped
+param: int = 30            → param=30              # concrete value -> annotation dropped
+param: str = 'utf-8'       → param='utf-8'         # concrete value -> annotation dropped
+param: type | None = None  → param: type = None    # None default -> type kept, '| None' dropped
 ```
 
 ```python
-def add(a: int, b: int) -> int:
-    return a + b
+def add_items(cart: list[str], item: str) -> list[str]:
+    cart.append(item)
+    return cart
 
-def configure(enabled=True, retries=512, name='x'):
+def open_socket(timeout=30, retries=3, encoding='utf-8'):
     # all three defaults are concrete values -> no annotations
     ...
 
-def find_handler(handler: Callable = None):
+def find_adapter(adapter: Adapter = None):
     # default is None -> base type kept, '| None' dropped
     ...
 
-def find_user(user_id: int) -> dict[str, str] | None:
+def find_record(record_id: int) -> dict[str, str] | None:
     ...
 
-def log_event(message: str, level=1):
-    print(f"[{level}] {message}")
+def log_metric(name: str, value=1):
+    print(f"[{name}] {value}")
 ```
 
 ## 9. Import order within a group
@@ -224,23 +239,23 @@ Within the standard-library / third-party import block of a script:
 4. Within each of those two groups, `as`-aliased imports (`import x as y` / `from x import y as z`) form their own sub-group **below** the plain (non-aliased) imports of that same group — separated by a blank line — and are themselves sorted by descending line length. A short aliased import still goes below a longer plain import, because it belongs to the aliased sub-group, not the plain one.
 
 ```python
-import json
-import os
+import sys
+import re
 
-from collections import defaultdict
-from pathlib import Path
+from html.parser import HTMLParser
+from urllib.parse import urljoin
 ```
 
-Example with aliased imports (the `as` sub-group sits below the plain `import` lines, in its own descending-length order — note `ipywidgets` outranks `gradio` there even though `os`/`time` above are shorter still, because they belong to different sub-groups):
+Example with aliased imports (the `as` sub-group sits below the plain `import` lines, in its own descending-length order — note `element_tree` outranks `numpy` there even though `sys`/`csv` above are shorter still, because they belong to different sub-groups):
 
 ```python
-import time
-import os
+import csv
+import sys
 
-import ipywidgets as widgets
-import gradio as gr
+import xml.etree.ElementTree as element_tree
+import numpy as np
 
-from IPython.display import HTML, display
+from dataclasses import dataclass, field
 ```
 
 ## 10. Project-local imports
@@ -255,16 +270,16 @@ Full example combining #9 and #10 (the project name below is just a stand-in —
 
 ```python
 import json
-import os
+import time
 
 from collections import defaultdict
 from pathlib import Path
 
-# === PROJECT NAME ===
-import project.utils
+# === SCRAPER TOOLKIT ===
+import scraper.throttling
 
-from project.config import settings
-from project.paths import BASE_PATH
+from scraper.parsers import extract_links
+from scraper.storage import save_page
 ```
 
 (Only **1 blank line** between the main import block and the `# === PROJECT NAME ===` marker — that's different from the 2-blank-line spacing section markers normally get elsewhere in the file, because this marker is directly continuing the imports, not starting a new code section.)
@@ -274,20 +289,19 @@ from project.paths import BASE_PATH
 Where it's reasonable to do so, align the `=` signs (or `:` in dicts) of related consecutive assignments so they form a neat column. Group related constants together (blank line between unrelated groups) and pad names/keys with spaces so the values line up. (Names/paths below are just an example shape to imitate, not fixed values.)
 
 ```python
-HOME_PATH     = Path.home()
-PROJECT_PATH  = HOME_PATH / 'myapp'
-SETTINGS_PATH = PROJECT_PATH / 'settings.json'
-VENV_PATH     = HOME_PATH / 'venv'
+DEFAULT_TIMEOUT  = 10
+MAX_RETRIES      = 5
+BACKOFF_SECONDS  = 2
+USER_AGENT       = 'toolkit/1.0'
 
-SCRIPTS_PATH = PROJECT_PATH / 'scripts'
-ASSETS_PATH  = PROJECT_PATH / 'assets'
+READ_CHUNK_SIZE  = 8192
+WRITE_CHUNK_SIZE = 4096
 
-os.environ.update({
-    'home_path':     str(HOME_PATH),
-    'project_path':  str(PROJECT_PATH),
-    'settings_path': str(SETTINGS_PATH),
-    'venv_path':     str(VENV_PATH),
-})
+STATUS_CODES = {
+    'ok':      200,
+    'created': 201,
+    'error':   500,
+}
 ```
 
 This applies to dict literals and lists of related values too — line them up in columns whenever the values are short and the alignment doesn't hurt readability (don't force alignment on structures with very long or highly variable-length keys/values, where it would just create huge gaps).
@@ -296,22 +310,22 @@ This applies to dict literals and lists of related values too — line them up i
 
 ```python
 # small gap on a pair -> still align
-self.width  = width
-self.height = height
+self.host = host
+self.port = port
 
-# big gap on a pair (7 spaces) -> leave unaligned
-self.retries = retries
-self.max_connection_pool_size = pool_size
+# big gap on a pair (6 spaces) -> leave unaligned
+self.enabled = enabled
+self.max_concurrent_uploads = max_uploads
 
 # same exception applies to dicts: big gap on a 2-key dict -> unaligned
 LIMITS = {
     'id': 1,
-    'maximum_upload_size_bytes': 104857600,
+    'maximum_requests_per_minute': 120,
 }
 
 # and to tuples/lists: small, even gap on a pair -> still align
-SMALL_ICON = (16, 16)
-LARGE_ICON = (256, 256)
+THUMBNAIL_SIZE = (128, 128)
+BANNER_SIZE    = (1024, 256)
 ```
 
 ## 12. Trailing blank line
@@ -320,11 +334,13 @@ Every script ends with a single blank line — i.e. the file's last line is empt
 
 ## Applying this in practice
 
-When writing or editing a Python file for this user:
+Only follow the steps below once the user has actually invoked this style (see the "opt-in, not a default" note above). When writing or editing a Python file under this style:
+
 - Assume a modern-Python target (3.10+) throughout — use current syntax and stdlib features, don't write code that supports older Python versions.
-- Start the file with the module docstring (rule 1).
+- Start the file with the module docstring (rule 1), unless the user has said not to.
 - Run through rules 2–7 as you write each function/class/docstring/string literal (rule 8's annotations only if the user has asked for them) — keep function bodies compact per rule 3, and name caught exceptions `exc` per rule 6.
 - Build the import block per rules 9–10 before writing the rest of the file.
 - After a first pass, do one alignment pass (rule 11) over constant blocks, dicts, and lists.
 - Make sure the file ends with exactly one trailing blank line (rule 12).
 - If editing existing code that violates these rules, bring the parts you touch into line with this style rather than matching the surrounding non-conforming code.
+- If the user later asks for plain/idiomatic Python again, drop back to normal conventions — this style stays active only while they want it.

@@ -11,10 +11,10 @@ from datetime import datetime
 
 # === SDAIGEN ===
 from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, JS_DIR_PATH, HUGGINGFACE_BASE
-from sdai.utils.webui import update_current_webui
 from sdai.models import XL, MODEL_CATEGORIES, get_category, find_model_by_partial_name
 from sdai.webui_meta import DEFAULT_UI, WEBUIS, meta
 from sdai.utils.json import read, save, key_exists
+from sdai.utils.webui import update_current_webui
 from sdai.factory import WidgetFactory
 from sdai.translations import tr
 

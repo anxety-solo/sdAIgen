@@ -324,7 +324,7 @@ def build_symlink_config(ui: str) -> dict:
     base_files = [
         (model_dir,     'Checkpoints'),
         (vae_dir,       'VAE'),
-        (lora_dir,      'Lora'),
+        (lora_dir,      'LoRa'),
         (embed_dir,     'Embeddings'),
         (control_dir,   'ControlNet'),
         (upscale_dir,   'Upscale'),

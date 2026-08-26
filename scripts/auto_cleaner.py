@@ -1,8 +1,8 @@
 """ Cleaner Widget: Disk Usage & Selective Purge | by ANXETY """
 
 import psutil
-import os
 import shutil
+import os
 
 import ipywidgets as widgets
 
@@ -14,6 +14,7 @@ from sdai.constants import SETTINGS_PATH, CSS_DIR_PATH, GD_BASE, GD_FILES, GD_OU
 from sdai.utils.json import read, load_settings
 from sdai.factory import WidgetFactory
 from sdai.translations import tr
+
 
 UI_NAME      = read(SETTINGS_PATH, 'WEBUI.current')
 ENV_NAME     = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
@@ -49,16 +50,16 @@ def build_directories(ui: str) -> dict[str, dict[bool, str | Path]]:
     # gdrive_map: display_name | (gd_folder, local_dir)
     gdrive_map = {
         # Display Name | GD folder | Local dir
-        'Models':            ('Checkpoints',  model_dir),
-        'VAE':               ('VAE',          vae_dir),
-        'LoRA':              ('Lora',         lora_dir),
-        'ControlNet Models': ('ControlNet',   control_dir),
-        'CLIP Models':       ('Clip',         clip_dir),
-        'UNET Models':       ('Unet',         unet_dir),
-        'Vision Models':     ('Vision',       vision_dir),
-        'Encoder Models':    ('Encoder',      encoder_dir),
-        'Diffusion Models':  ('Diffusion',    diffusion_dir),
-        'Output Images':     ('Output',       output_dir),
+        'Models':            ('Checkpoints', model_dir),
+        'VAE':               ('VAE',         vae_dir),
+        'LoRa':              ('LoRa',        lora_dir),
+        'ControlNet Models': ('ControlNet',  control_dir),
+        'CLIP Models':       ('Clip',        clip_dir),
+        'UNET Models':       ('Unet',        unet_dir),
+        'Vision Models':     ('Vision',      vision_dir),
+        'Encoder Models':    ('Encoder',     encoder_dir),
+        'Diffusion Models':  ('Diffusion',   diffusion_dir),
+        'Output Images':     ('Output',      output_dir),
     }
 
     return {
@@ -77,10 +78,12 @@ DIRECTORIES = build_directories(UI_NAME)
 
 def should_delete_file(filename: str, directory_type: str) -> tuple[bool, bool]:
     """Return (should_delete, should_count) flags for a file"""
-    if filename.endswith(tuple(TRASH_EXTENSIONS)):
+    lower_name = filename.lower()
+
+    if lower_name.endswith(tuple(TRASH_EXTENSIONS)):
         return False, False
 
-    is_image = filename.endswith(tuple(IMAGE_EXTENSIONS))
+    is_image = lower_name.endswith(tuple(IMAGE_EXTENSIONS))
 
     if directory_type == 'Output Images':
         return True, True

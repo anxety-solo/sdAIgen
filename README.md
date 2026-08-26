@@ -15,7 +15,7 @@ English • [Русский](README.ru.md)
     <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-en-ipynb">
         <img src=".github/assets/svg/en/kaggle-en.svg" width="800" height="160" alt="kaggle">
     </a>
-    <h6>Project Wiki — <a href="https://github.com/anxety-solo/sdAIgen/wiki">WiKi</a>.</h6>
+    <h6>Project Wiki — <a href="https://github.com/anxety-solo/sdAIgen/wiki">Wiki</a>.</h6>
 </div>
 
 ## 🌟 Features:

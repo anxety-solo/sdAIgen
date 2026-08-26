@@ -15,7 +15,7 @@
     <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-ru-ipynb">
         <img src=".github/assets/svg/ru/kaggle-ru.svg" width="800" height="160" alt="kaggle">
     </a>
-    <h6>Вики проекта — <a href="https://github.com/anxety-solo/sdAIgen/wiki">WiKi</a>.</h6>
+    <h6>Вики проекта — <a href="https://github.com/anxety-solo/sdAIgen/wiki">Wiki</a>.</h6>
 </div>
 
 ## 🌟 Особенности:
