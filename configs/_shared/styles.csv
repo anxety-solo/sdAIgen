@@ -2,8 +2,8 @@
 None,,
 
 ———— Base Negative Style ————
-CleanGen,, "(worst quality, low quality:1.3), lowres, bad anatomy, wrong anatomy, (mutated hands and fingers:1.2), [extra | missing | floating] limb, blurry, jpeg artifacts, watermark, text, signature, ugly"
-CleanGen+,, "(worst quality, low quality:1.2), bad anatomy, wrong anatomy, (mutated hands and fingers:1.3), [extra | missing | floating | disconnected] limb, ugly, blurry, oversaturated, jpeg artifacts, watermark, text, logo, censored"
+CleanGen, "score_9, score_8, score_7, {prompt}", "(worst quality, low quality:1.3), lowres, bad anatomy, wrong anatomy, (mutated hands and fingers:1.2), [extra | missing | floating] limb, blurry, jpeg artifacts, watermark, text, signature, ugly, score_5, score_4, score_1, score_2, score_3"
+CleanGen+, "score_9, score_8, score_7, {prompt}", "(worst quality, low quality:1.2), bad anatomy, wrong anatomy, (mutated hands and fingers:1.3), [extra | missing | floating | disconnected] limb, ugly, blurry, oversaturated, jpeg artifacts, watermark, text, logo, censored, score_5, score_4, score_1, score_2, score_3"
 ANXETY,, "extra fingers, fewer fingers, (low quality, worst quality:1.4), (bad anatomy), (inaccurate limb:1.2), bad composition, inaccurate eyes, extra digit, fewer digits, (extra arms:1.2), easynegative"
 ANXETY V2,, "lowres, (worst quality, low quality:1.2), bad anatomy, bad hands, 4koma, comic, greyscale, censored, jpeg artifacts, overly saturated, overly vivid"
 XpucT (Anime),, "(worst quality, low quality, mutated hands and fingers, bad anatomy, wrong anatomy, ugly, mutation:1.2)"

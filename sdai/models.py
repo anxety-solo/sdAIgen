@@ -192,8 +192,8 @@ XL = {
 
 ANIMA = {
     'model': {
-        'MiaoMiao Harem [Anime | Color V1]': [
-            {'url': 'https://civitai.red/api/download/models/3203207', 'name': 'MiaoMiao-Harem-Color_V1.safetensors'}
+        'MiaoMiao Harem [Anime | V1.6]': [
+            {'url': 'https://civitai.com/api/download/models/3248362', 'name': 'MiaoMiao-Harem_V1.6.safetensors'}
         ],
     },
 

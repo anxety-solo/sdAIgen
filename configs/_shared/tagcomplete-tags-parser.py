@@ -19,8 +19,8 @@ from sdai.utils.json import read
 
 EXTS_DIR = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
-GITHUB_API_URL = 'https://api.github.com/repos/DraconicDragon/dbr-e621-lists-archive/contents/tag-lists'
-GITHUB_RAW_URL = 'https://raw.githubusercontent.com/DraconicDragon/dbr-e621-lists-archive/main/tag-lists'
+GITHUB_API_URL = 'https://api.github.com/repos/anxety-solo/booru-tags-sync/contents/tag-lists'
+GITHUB_RAW_URL = 'https://raw.githubusercontent.com/anxety-solo/booru-tags-sync/main/tag-lists'
 
 # Order is IMPORTANT!
 TARGET_CATEGORIES = ['danbooru_e621_merged', 'danbooru', 'e621']

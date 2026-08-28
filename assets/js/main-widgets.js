@@ -1,4 +1,4 @@
-// CivitAI Token check (valid = 32 chars)
+// Check CivitAI token validity (valid = 32 chars)
 function checkCivitaiKey() {
     const input = document.querySelector('.cai-token-input input[type="text"]');
     if (!input) return;
@@ -7,100 +7,83 @@ function checkCivitaiKey() {
     input.style.animation = 'none';
     void input.offsetWidth;
 
-    if (len === 32) return;
-
-    input.style.animation = len === 0
-        ? 'pulseBlue 1s ease 3'
-        : 'pulseYellow 0.75s ease 5';
+    if (len !== 32) { input.style.animation = len === 0 ? 'pulseBlue 1s ease 3' : 'pulseYellow 0.75s ease 5'; }
 }
-
 
 // Toggle Custom Downloads container (expand/collapse)
 function toggleContainer() {
-    const SHOW_CLASS = 'showed';
+    const s = 'showed';
     document.querySelector('.container_cdl').classList.toggle('expanded');
-    document.querySelector('.info').classList.toggle(SHOW_CLASS);
-    document.querySelector('.empowerment').classList.toggle(SHOW_CLASS);
+    document.querySelector('.info').classList.toggle(s);
+    document.querySelector('.empowerment').classList.toggle(s);
 }
 
-
-// Notifications (rendered into .sideContainer)
-function showNotification(message, type = 'info', duration = 3000) {
+// Show notification in .sideContainer
+function showNotification(msg, type = 'info', duration = 3000) {
     const ICONS = { success: '✅', error: '❌', info: '💡', warning: '⚠️' };
-    const sideContainer = document.querySelector('.sideContainer');
-    if (!sideContainer) return;
+    const container = document.querySelector('.sideContainer');
+    if (!container) return;
 
     document.querySelectorAll('.notification-popup').forEach(p => p.remove());
 
-    const popup = document.createElement('div');
-    popup.className = `notification-popup ${type}`;
+    const popup = Object.assign(document.createElement('div'), { className: `notification-popup ${type}` });
     popup.innerHTML = `
         <div class="notification ${type}">
             <span class="notification-icon">${ICONS[type] || ICONS.info}</span>
-            <span class="notification-text">${message}</span>
+            <span class="notification-text">${msg}</span>
         </div>
     `;
+    container.appendChild(popup);
 
-    sideContainer.appendChild(popup);
-
-    // FadeIn
     requestAnimationFrame(() => popup.classList.add('show'));
-
-    // FadeOut + remove
     setTimeout(() => {
         popup.classList.remove('show');
         setTimeout(() => popup.remove(), 500);
     }, duration);
 }
 
-
-// GDrive panel — show/hide with showedWidgets/hideWidgets animation
-(function initGDrivePanel() {
-    const SHOW_DUR = '0.45s';
-    const HIDE_DUR = '0.3s';
-
+// GDrive panel — show/hide with showedWidgets / hideWidgets animations
+(() => {
     const poll = setInterval(() => {
         const panel = document.querySelector('.container_gdrive');
         if (!panel) return;
         clearInterval(poll);
 
-        // Initial state — no animation on page load
-        const visible = panel.classList.contains('gdrive-visible');
-        panel.style.display = visible ? '' : 'none';
-        panel.style.pointerEvents = visible ? 'auto' : 'none';
-        if (visible) panel.style.animation = `showedWidgets ${SHOW_DUR} forwards ease`;
+        const show = () => {
+            panel.style.display = '';
+            panel.style.pointerEvents = 'auto';
+            void panel.offsetWidth;
+            panel.style.animation = 'showedWidgets 0.45s forwards ease';
+        };
 
-        // Watch class changes (gdrive toggle or Save .hide)
-        new MutationObserver((mutations) => {
-            for (const m of mutations) {
-                if (m.attributeName !== 'class') continue;
-
-                // .hide added by Save button — hide panel if visible
-                if (panel.classList.contains('hide')) {
-                    panel.style.pointerEvents = 'none';
-                    if (panel.classList.contains('gdrive-visible')) {
-                        panel.style.animation = `hideWidgets ${HIDE_DUR} forwards ease`;
+        const hide = (animate) => {
+            panel.style.pointerEvents = 'none';
+            if (animate) {
+                panel.style.animation = 'hideWidgets 0.3s forwards ease';
+                setTimeout(() => {
+                    if (!panel.classList.contains('gdrive-visible') || panel.classList.contains('hide')) {
+                        panel.style.display = 'none';
+                        panel.style.animation = '';
                     }
-                    continue;
-                }
-
-                const nowVisible = panel.classList.contains('gdrive-visible');
-                if (nowVisible) {
-                    panel.style.display = '';
-                    panel.style.pointerEvents = 'auto';
-                    void panel.offsetWidth; // force reflow → replay animation
-                    panel.style.animation = `showedWidgets ${SHOW_DUR} forwards ease`;
-                } else {
-                    panel.style.animation = `hideWidgets ${HIDE_DUR} forwards ease`;
-                    panel.style.pointerEvents = 'none';
-                    setTimeout(() => {
-                        if (!panel.classList.contains('gdrive-visible')) {
-                            panel.style.display = 'none';
-                            panel.style.animation = '';
-                        }
-                    }, 320);
-                }
+                }, 320);
+            } else {
+                panel.style.display = 'none';
             }
+        };
+
+        if (panel.classList.contains('gdrive-visible')) {
+            show();
+        } else {
+            hide(false);
+        }
+
+        new MutationObserver(() => {
+            if (panel.classList.contains('hide')) {
+                panel.style.pointerEvents = 'none';
+                if (panel.classList.contains('gdrive-visible')) { panel.style.animation = 'hideWidgets 0.3s forwards ease'; }
+                return;
+            }
+            panel.classList.contains('gdrive-visible') ? show() : hide(true);
         }).observe(panel, { attributes: true, attributeFilter: ['class'] });
     }, 100);
 })();

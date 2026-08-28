@@ -113,11 +113,11 @@ hr {
 /* === Fonts & Text === */
 
 .instruction,
-.selection-panel select,
+.storage_info,
 .output-message,
 .cleaner_button,
-.storage_info,
-.widget-checkbox label {
+.widget-checkbox label,
+.selection-panel select {
     font-family: var(--aw-font-family-primary);
     font-optical-sizing: auto;
 }
@@ -339,12 +339,12 @@ hr {
 }
 
 @keyframes slideInTopBlur {
-    0% {
+    from {
         transform: translate3d(0, 50%, 0) scale(0.85) rotate3d(1, 0, 0, -85deg);
         filter: blur(5px) grayscale(1) brightness(0.5);
         opacity: 0;
     }
-    100% {
+    to {
         transform: translate3d(0, 0, 0) scale(1) rotate3d(1, 0, 0, 0deg);
         filter: blur(0) grayscale(0) brightness(1);
         opacity: 1;
@@ -352,12 +352,12 @@ hr {
 }
 
 @keyframes slideOutTopBlur {
-    0% {
+    from {
         transform: translate3d(0, 0, 0) scale(1);
         filter: blur(0) grayscale(0) brightness(1);
         opacity: 1;
     }
-    100% {
+    to {
         transform: translate3d(0, -100%, 0);
         filter: blur(5px) grayscale(1) brightness(0);
         opacity: 0;

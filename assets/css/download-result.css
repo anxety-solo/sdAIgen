@@ -152,11 +152,11 @@ hr {
 }
 
 @keyframes showedResult {
-    0%   { transform: translate3d(0, 15%, 0); opacity: 0; }
-    100% { transform: translate3d(0, 0, 0);   opacity: 1; }
+    from { transform: translate3d(0, 15%, 0); opacity: 0; }
+    to   { transform: translate3d(0, 0, 0);   opacity: 1; }
 }
 
 @keyframes showedText {
-    0%   { transform: translate3d(-30%, 0, 0); opacity: 0; }
-    100% { transform: translate3d(0, 0, 0);    opacity: 1; }
+    from { transform: translate3d(-30%, 0, 0); opacity: 0; }
+    to   { transform: translate3d(0, 0, 0);    opacity: 1; }
 }
