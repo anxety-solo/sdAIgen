@@ -8,8 +8,16 @@ import re
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
 
-# === SDAIGEN ===
-from sdai.constants import COL
+
+class COL:
+    R  =  '\033[31m'    # Red
+    G  =  '\033[32m'    # Green
+    Y  =  '\033[33m'    # Yellow
+    B  =  '\033[34m'    # Blue
+    P  =  '\033[35m'    # Purple
+    C  =  '\033[36m'    # Cyan
+    cB =  '\033[36;1m'  # Cyan + BOLD
+    X  =  '\033[0m'     # Reset
 
 
 # ~~ PACKAGE CHECKS ~~
