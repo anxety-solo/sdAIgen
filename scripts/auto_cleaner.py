@@ -115,7 +115,7 @@ def clean_directory(directory: str | Path, directory_type: str, on_error=None) -
                 os.remove(file_path)
                 deleted_count += should_count
             except Exception as exc:
-                message = tr('cleaner_delete_error', file_path=file_path, exc=exc)
+                message = f"Error deleting {file_path}: {exc}"
                 if on_error:
                     on_error(message)
                 else:

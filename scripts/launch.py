@@ -261,7 +261,7 @@ def _print_selected_tagger(tagger: str):
     target   = TAGGER_MAP.get(tagger, tagger)
     tag_file = find_latest_tag_file(target)
     if tag_file:
-        print(f"{COL.B}{tr('selected_tagger', tagger=f'{COL.cB}{target}{COL.X}', tag_file=tag_file)}\n")
+        print(f"{COL.B}>> 🏷️ {tr('selected_tagger', tagger=f'{COL.cB}{target}{COL.X}', tag_file=tag_file)}\n")
 
 
 def _print_session_duration():
@@ -270,7 +270,7 @@ def _print_session_duration():
         timer    = float((WEBUI_PATH / 'static/timer.txt').read_text(encoding='utf-8'))
         duration = timedelta(seconds=time.time() - timer)
         time_str = f"{COL.Y}{str(duration).split('.')[0]}{COL.X}"
-        print(f"\n{tr('session_duration', time=time_str)}")
+        print(f"\n⌚️ {tr('session_duration', time=time_str)}")
     except FileNotFoundError:
         pass
 
@@ -320,7 +320,7 @@ if __name__ == '__main__':
         if args.log and unavailable:
             print(f"{COL.R}{tr('unavailable_header')}{COL.X}")
             for name in unavailable:
-                print(tr('cmd_not_found', name=name))
+                print(f"- {name}: Command not found in PATH")
             print()
 
         if UI_NAME != 'ComfyUI' and args.tagger:
@@ -335,6 +335,6 @@ if __name__ == '__main__':
 
     if zrok2_token:
         ipySys('zrok2 disable &> /dev/null')
-        print(f"\n{tr('zrok_disabled')}")
+        print(f"\n🔐 {tr('zrok_disabled')}")
 
     _print_session_duration()

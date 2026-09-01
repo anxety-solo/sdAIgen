@@ -70,7 +70,7 @@ def install_packages(install_lib: dict[str, str]):
         try:
             result = subprocess.run(install_cmd, shell=True, capture_output=True)
             if result.returncode != 0:
-                print(f"\n{COL.R}{tr('lib_install_error', package=package)}{COL.X}")
+                print(f"\n{COL.R}❌ Error installing {package}{COL.X}")
         except Exception:
             pass
 
@@ -120,7 +120,7 @@ if not key_exists(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True):
         'ngrok':       'wget -qO ngrok-v3-stable-linux-amd64.tgz https://bin.ngrok.com/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz; tar -xzf ngrok-v3-stable-linux-amd64.tgz -C /usr/bin; rm -f ngrok-v3-stable-linux-amd64.tgz'
     }
 
-    print(tr('deps_installing'))
+    print(f"💿 {tr('deps_installing')}")
     install_packages(install_lib)
     clear_output()
     save(SETTINGS_PATH, 'ENVIRONMENT.install_deps', True)
@@ -134,16 +134,16 @@ venv_needs_reinstall = (
 
 if not SKIP_VENV and venv_needs_reinstall:
     if VENV_PATH.exists():
-        print(tr('venv_removing'))
+        print(f"🗑️ {tr('venv_removing')}")
         shutil.rmtree(VENV_PATH)
         clear_output()
 
     venv_url = build_urls(UI_NAME)['venv'] if UI_NAME in WEBUIS else f"{HF_REPO_URL}/{DEFAULT_VENV}"
     ui_name  = UI_NAME if UI_NAME in WEBUIS else 'Default'
-    _m = re.search(r'python(\d)(\d{2})(\d{2})', venv_url)
-    venv_version = f"{ui_name} • {int(_m[1])}.{int(_m[2])}.{int(_m[3])}" if _m else ui_name
+    m = re.search(r'python(\d)(\d{2})(\d{2})', venv_url)
+    venv_version = f"{ui_name} • {int(m[1])}.{int(m[2])}.{int(m[3])}" if m else ui_name
 
-    print(tr('venv_installing', venv=f"{COL.B}{venv_version}{COL.X}"))
+    print(f"♻️ {tr('venv_installing', venv=f'{COL.B}{venv_version}{COL.X}')}")
     setup_venv(venv_url)
     clear_output()
 
@@ -151,13 +151,13 @@ if not SKIP_VENV and venv_needs_reinstall:
     save(SETTINGS_PATH, 'WEBUI.latest', UI_NAME)
 
 
-# ~~ WEBUI ~~
+# ~~ WEBUI Installation ~~
 
 # --- ADetailer cache (A1111 / SD-UX only) ---
 if (cache_url := build_urls(UI_NAME).get('adetailer_cache')):
     cache_path = '/root/.cache/huggingface/hub/models--Bingsu--adetailer'
     if not os.path.exists(cache_path):
-        print(tr('adetailer_unpacking'))
+        print(f"🚚 {tr('adetailer_unpacking')}")
 
         zip_path = HOME_PATH / 'hf_cache_adetailer.zip'
         parent_cache_dir = os.path.dirname(cache_path)
@@ -170,26 +170,20 @@ if (cache_url := build_urls(UI_NAME).get('adetailer_cache')):
 start_timer = read(SETTINGS_PATH, 'ENVIRONMENT.start_timer')
 
 if not WEBUI_PATH.exists():
-    start_install = time.time()
-
     method = tr('method_cloning' if clone_ui else 'method_unpacking')
 
-    print(tr('webui_installing', method=method, ui=f"{COL.B}{UI_NAME}{COL.X}"), end='')
+    print(f"⌚ {tr('webui_installing', method=method, ui=f'{COL.B}{UI_NAME}{COL.X}')}", end='')
     ipyRun('run', str(SCRIPTS_PATH / 'webui_installer.py'))
 
-    handle_setup_timer(WEBUI_PATH, start_timer) # Setup timer (for timer-extensions)
+    handle_setup_timer(WEBUI_PATH, start_timer) # Setup timer (for timer-extension)
 
-    install_time = time.time() - start_install
-    minutes, seconds = divmod(int(install_time), 60)
-    print(f"\r{tr('webui_installed', method=method, ui=f'{COL.B}{UI_NAME}{COL.X}', time=f'{minutes:02}:{seconds:02}')}" + ' '*25)
-
+    print(f"\r🚀 {tr('webui_installed', method=method, ui=f'{COL.B}{UI_NAME}{COL.X}')} ⚡" + ' '*20)
 else:
-    print(tr('webui_current', ui=f"{COL.B}{UI_NAME}{COL.X}"))
+    print(f"🔧 {tr('webui_current', ui=f'{COL.B}{UI_NAME}{COL.X}')}")
 
     timer_env = handle_setup_timer(WEBUI_PATH, start_timer)
     elapsed_time = str(timedelta(seconds=time.time() - timer_env)).split('.')[0]
-    print(tr('session_duration', time=f"{COL.Y}{elapsed_time}{COL.X}"))
-
+    print(f"⌚️ {tr('session_duration', time=f'{COL.Y}{elapsed_time}{COL.X}')}")
 
 # --- Extensions and WebUI update ---
 
@@ -203,7 +197,7 @@ if update_scope != 'none' and not clone_ui:
     do_ext   = update_scope.lower() in ('extensions', 'all')
 
     action = tr('update_webui_exts') if do_webui and do_ext else ('WebUI' if do_webui else tr('update_exts'))
-    print(tr('update_action', action=action), end='')
+    print(f"⌚️ {tr('update_action', action=action)}", end='')
     with capture.capture_output():
         _setup_git_identity()
 
@@ -223,8 +217,7 @@ if update_scope != 'none' and not clone_ui:
                     subprocess.run(['git', 'reset', '--hard'], cwd=dir_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     subprocess.run(['git', 'pull'], cwd=dir_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    print(f"\r{tr('update_done', action=action)}")
-
+    print(f"\r✨ {tr('update_done', action=action)}")
 
 # --- Version or branch switching ---
 
@@ -236,7 +229,7 @@ def _git_branch_exists(branch: str) -> bool:
 
 
 if commit_hash or branch != 'none':
-    print(tr('switching_branch'), end='')
+    print(f"🔄 {tr('switching_branch')}", end='')
     with capture.capture_output():
         CD(WEBUI_PATH)
         _setup_git_identity()
@@ -280,7 +273,7 @@ if commit_hash or branch != 'none':
             if conflicts:
                 ipySys(f"git add {' '.join(conflicts)}")
 
-    print(f"\r{tr('switch_done', commit=f'{COL.B}{commit_hash}{COL.X}')}")
+    print(f"\r✅ {tr('switch_done', commit=f'{COL.B}{commit_hash}{COL.X}')}")
 
 
 # ~~ GOOGLE DRIVE MOUNTING (Colab only) ~~
@@ -312,7 +305,6 @@ def cleanup_ipynb_checkpoints(base_path: Path):
         if '.ipynb_checkpoints' in dirs:
             chk = Path(root) / '.ipynb_checkpoints'
             shutil.rmtree(chk, ignore_errors=True)
-
 
 # --- Main Logic ---
 
@@ -431,7 +423,7 @@ def create_config_symlink(local_path: str | Path, gdrive_path: str | Path, confi
             if local_path.exists() and local_path.is_file() and not gdrive_path.exists():
                 shutil.copy2(local_path, gdrive_path)
                 if log:
-                    print(f"{COL.Y}{tr('gd_backed_up', config_name=config_name, name=f'{COL.cB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
+                    print(f"{COL.Y}📄 {tr('gd_backed_up', config_name=config_name, name=f'{COL.cB}{local_path.name}{COL.X}')} → {COL.G}GDrive{COL.X}")
 
             if local_path.exists():
                 local_path.unlink()
@@ -531,7 +523,7 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
     if not mount_flag:
         if drive_mounted:
             try:
-                print(tr('gd_unmounting'), end='')
+                print(f"⏳ {tr('gd_unmounting')}", end='')
                 if log: print()
 
                 removed = remove_all_symlinks(ui, restore_configs=True, log=log)
@@ -540,9 +532,9 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
                     drive.flush_and_unmount()
                     os.system('rm -rf /content/drive')
 
-                print(f"\r{tr('gd_unmounted')}")
+                print(f"\r✅ {tr('gd_unmounted')}")
                 if removed:
-                    print(tr('gd_restore_summary', count=removed))
+                    print(f"💾 {tr('gd_restore_summary', count=removed)}")
             except Exception as exc:
                 print(f"\r{COL.R}❌ {tr('gd_unmount_error')}{COL.X} {exc}")
         return
@@ -550,15 +542,15 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
     # Mount logic
     if not drive_mounted:
         try:
-            print(tr('gd_mounting'), end='')
+            print(f"⏳ {tr('gd_mounting')}", end='')
             with capture.capture_output():
                 drive.mount('/content/drive')
-            print(f"\r{tr('gd_mounted')}")
+            print(f"\r💿 {tr('gd_mounted')}")
         except Exception as exc:
             print(f"\r{COL.R}❌ {tr('gd_mount_error')}{COL.X} {exc}")
             return
     else:
-        print(tr('gd_connected'))
+        print(f"🎉 {tr('gd_connected')}")
 
     # categories: (key, enabled, restore_on_deselect, display_name, section_header)
     categories = [
@@ -570,12 +562,12 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
     inactive = [name for _, enabled, _, name, _ in categories if not enabled]
 
     if not active:
-        print(tr('gd_no_categories'))
+        print(f"⚠️ {tr('gd_no_categories')}")
         return
 
     active_str   = ', '.join(f"{COL.G}{n}{COL.X}" for n in active)
     inactive_str = ', '.join(f"{COL.Y}{n}{COL.X}" for n in inactive)
-    print(f"{COL.B}{tr('gd_sync_summary', active=active_str)}{tr('gd_sync_inactive', inactive=inactive_str) if inactive else ''}{COL.X}")
+    print(f"{COL.B}📋 {tr('gd_sync_summary', active=active_str)}{tr('gd_sync_inactive', inactive=inactive_str) if inactive else ''}{COL.X}")
 
     try:
         # Create base directories
@@ -611,7 +603,7 @@ def handle_gdrive(mount_flag: bool, ui='A1111', log=False, sync_files=False, syn
                         log=log
                     )
 
-        print(tr('gd_sync_done'))
+        print(f"✅ {tr('gd_sync_done')}")
     except Exception as exc:
         print(f"{COL.R}❌ {tr('gd_setup_error')}{COL.X} {exc}")
 
@@ -641,7 +633,7 @@ model_data = get_category(model_type)
 model_list, vae_list, controlnet_list, additional_list = (model_data.get(k, {}) for k in ('model', 'vae', 'controlnet', 'additional'))
 
 # --- Downloading models ---
-print(tr('dl_start'), end='')
+print(f"📦 {tr('dl_start')}", end='')
 
 extension_repo = []
 # prefix | (dir_path, short_tag)
@@ -938,7 +930,7 @@ else:
     with capture.capture_output():
         run_downloads(line)
 
-print(f"\r{tr('dl_done')}" + ' '*15)
+print(f"\r🏁 {tr('dl_done')}" + ' '*15)
 
 
 # ~~ CUSTOM EXTENSIONS ~~
@@ -946,11 +938,11 @@ print(f"\r{tr('dl_done')}" + ' '*15)
 extension_type = tr('ext_type_nodes') if UI_NAME == 'ComfyUI' else tr('ext_type_extensions')
 
 if extension_repo:
-    print(tr('ext_installing', type=extension_type), end='')
+    print(f"✨ {tr('ext_installing', type=extension_type)}", end='')
     with capture.capture_output():
         for repo_url, repo_name in extension_repo:
             clone(f"{repo_url} {EXTS_DIR} {repo_name}")
-    print(f"\r{tr('ext_installed', count=len(extension_repo), type=extension_type)}")
+    print(f"\r📦 {tr('ext_installed', count=len(extension_repo), type=extension_type)}")
 
 
 # ~~ SPECIAL ~~
@@ -972,7 +964,7 @@ if UI_NAME == 'ComfyUI':
             shutil.move(path, dest)
 
 # --- Symlink `diffusion_dir/model` → `model_dir` | ComfyUI only ---
-model_symlink = diffusion_dir / 'ckpts'
+model_symlink = Path(diffusion_dir) / 'ckpts'
 if UI_NAME == 'ComfyUI':
     if not model_symlink.exists():
         model_symlink.symlink_to(model_dir, target_is_directory=True)
@@ -990,6 +982,7 @@ if gdrive_mount and sync_files:
             if src.is_dir():
                 shutil.copytree(src, dst, dirs_exist_ok=True)
         _remove_path(gdrive_path)
+
 
 # --- List Models and stuff ---
 ipyRun('run', str(SCRIPTS_PATH / 'download_result.py'))

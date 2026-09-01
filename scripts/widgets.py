@@ -292,7 +292,7 @@ def export_settings(button: widgets.Button = None):
             '''))
         show_notification(tr('settings_exported'), 'success')
     except Exception as exc:
-        show_notification(tr('settings_export_failed', error=str(exc)), 'error')
+        show_notification(f"Export failed: {str(exc)}", 'error')
 
 
 # ~~ APPLY SETTINGS ~~
@@ -330,7 +330,7 @@ def apply_imported_settings(data: dict):
         else:
             show_notification(tr('settings_import_partial', count=success_count, total=total_count), 'warning')
     except Exception as exc:
-        show_notification(tr('settings_import_failed', error=str(exc)), 'error')
+        show_notification(f"Import failed: {str(exc)}", 'error')
 
 
 # ~~ OBSERVE (CALLBACK) ~~
@@ -352,7 +352,7 @@ def handle_file_upload(change: dict):
         data = json.loads(json_str)
         apply_imported_settings(data)
     except Exception as exc:
-        show_notification(tr('settings_import_failed', error=str(exc)), 'error')
+        show_notification(f"Import failed: {str(exc)}", 'error')
     finally:
         # Reset for re-uploading
         import_button._counter = 0

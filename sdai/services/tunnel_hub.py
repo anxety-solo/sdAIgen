@@ -148,7 +148,7 @@ class Tunnel:
     ) -> None:
         """Add a tunnel configuration"""
         if self.check_command_available and not self.is_command_available(command):
-            self.logger.warning(f"Skipping {name} - {command.split()[0]} not installed")
+            self.logger.warning(f"- {name}: Command not found in PATH")
             return
 
         self.tunnel_list.append({
