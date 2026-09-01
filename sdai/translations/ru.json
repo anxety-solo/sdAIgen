@@ -112,8 +112,6 @@
     "ext_installing": "Установка кастомных {type}...",
     "ext_installed": "Установлено '{count}' кастомных {type}!",
 
-    "symlink_created": "Симлинк создан: {source} → {target}",
-
     "settings_load_error": "Ошибка загрузки настроек: {error}",
     "ip_error": "Ошибка получения публичного IP: {error}",
     "tunnels_checking": ">> Проверка Туннелей:",

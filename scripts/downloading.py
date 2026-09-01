@@ -177,7 +177,7 @@ if not WEBUI_PATH.exists():
 
     handle_setup_timer(WEBUI_PATH, start_timer) # Setup timer (for timer-extension)
 
-    print(f"\r🚀 {tr('webui_installed', method=method, ui=f'{COL.B}{UI_NAME}{COL.X}')} ⚡" + ' '*20)
+    print(f"\r🚀 {tr('webui_installed', method=method, ui=f'{COL.B}{UI_NAME}{COL.X}')}" + ' '*20)
 else:
     print(f"🔧 {tr('webui_current', ui=f'{COL.B}{UI_NAME}{COL.X}')}")
 
@@ -968,7 +968,6 @@ model_symlink = Path(diffusion_dir) / 'ckpts'
 if UI_NAME == 'ComfyUI':
     if not model_symlink.exists():
         model_symlink.symlink_to(model_dir, target_is_directory=True)
-        print(tr('symlink_created', source=str(model_symlink), target=str(model_dir)))
 elif model_symlink.is_symlink():
     model_symlink.unlink()
 
