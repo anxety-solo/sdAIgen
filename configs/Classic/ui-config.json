@@ -1,6 +1,5 @@
 {
     "txt2img/Styles/value": [
-        "ANXETY V2"
     ],
     "customscript/sampler.py/txt2img/Sampling Method/value": "Euler a",
     "customscript/sampler.py/txt2img/Schedule Type/value": "Karras",
@@ -10,7 +9,6 @@
     "txt2img/Denoising strength/value": 0.45,
     "txt2img/Control Mode/value": "My prompt is more important",
     "img2img/Styles/value": [
-        "ANXETY V2"
     ],
     "customscript/sampler.py/img2img/Sampling Method/value": "Euler a",
     "customscript/sampler.py/img2img/Schedule Type/value": "Karras",
