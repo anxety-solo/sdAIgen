@@ -117,7 +117,7 @@ def create_sections() -> list[widgets.Widget]:
     ]
 
     return [
-        create_section(title, items, is_grid=(title == ext_type))
+        create_section(title, items, is_grid=(title in (ext_type, 'ADetailers')))
         for title, items in sections
         if items
     ]

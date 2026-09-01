@@ -311,8 +311,8 @@ hr {
     background-color: var(--aw-checkbox-handle-bg);
     border-radius: inherit;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-    transform: translateY(-50%);
-    transition: all 0.25s cubic-bezier(0.785, 0.135, 0.15, 0.85);
+transform: translateY(-50%);
+    transition: all 0.35s cubic-bezier(0.45, 1.85, 0.25, 0.85);
 }
 .widget-checkbox.gdrive-mode input[type='checkbox']:checked:before {
     left: 20px;

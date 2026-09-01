@@ -1,8 +1,17 @@
 <div align="center">
+<img width="1080px" height="auto" src=".github/preview.webp"/></br>
 <h1>~ SDAIGEN | Stable Diffusion / ComfyUI | NoteBook V3 ~</h1>
 
 English • [Русский](README.ru.md)
 
+<details>
+<summary>🖥️ UI Preview</summary>
+
+| WebUI | ComfyUI |
+|:-----:|:-------:|
+| <img src=".github/webui.webp" width="530" alt="WebUI"> | <img src=".github/comfyui.webp" width="530" alt="ComfyUI"> |
+
+</details>
 </div>
 
 <div align="center">
@@ -15,7 +24,6 @@ English • [Русский](README.ru.md)
     <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-en-ipynb">
         <img src=".github/assets/svg/en/kaggle-en.svg" width="800" height="160" alt="kaggle">
     </a>
-    <h6>Project Wiki — <a href="https://github.com/anxety-solo/sdAIgen/wiki">Wiki</a>.</h6>
 </div>
 
 ## 🌟 Features:
