@@ -76,8 +76,6 @@ English • [Русский](README.ru.md)
 - [ComfyUI-Model-Manager](https://github.com/hayden-fr/ComfyUI-Model-Manager)
 - [ControlNet-AUX](https://github.com/Fannovel16/comfyui_controlnet_aux)
 - [Efficiency-Nodes](https://github.com/jags111/efficiency-nodes-comfyui)
-- [UltimateSDUpscale](https://github.com/ssitu/ComfyUI_UltimateSDUpscale)
-- [WAS-Nodes](https://github.com/WASasquatch/was-node-suite-comfyui)
 - [WD14-Tagger](https://github.com/pythongosssss/ComfyUI-WD14-Tagger)
 
 </details>

@@ -248,6 +248,7 @@ def _setup_comfyui():
         save(comfyui_settings, 'install_req', True)
         clear_output(wait=True)
 
+    # WAS Node Suite support
     was_config = EXTS_DIR / 'was-node-suite-comfyui/was_suite_config.json'
     ffmpeg = shutil.which('ffmpeg')
     if was_config.exists() and ffmpeg:
