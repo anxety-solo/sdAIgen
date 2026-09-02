@@ -112,16 +112,11 @@
     "ext_installing": "Installing custom {type}...",
     "ext_installed": "Installed '{count}' custom {type}!",
 
-    "settings_load_error": "Error loading settings: {error}",
-    "ip_error": "Error getting public IP: {error}",
-    "tunnels_checking": ">> Checking Tunnels:",
-    "tunnel_checking": "Checking {name}",
-    "please_wait": "Please Wait...",
     "comfy_deps_installing": "Installing ComfyUI dependencies...",
-    "tunnels_total": ">> Total Tunnels: {total}",
+    "tunnels_total": "Total Tunnels: {total}",
     "tunnels_available": "Available: {count}",
     "tunnels_unavailable": "Unavailable: {count}",
-    "unavailable_header": ">> Unavailable Tunnels:",
+    "unavailable_header": "Unavailable Tunnels:",
     "selected_tagger": "Selected Tagger: {tagger} ({tag_file})",
     "zrok_disabled": "Zrok2 tunnel disabled :3",
 

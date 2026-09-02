@@ -79,7 +79,7 @@ WEBUIS = {
         'folders': COMFY_FOLDERS,
         'config': COMFY_CONFIG,
         'launcher': 'main.py',
-        'launch_args': '--dont-print-server',
+        'launch_args': '--dont-print-server --enable-cors-header',
         'adetailer_cache': False,
     },
     'Forge': {

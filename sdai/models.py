@@ -193,7 +193,7 @@ XL = {
 ANIMA = {
     'model': {
         'MiaoMiao Harem [Anime | V1.6]': [
-            {'url': 'https://civitai.com/api/download/models/3248362', 'name': 'MiaoMiao-Harem_V1.6.safetensors'}
+            {'url': 'https://civitai.com/api/download/models/3248362', 'name': 'MiaoMiao-Harem_V1.6.safetensors', 'dst_dir': 'diffusion_dir'}
         ],
     },
 

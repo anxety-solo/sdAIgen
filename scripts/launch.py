@@ -79,7 +79,7 @@ def get_public_ip() -> str:
         update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
         return public_ip
     except Exception as exc:
-        print(tr('ip_error', error=exc))
+        print(f"Error getting public IP: {exc}")
         return 'N/A'
 
 
@@ -113,10 +113,10 @@ def setup_tunnels(tunnel_port: int, tunneling_service: Tunnel) -> tuple[list[tup
         )
         services.append(('Ngrok', {'command': f"ngrok http http://localhost:{tunnel_port} --log stdout", 'pattern': r'https://[\w-]+\.ngrok-free\.app'}))
 
-    print(f"{COL.Y}{tr('tunnels_checking')}{COL.X}")
+    print(f"{COL.Y}>> Checking Tunnels:{COL.X}")
     available, unavailable = [], []
     for name, config in services:
-        print(f"- 🕒 {tr('tunnel_checking', name=f'{COL.cB}{name}{COL.X}')}...", end=' ')
+        print(f"- 🕒 Checking {f'{COL.cB}{name}{COL.X}'}...", end=' ')
         if tunneling_service.is_command_available(config['command']):
             available.append((name, config))
             print(f"{COL.G}✓{COL.X}")
@@ -286,7 +286,7 @@ def parse_arguments() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_arguments()
-    print(f"{tr('please_wait')}\n")
+    print(f"Please Wait...\n")
 
     osENV.setdefault('IIB_ACCESS_CONTROL', 'disable')
     osENV['UVICORN_LOG_LEVEL'] = 'error'
@@ -315,10 +315,10 @@ if __name__ == '__main__':
         if UI_NAME == 'ComfyUI':
             _setup_comfyui()
 
-        print(f"{COL.B}{tr('tunnels_total', total=total)}{COL.X} | {COL.G}{tr('tunnels_available', count=success)}{COL.X} | {COL.R}{tr('tunnels_unavailable', count=len(unavailable))}{COL.X}\n")
+        print(f"{COL.B}>> {tr('tunnels_total', total=total)}{COL.X} | {COL.G}{tr('tunnels_available', count=success)}{COL.X} | {COL.R}{tr('tunnels_unavailable', count=len(unavailable))}{COL.X}\n")
 
         if args.log and unavailable:
-            print(f"{COL.R}{tr('unavailable_header')}{COL.X}")
+            print(f"{COL.R}>> {tr('unavailable_header')}{COL.X}")
             for name in unavailable:
                 print(f"- {name}: Command not found in PATH")
             print()

@@ -963,14 +963,6 @@ if UI_NAME == 'ComfyUI':
         else:
             shutil.move(path, dest)
 
-# --- Symlink `diffusion_dir/model` → `model_dir` | ComfyUI only ---
-model_symlink = Path(diffusion_dir) / 'ckpts'
-if UI_NAME == 'ComfyUI':
-    if not model_symlink.exists():
-        model_symlink.symlink_to(model_dir, target_is_directory=True)
-elif model_symlink.is_symlink():
-    model_symlink.unlink()
-
 # --- Copy dir from GDrive to extension_dir (if enabled) ---
 if gdrive_mount and sync_files:
     gdrive_path = EXTS_DIR / 'GDrive'
