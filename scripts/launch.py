@@ -1,149 +1,166 @@
-# ~ launch.py | by ANXETY ~
+""" WebUI Launcher: Tunnels, Tagger & Server Start | by ANXETY """
 
-from TunnelHub import Tunnel    # Tunneling
-import json_utils as js         # JSON
-
-from IPython.display import clear_output
-from IPython import get_ipython
-from datetime import timedelta
-from pathlib import Path
 import subprocess
-import requests
 import argparse
+import requests
 import logging
 import shutil
 import shlex
-import time
 import json
+import time
 import yaml
 import os
 import re
 
+from datetime import datetime, timedelta
+from IPython.display import clear_output
+from collections.abc import Callable
+from IPython import get_ipython
+from pathlib import Path
 
-osENV = os.environ
-CD = os.chdir
+from os import chdir as CD
+
+# === SDAIGEN ===
+from sdai.constants import HOME_PATH, SETTINGS_PATH, VENV_PATH, SCRIPTS_PATH, COL
+from sdai.utils.json import read, save, update, key_exists, load_settings
+from sdai.services.tunnel_hub import Tunnel
+from sdai.webui_meta import WEBUIS, meta
+from sdai.translations import tr
+
+
+# ~~ SETUP ~~
+
+osENV  = os.environ
 ipySys = get_ipython().system
 
 osENV['PYTHONWARNINGS'] = 'ignore'
 
-# Auto-convert *_path env vars to Path
-PATHS = {k: Path(v) for k, v in osENV.items() if k.endswith('_path')}
-HOME, SCR_PATH, VENV, SETTINGS_PATH = (
-    PATHS['home_path'], PATHS['scr_path'], PATHS['venv_path'], PATHS['settings_path']
-)
-
-ENV_NAME = js.read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
-UI = js.read(SETTINGS_PATH, 'WEBUI.current')
-WEBUI = js.read(SETTINGS_PATH, 'WEBUI.webui_path')
-EXTS = Path(js.read(SETTINGS_PATH, 'WEBUI.extension_dir'))
+ENV_NAME   = read(SETTINGS_PATH, 'ENVIRONMENT.env_name')
+UI_NAME    = read(SETTINGS_PATH, 'WEBUI.current')
+WEBUI_PATH = Path(read(SETTINGS_PATH, 'WEBUI.webui_path'))
+EXTS_DIR   = Path(read(SETTINGS_PATH, 'WEBUI.extension_dir'))
 
 
-BIN = str(VENV / 'bin')
-PYTHON_VERSION = js.read(SETTINGS_PATH, 'WEBUI.python_version')
-PKG = str(VENV / f"lib/python{PYTHON_VERSION}/site-packages")
+BIN    = str(VENV_PATH / 'bin')
+PY_VER = read(SETTINGS_PATH, 'WEBUI.python_version')
+PKG    = str(VENV_PATH / f"lib/python{PY_VER}/site-packages")
 
 osENV.update({
     'PATH': f"{BIN}:{osENV['PATH']}" if BIN not in osENV['PATH'] else osENV['PATH'],
-    'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH']
+    'PYTHONPATH': f"{PKG}:{osENV['PYTHONPATH']}" if PKG not in osENV['PYTHONPATH'] else osENV['PYTHONPATH'],
 })
 
 
-# Text Colors (\033)
-class COLORS:
-    R  = '\033[31m'    # Red
-    G  = '\033[32m'    # Green
-    Y  = '\033[33m'    # Yellow
-    B  = '\033[34m'    # Blue
-    lB = '\033[36m'    # Light Blue
-    X  = '\033[0m'     # Reset
+# ~~ LOADING SETTINGS ~~
 
-COL = COLORS
-
-# Tag-CSV Mapping
-TAGGER_MAP = {
-    'm': 'merged', 'merged': 'merged',
-    'e': 'e621', 'e621': 'e621',
-    'd': 'danbooru', 'danbooru': 'danbooru'
-}
-
-
-# =================== loading settings V5 ==================
-
-def load_settings(path):
-    """Load settings from a JSON file"""
-    try:
-        return {
-            **js.read(path, 'ENVIRONMENT'),
-            **js.read(path, 'WIDGETS'),
-            **js.read(path, 'WEBUI')
-        }
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Error loading settings: {e}")
-        return {}
-
-# Load settings
 settings = load_settings(SETTINGS_PATH)
 locals().update(settings)
 
 
-# ==================== Helper Functions ====================
+# ~~ TUNNELS ~~
 
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log', action='store_true', help='Show failed tunnel details')
-    parser.add_argument(
-        '-t', '--tagger',
-        choices=['m', 'merged', 'e', 'e621', 'd', 'danbooru'],
-        help='Select tagger type: m/merged, e/e621, d/danbooru'
-    )
-    return parser.parse_args()
+def _sync_token(config_path: Path, parse: Callable[[str], str | None], commands: list[str], token: str):
+    """Apply token commands when the stored token differs"""
+    stored = parse(config_path.read_text(encoding='utf-8')) if config_path.exists() else None
+    if stored != token:
+        for cmd in commands:
+            ipySys(cmd)
 
-def _trashing():
-    dirs = ['A1111', 'ComfyUI', 'Forge', 'Classic', 'Neo', 'ReForge', 'SD-UX']
-    paths = [Path(HOME) / name for name in dirs]
 
-    for path in paths:
-        cmd = f"find {path} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"
-        subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def get_public_ip() -> str:
+    """Get the public IPv4 address, cached in settings"""
+    cached_ip = read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
+    if cached_ip:
+        return cached_ip
 
-def find_latest_tag_file(target='danbooru'):
-    """Find the latest tag file for specified target in TagComplete extension"""
-    from datetime import datetime
+    try:
+        response  = requests.get('https://api64.ipify.org?format=json&ipv4=true', timeout=5)
+        public_ip = response.json().get('ip', 'N/A')
+        update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
+        return public_ip
+    except Exception as exc:
+        print(f"Error getting public IP: {exc}")
+        return 'N/A'
 
-    possible_names = {
-        'a1111-sd-webui-tagcomplete',
-        'sd-webui-tagcomplete',
-        'webui-tagcomplete',
-        'tag-complete',
-        'tagcomplete',
-    }
 
-    # Find TagComplete extension directory
+def setup_tunnels(tunnel_port: int, tunneling_service: Tunnel) -> tuple[list[tuple[str, dict]], int, int, list[str]]:
+    """Configure tunnel tokens and check command availability"""
+    public_ip = get_public_ip()
+
+    # services: (name, {'command': str, 'pattern': regex, 'note': str})
+    services = [
+        ('Gradio',      {'command': f"gradio-tun {tunnel_port}", 'pattern': r'[\w-]+\.gradio\.live'}),
+        ('Pinggy',      {'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{tunnel_port} a.pinggy.io", 'pattern': r'[\w-]+\.run\.pinggy-free\.link'}),
+        ('Cloudflared', {'command': f"cl tunnel --url localhost:{tunnel_port}", 'pattern': r'[\w-]+\.trycloudflare\.com'}),
+        ('Localtunnel', {'command': f"lt --port {tunnel_port}", 'pattern': r'[\w-]+\.loca\.lt', 'note': f"| Password: {COL.G}{public_ip}{COL.X}"}),
+    ]
+
+    if zrok2_token:
+        _sync_token(
+            HOME_PATH / '.zrok2/environment.json',
+            lambda data: json.loads(data).get('zrok_token'),
+            ['zrok2 disable &> /dev/null', f"zrok2 enable {zrok2_token} &> /dev/null"],
+            zrok2_token,
+        )
+        services.append(('Zrok', {'command': f"zrok2 share public localhost:{tunnel_port} --headless", 'pattern': r'[\w-]+\.shares\.zrok\.io'}))
+
+    if ngrok_token:
+        _sync_token(
+            HOME_PATH / '.config/ngrok/ngrok.yml',
+            lambda data: yaml.safe_load(data).get('agent', {}).get('authtoken'),
+            [f"ngrok config add-authtoken {ngrok_token}"],
+            ngrok_token,
+        )
+        services.append(('Ngrok', {'command': f"ngrok http http://localhost:{tunnel_port} --log stdout", 'pattern': r'https://[\w-]+\.ngrok-free\.app'}))
+
+    print(f"{COL.Y}>> Checking Tunnels:{COL.X}")
+    available, unavailable = [], []
+    for name, config in services:
+        print(f"- 🕒 Checking {f'{COL.cB}{name}{COL.X}'}...", end=' ')
+        if tunneling_service.is_command_available(config['command']):
+            available.append((name, config))
+            print(f"{COL.G}✓{COL.X}")
+        else:
+            unavailable.append(name)
+            print(f"{COL.R}✗{COL.X}")
+
+    return available, len(services), len(available), unavailable
+
+
+# ~~ TAG COMPLETE ~~
+
+# short | full_name
+TAGGER_MAP = {
+    'm': 'merged', 'merged': 'merged',
+    'e': 'e621', 'e621': 'e621',
+    'd': 'danbooru', 'danbooru': 'danbooru',
+}
+
+TAGCOMPLETE_NAMES = ('a1111-sd-webui-tagcomplete', 'sd-webui-tagcomplete', 'webui-tagcomplete', 'tag-complete', 'tagcomplete')
+
+CONFIG_FILE = WEBUI_PATH / 'config.json'
+
+
+def find_latest_tag_file(target='danbooru') -> str | None:
+    """Find the latest tag file for the target in the TagComplete extension"""
     tagcomplete_dir = next(
-        (ext_dir for ext_dir in EXTS.iterdir() if ext_dir.is_dir() and ext_dir.name.lower() in possible_names),
-        None
+        (ext for ext in EXTS_DIR.iterdir() if ext.is_dir() and ext.name.lower() in TAGCOMPLETE_NAMES),
+        None,
     )
-    if not tagcomplete_dir:
+    tags_dir = tagcomplete_dir / 'tags' if tagcomplete_dir else None
+    if not tags_dir or not tags_dir.exists():
         return None
 
-    tags_dir = tagcomplete_dir / 'tags'
-    if not tags_dir.exists():
-        return None
-
-    # Prepare patterns
     if target == 'merged':
-        glob_pattern = '*_merged_*.csv'
+        glob_pattern  = '*_merged_*.csv'
         regex_pattern = r'.*_merged_(\d{4}-\d{2}-\d{2})\.csv$'
     else:
-        glob_pattern = f"{target}_*.csv"
+        glob_pattern  = f"{target}_*.csv"
         regex_pattern = rf"{re.escape(target)}_(\d{{4}}-\d{{2}}-\d{{2}})\.csv$"
 
-    # Find latest file
-    latest_file = None
-    latest_date = None
-
-    for file_path in tags_dir.glob(glob_pattern):
-        match = re.search(regex_pattern, file_path.name)
+    latest_file = latest_date = None
+    for path in tags_dir.glob(glob_pattern):
+        match = re.search(regex_pattern, path.name)
         if not match:
             continue
         try:
@@ -151,251 +168,174 @@ def find_latest_tag_file(target='danbooru'):
         except ValueError:
             continue
         if latest_date is None or file_date > latest_date:
-            latest_date, latest_file = file_date, file_path.name
+            latest_date, latest_file = file_date, path.name
 
     return latest_file
 
-def _update_config_paths(tagger=None):
-    """Update configuration paths in WebUI config file"""
-    target_tagger = TAGGER_MAP.get(tagger, 'danbooru')
 
-    config_mapping = {
-        'tac_tagFile': find_latest_tag_file(target_tagger),
-        'tagger_hf_cache_dir': f"{WEBUI}/models/interrogators/",
-        'ad_extra_models_dir': adetailer_dir,
-        # 'sd_vae': 'None'
-    }
+def _set_config(key: str, value: str | None):
+    """Set a config key, saving it when missing"""
+    value = str(value)
+    if key_exists(CONFIG_FILE, key):
+        update(CONFIG_FILE, key, value)
+    else:
+        save(CONFIG_FILE, key, value)
 
-    config_file = f"{WEBUI}/config.json"
-    for key, value in config_mapping.items():
-        if js.key_exists(config_file, key):
-            js.update(config_file, key, str(value))
-        else:
-            js.save(config_file, key, str(value))
+
+def _sync_version_uid():
+    """Sync VERSION_UID from launch_utils.py into the WebUI config"""
+    launch_utils = WEBUI_PATH / 'modules/launch_utils.py'
+    if not launch_utils.exists():
+        return
+
+    match = re.search(r'VERSION_UID:\s*Final\[str\]\s*=\s*["\'](.+?)["\']', launch_utils.read_text(encoding='utf-8'))
+    if match:
+        _set_config('VERSION_UID', match.group(1))
+
+
+def _update_config_paths(tagger: str = None):
+    """Update tagger and ADetailer paths in the WebUI config"""
+    _set_config('tac_tagFile', find_latest_tag_file(TAGGER_MAP.get(tagger, 'danbooru')))
+    _set_config('tagger_hf_cache_dir', f"{WEBUI_PATH}/models/interrogators/")
+    _set_config('ad_extra_models_dir', adetailer_dir)
 
     # Auto-sync VERSION_UID | Fix for NEO
-    if UI == 'Neo':
-        launch_utils_path = Path(WEBUI) / 'modules/launch_utils.py'
-        if launch_utils_path.exists():
-            content = launch_utils_path.read_text(encoding='utf-8')
-            match = re.search(r'VERSION_UID:\s*Final\[str\]\s*=\s*["\'](.+?)["\']', content)
-            if match:
-                version_uid = match.group(1)
-                if js.key_exists(config_file, 'VERSION_UID'):
-                    js.update(config_file, 'VERSION_UID', version_uid)
-                else:
-                    js.save(config_file, 'VERSION_UID', version_uid)
+    if UI_NAME == 'Neo':
+        _sync_version_uid()
 
-def get_launch_command():
-    """Construct launch command based on configuration"""
-    base_args = commandline_arguments
-    password = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
 
-    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --skip-torch-cuda-test --theme dark'  # nah: --no-gradio-queue
+# ~~ LAUNCHER ~~
+
+ENCRYPT_PASS = 'emoy4cnkm6imbysp84zmfiz1opahooblh7j34sgh'
+PINGGY_TIMER = 3620  # Free tier lasts 1 hour, +20s margin
+
+
+def _trashing():
+    """Remove .ipynb_checkpoints directories from all WebUI roots"""
+    for ui in WEBUIS:
+        cmd = f"find {HOME_PATH / ui} -type d -name .ipynb_checkpoints -exec rm -rf {{}} +"
+        subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def get_launch_command() -> str:
+    """Construct the launch command from settings"""
+    common_args = ' --enable-insecure-extension-access --disable-console-progressbars --skip-torch-cuda-test --theme dark'
+
     if ENV_NAME == 'Kaggle':
-        common_args += f" --encrypt-pass={password}"
-
-    # Accent Color For Anxety-Theme
+        common_args += f" --encrypt-pass={ENCRYPT_PASS}"
     if theme_accent != 'anxety':
         common_args += f" --anxety {theme_accent}"
 
-    if UI == 'ComfyUI':
-        return f"python3 main.py {base_args}"
-    else:
-        return f"python3 launch.py {base_args}{common_args}"
+    launcher = meta(UI_NAME)['launcher']
+
+    if UI_NAME == 'ComfyUI':
+        return f"python3 {launcher} {commandline_arguments}"
+    return f"python3 {launcher} {commandline_arguments}{common_args}"
 
 
-# ======================== Tunneling =======================
+def _setup_comfyui():
+    """Prepare ComfyUI: node deps, requirements and ffmpeg config"""
+    osENV['MPLBACKEND'] = 'agg'
 
-def is_command_available(command: str) -> bool:
-    """Check if command is available in PATH"""
-    cmd_name = command.split()[0]
-    return any(
-        os.access(os.path.join(path, cmd_name), os.X_OK)
-        for path in os.environ.get('PATH', '').split(os.pathsep)
-    )
+    if check_nodes_deps:
+        ipySys('python3 install-deps.py')
+        clear_output(wait=True)
 
-def get_public_ip() -> str:
-    """Retrieve and cache public IPv4 address"""
-    cached_ip = js.read(SETTINGS_PATH, 'ENVIRONMENT.public_ip')
-    if cached_ip:
-        return cached_ip
+    comfyui_settings = SCRIPTS_PATH / 'ComfyUI.json'
+    if not key_exists(comfyui_settings, 'install_req', True):
+        print(tr('comfy_deps_installing'))
+        subprocess.run(['pip', 'install', '-r', 'requirements.txt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        save(comfyui_settings, 'install_req', True)
+        clear_output(wait=True)
 
+    # WAS Node Suite support
+    was_config = EXTS_DIR / 'was-node-suite-comfyui/was_suite_config.json'
+    ffmpeg = shutil.which('ffmpeg')
+    if was_config.exists() and ffmpeg:
+        config = json.loads(was_config.read_text(encoding='utf-8'))
+        config['ffmpeg_bin_path'] = ffmpeg
+        was_config.write_text(json.dumps(config, indent=2), encoding='utf-8')
+
+
+def _print_selected_tagger(tagger: str):
+    """Print the selected tagger and its latest tag file"""
+    target   = TAGGER_MAP.get(tagger, tagger)
+    tag_file = find_latest_tag_file(target)
+    if tag_file:
+        print(f"{COL.B}>> 🏷️ {tr('selected_tagger', tagger=f'{COL.cB}{target}{COL.X}', tag_file=tag_file)}\n")
+
+
+def _print_session_duration():
+    """Print the session duration from the saved timer"""
     try:
-        response = requests.get('https://api64.ipify.org?format=json&ipv4=true', timeout=5)
-        public_ip = response.json().get('ip', 'N/A')
-        js.update(SETTINGS_PATH, 'ENVIRONMENT.public_ip', public_ip)
-        return public_ip
-    except Exception as e:
-        print(f"Error getting public IP: {e}")
-        return 'N/A'
-
-def setup_tunnels(tunnel_port):
-    """Setup tunnel configurations with command availability check"""
-    public_ip = get_public_ip()
-
-    services = [
-        ('Gradio', {
-            'command': f"gradio-tun {tunnel_port}",
-            'pattern': r'[\w-]+\.gradio\.live'
-        }),
-        ('Pinggy', {
-            'command': f"ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{tunnel_port} a.pinggy.io",
-            'pattern': r'[\w-]+\.run\.pinggy-free\.link'
-        }),
-        ('Cloudflared', {
-            'command': f"cl tunnel --url localhost:{tunnel_port}",
-            'pattern': r'[\w-]+\.trycloudflare\.com'
-        }),
-        ('Localtunnel', {
-            'command': f"lt --port {tunnel_port}",
-            'pattern': r'[\w-]+\.loca\.lt',
-            'note': f"| Password: {COL.G}{public_ip}{COL.X}"
-        })
-    ]
-
-    # Zrok2 setup
-    if zrok_token:
-        env_path = HOME / '.zrok2/environment.json'
-        current_token = None
-
-        if env_path.exists():
-            with open(env_path, 'r') as f:
-                current_token = json.load(f).get('zrok_token')
-
-        if current_token != zrok_token:
-            ipySys('zrok2 disable &> /dev/null')
-            ipySys(f"zrok2 enable {zrok_token} &> /dev/null")
-
-        services.append(('Zrok2', {
-            'command': f"zrok2 share public localhost:{tunnel_port} --headless",
-            'pattern': r'[\w-]+\.shares\.zrok\.io'
-        }))
-
-    # Ngrok setup
-    if ngrok_token:
-        config_path = HOME / '.config/ngrok/ngrok.yml'
-        current_token = None
-
-        if config_path.exists():
-            with open(config_path, 'r') as f:
-                current_token = yaml.safe_load(f).get('agent', {}).get('authtoken')
-
-        if current_token != ngrok_token:
-            ipySys(f"ngrok config add-authtoken {ngrok_token}")
-
-        services.append(('Ngrok', {
-            'command': f"ngrok http http://localhost:{tunnel_port} --log stdout",
-            'pattern': r'https://[\w-]+\.ngrok-free\.app'
-        }))
-
-    # Check command availability
-    available_tunnels = []
-    unavailable_tunnels = []
-
-    print(f"{COL.Y}>> Checking Tunnels:{COL.X}")
-    for name, config in services:
-        print(f"- 🕒 Checking {COL.lB}{name}{COL.X}...", end=' ')
-        if is_command_available(config['command']):
-            available_tunnels.append((name, config))
-            print(f"{COL.G}✓{COL.X}")
-        else:
-            unavailable_tunnels.append(name)
-            print(f"{COL.R}✗{COL.X}")
-
-    return available_tunnels, len(services), len(available_tunnels), unavailable_tunnels
+        timer    = float((WEBUI_PATH / 'static/timer.txt').read_text(encoding='utf-8'))
+        duration = timedelta(seconds=time.time() - timer)
+        time_str = f"{COL.Y}{str(duration).split('.')[0]}{COL.X}"
+        print(f"\n⌚️ {tr('session_duration', time=time_str)}")
+    except FileNotFoundError:
+        pass
 
 
-# ========================== Main ==========================
+# ~~ MAIN ~~
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--log', action='store_true', help='Show failed tunnel details')
+    parser.add_argument('-t', '--tagger', choices=TAGGER_MAP, help='Select tagger type: m/merged, e/e621, d/danbooru')
+    return parser.parse_args()
+
 
 if __name__ == '__main__':
-    """Main execution flow"""
     args = parse_arguments()
-    print('Please Wait...\n')
+    print(f"Please Wait...\n")
 
     osENV.setdefault('IIB_ACCESS_CONTROL', 'disable')
     osENV['UVICORN_LOG_LEVEL'] = 'error'
-    # osENV.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')    # (thx: github.com/zanllp/sd-webui-infinite-image-browsing/issues/880)
 
-    # Initialize tunnel manager
-    tunnel_port = 8188 if UI == 'ComfyUI' else 7860
-    available_tunnels, total, success, unavailable = setup_tunnels(tunnel_port)
+    tunnel_port = meta(UI_NAME)['port']
 
-    # Setup tunneling service
     tunneling_service = Tunnel(tunnel_port, check_command_available=False)
     tunneling_service.logger.setLevel(logging.DEBUG if args.log else logging.INFO)
+
+    available_tunnels, total, success, unavailable = setup_tunnels(tunnel_port, tunneling_service)
 
     for name, config in available_tunnels:
         tunneling_service.add_tunnel(name=name, **config)
 
     clear_output(wait=True)
 
-    # Launch sequence
     _trashing()
     _update_config_paths(args.tagger)
-    LAUNCHER = get_launch_command()
+    launcher = get_launch_command()
 
-    # Setup pinggy timer
-    ipySys(f"echo -n {int(time.time())+(3600+20)} > {WEBUI}/static/timer-pinggy.txt")
+    ipySys(f"echo -n {int(time.time()) + PINGGY_TIMER} > {WEBUI_PATH}/static/timer-pinggy.txt")
 
     with tunneling_service:
-        CD(WEBUI)
+        CD(WEBUI_PATH)
 
-        if UI == 'ComfyUI':
-            osENV['MPLBACKEND'] = 'agg'
+        if UI_NAME == 'ComfyUI':
+            _setup_comfyui()
 
-            COMFYUI_SETTINGS_PATH = SCR_PATH / 'ComfyUI.json'
-            if check_custom_nodes_deps:
-                ipySys('python3 install-deps.py')
-                clear_output(wait=True)
+        print(f"{COL.B}>> {tr('tunnels_total', total=total)}{COL.X} | {COL.G}{tr('tunnels_available', count=success)}{COL.X} | {COL.R}{tr('tunnels_unavailable', count=len(unavailable))}{COL.X}\n")
 
-            if not js.key_exists(COMFYUI_SETTINGS_PATH, 'install_req', True):
-                print('Installing ComfyUI dependencies...')
-                subprocess.run(['pip', 'install', '-r', 'requirements.txt'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                js.save(COMFYUI_SETTINGS_PATH, 'install_req', True)
-                clear_output(wait=True)
-
-            was_cfg_path = EXTS / 'was-node-suite-comfyui/was_suite_config.json'
-            ffmpeg_path = shutil.which('ffmpeg')
-            if was_cfg_path.exists() and ffmpeg_path:
-                cfg = json.loads(was_cfg_path.read_text(encoding='utf-8'))
-                cfg['ffmpeg_bin_path'] = ffmpeg_path
-                was_cfg_path.write_text(json.dumps(cfg, indent=2), encoding='utf-8')
-
-        print(f"{COL.B}>> Total Tunnels:{COL.X} {total} | {COL.G}Available:{COL.X} {success} | {COL.R}Unavailable:{COL.X} {len(unavailable)}\n")
-
-        # Display unavailable tunnels if any
         if args.log and unavailable:
-            print(f"{COL.R}>> Unavailable Tunnels:{COL.X}")
+            print(f"{COL.R}>> {tr('unavailable_header')}{COL.X}")
             for name in unavailable:
-                print(f"  - {name}: Command not found in PATH")
+                print(f"- {name}: Command not found in PATH")
             print()
 
-        # Display selected tagger if was used
-        if UI != 'ComfyUI' and args.tagger:
-            selected_tagger = TAGGER_MAP.get(args.tagger, args.tagger)
-            tag_file = find_latest_tag_file(selected_tagger)
+        if UI_NAME != 'ComfyUI' and args.tagger:
+            _print_selected_tagger(args.tagger)
 
-            if tag_file:
-                print(f"{COL.B}>> 🏷️ Selected Tagger: {COL.lB}{selected_tagger}{COL.X} ({tag_file})\n")
-
-        print(f"🔧 WebUI: {COL.B}{UI}{COL.X}")
+        print(f"🔧 WebUI: {COL.B}{UI_NAME}{COL.X}")
 
         try:
-            ipySys(LAUNCHER)
+            ipySys(launcher)
         except KeyboardInterrupt:
             pass
 
-    # Post-execution cleanup
-    if zrok_token:
+    if zrok2_token:
         ipySys('zrok2 disable &> /dev/null')
-        print('\n🔐 Zrok2 tunnel disabled :3')
+        print(f"\n🔐 {tr('zrok_disabled')}")
 
-    # Display session duration
-    try:
-        with open(f"{WEBUI}/static/timer.txt") as f:
-            timer = float(f.read())
-            duration = timedelta(seconds=time.time() - timer)
-            print(f"\n⌚️ Session duration: {COL.Y}{str(duration).split('.')[0]}{COL.X}")
-    except FileNotFoundError:
-        pass
+    _print_session_duration()
