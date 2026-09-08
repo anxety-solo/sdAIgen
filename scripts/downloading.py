@@ -963,6 +963,16 @@ if UI_NAME == 'ComfyUI':
         else:
             shutil.move(path, dest)
 
+# --- model_dir contents into diffusion_dir via symlink | ComfyUI only  ---
+diffusion_link = Path(diffusion_dir)
+
+if UI_NAME == 'ComfyUI':
+    if not diffusion_link.is_symlink():
+        _remove_path(diffusion_link)    # remove real dir/file if present
+        diffusion_link.symlink_to(Path(model_dir), target_is_directory=True)
+elif diffusion_link.is_symlink():
+    diffusion_link.unlink()
+
 # --- Copy dir from GDrive to extension_dir (if enabled) ---
 if gdrive_mount and sync_files:
     gdrive_path = EXTS_DIR / 'GDrive'
