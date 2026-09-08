@@ -228,7 +228,7 @@ def install_startup():
     if not source.exists():
         return
 
-    startup_dir =  / '.ipython' / 'profile_default' / 'startup'
+    startup_dir = HOME_PATH / '.ipython' / 'profile_default' / 'startup'
     startup_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, startup_dir / '00-startup.py')
 
