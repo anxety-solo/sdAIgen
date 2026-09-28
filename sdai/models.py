@@ -101,8 +101,8 @@ SD = {
 
 XL = {
     'model': {
-        'Flanime-IL [Anime | 4.0 | IL]': [
-            {'url': 'https://civitai.red/api/download/models/2944197', 'name': 'FlanimeXL-illustrious_V4.safetensors'}
+        'Flanime-IL [Anime | 5.0 | IL]': [
+            {'url': 'https://civitai.red/api/download/models/3262295', 'name': 'FlanimeXL-illustrious_V5.safetensors'}
         ],
         'Hassaku-XL [Anime | V3.4 | IL]': [
             {'url': 'https://civitai.red/api/download/models/2615702', 'name': 'HassakuXL-illustrious_V3.4.safetensors'}

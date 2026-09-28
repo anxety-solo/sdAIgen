@@ -21,7 +21,7 @@ English • [Русский](README.ru.md)
     <a href="https://colab.research.google.com/github/anxety-solo/sdAIgen/blob/main/notebook/ANXETY_sdAIgen_EN.ipynb">
         <img src=".github/assets/svg/en/colab-en.svg" width="800" height="160" alt="colab">
     </a>
-    <a href="https://www.kaggle.com/code/anxetysolo/sdaigen-en-ipynb">
+    <a href="https://www.kaggle.com/code/anxetysolox/sdaigen-en-ipynb">
         <img src=".github/assets/svg/en/kaggle-en.svg" width="800" height="160" alt="kaggle">
     </a>
 </div>
