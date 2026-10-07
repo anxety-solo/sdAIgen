@@ -95,5 +95,6 @@
     "pysssss.ImageFeed.Location": "hidden",
     "pysssss.ModelInfo.NsfwLevel": "PG",
     "ModelManager.APIKey.Civitai": "d13740311c9f4ca5b250dfb26cf43a26",
-    "ModelManager.APIKey.HuggingFace": ""
+    "ModelManager.APIKey.HuggingFace": "",
+    "ModelManager.UI.CardSize": "size.large"
 }

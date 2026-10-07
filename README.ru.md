@@ -73,7 +73,7 @@
 - [ComfyUI-Impact-Pack](https://github.com/ltdrdata/ComfyUI-Impact-Pack)
 - [ComfyUI-Impact-Subpack](https://github.com/ltdrdata/ComfyUI-Impact-Subpack)
 - [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager)
-- [ComfyUI-Model-Manager](https://github.com/hayden-fr/ComfyUI-Model-Manager)
+- [ComfyUI-Model-Manager](https://github.com/anxety-solo/ComfyUI-Model-Manager)
 - [ControlNet-AUX](https://github.com/Fannovel16/comfyui_controlnet_aux)
 - [Efficiency-Nodes](https://github.com/jags111/efficiency-nodes-comfyui)
 - [WAS-Nodes](https://github.com/WASasquatch/was-node-suite-comfyui)
